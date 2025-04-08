@@ -55,6 +55,10 @@
 				"title": "Hello Aurora"
 			},
             {
+                "command": "AuroraSjsExt.patients",
+                "title": "Patient Tracker"
+            },
+            {
                 "command": "webview-communication.openWebview1",
                 "title": "Open Webview 1"
             },
