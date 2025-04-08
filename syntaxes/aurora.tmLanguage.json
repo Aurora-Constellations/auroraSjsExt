@@ -1,0 +1,169 @@
+{
+  "name": "aurora",
+  "scopeName": "source.aurora",
+  "fileTypes": [
+    ".aurora"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#arith"
+    },
+    {
+      "name": "storage.type",
+      "match": "\\b(from|import|module|Treatment|Treatments|package|template|time|TRUE|FALSE|Investigations|Investigation|Issues|Clinical|Activity|Orders|Vitals|Vital|Treatment|Antibiotics|Antibiotic|Diet|Labs|Lab)\\b"
+    },
+    {
+      "name": "storage.type",
+      "match": "\\b(([A-Za-z0-9_]+)*:)"
+    },
+    {
+      "name": "variable.parameter",
+      "match": "\\b(Allergies|EDConsult|EDAssessment|Past History|Physical|Note|Trajectory|Clinical)\\b"
+    },
+    {
+      "name": "variable.parameter",
+      "match": "\\#(.+)$"
+    },
+    {
+      "name": "storage.type",
+      "match": "\\+(.+)$"
+    },
+    {
+      "name": "invalid.deprecated",
+      "match": "[-][!][\\s\\S]*"
+    },
+    {
+      "name": "keyword.control.aurora",
+      "match": "\\b(def|module|arith_module)\\b"
+    },
+    {
+      "name": "constant.numeric.aurora",
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+    },
+    {
+      "name": "keyword.operator.aurora",
+      "match": "[+\\-*/%^]"
+    },
+    {
+      "name": "punctuation.separator.aurora",
+      "match": "[;:,]"
+    },
+    {
+      "name": "punctuation.brackets.aurora",
+      "match": "[(){}]"
+    },
+    {
+        "name": "string.quoted.double.n",
+        "begin": "[?][?]",
+        "end" : ";"
+    },
+    {
+        "name": "string.quoted.double.n",
+        "match": "[-][?][\\s\\S]*"
+    },
+    {
+        "name": "entity.other.inherited-class",
+        "begin": "[x][x]",
+        "end" : ";"
+    },
+    {
+        "name": "entity.other.inherited-class",
+        "match": "[-][x][\\s\\S]*"
+    },
+    {
+      "begin": "/\\*",
+      "captures": {
+        "0": {
+          "name": "punctuation.definition.comment.json.comments"
+        }
+      },
+      "end": "\\*/",
+      "name": "comment.block.json.comments"
+    },
+    {
+      "match": "(//).*$\\n?",
+      "name": "comment.line.double-slash.js"
+    },
+    {
+        "name": "invalid.deprecated",
+        "begin": "[!][!]",
+        "end" : ";"
+    },
+    {
+        "name": "invalid.deprecated",
+        "begin": "[-][!]",
+        "end": "\n"
+    },
+    {
+        "name": "keyword.control",
+        "begin": "[.][.]",
+        "end" : ";"
+    },
+    {
+        "name": "keyword.control",
+        "match": "[-][.][\\s\\S]*"
+    },
+    {
+      "name": "keyword.control.aurora",
+      "match": "\\b(def|module)\\b"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.aurora",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.aurora"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.aurora"
+            }
+          }
+        },
+        {
+          "begin": "//\n\r",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.aurora"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.aurora"
+        }
+      ]
+    },
+    "arith": {
+      "patterns": [
+        {
+          "name": "keyword.control.arith",
+          "match": "\\b(def|arith_module)\\b"
+        },
+        {
+          "name": "constant.numeric.arith",
+          "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+        },
+        {
+          "name": "keyword.operator.arith",
+          "match": "[+\\-*/%^]"
+        },
+        {
+          "name": "punctuation.separator.arith",
+          "match": "[;:,]"
+        },
+        {
+          "name": "punctuation.brackets.arith",
+          "match": "[(){}]"
+        }
+      ]
+    }
+  }
+}

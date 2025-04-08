@@ -1,0 +1,77 @@
+{
+	"name": "aurora-sjs-ext",
+	"displayName": "auroraSjsExt",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.90.0"
+	},
+	"publisher": "com.axiommd",
+	"categories": [
+		"Other"
+	],
+	"main": "./out/extension",
+	"contributes": {
+		"languages": [
+            {
+                "id": "aurora",
+                "aliases": [
+                    "Aurora",
+                    "aurora"
+                ],
+                "extensions": [".aurora"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "aurora",
+                "scopeName": "source.aurora",
+                "path": "syntaxes/aurora.tmLanguage.json"
+            }
+        ],
+		"viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "aurora-container",
+                    "title": "Aurora",
+                    "icon": "$(symbol-structure)"
+                }
+            ]
+        },
+        "views": {
+            "aurora-container": [
+                {
+                    "id": "aurora",
+                    "type": "webview",
+                    "name": "Patient Care Scenario",
+                    "icon": "$(symbol-structure)"
+                }
+            ]
+        },
+		"commands": [
+			{
+				"command": "AuroraSjsExt.aurora",
+				"title": "Hello Aurora"
+			},
+            {
+                "command": "webview-communication.openWebview1",
+                "title": "Open Webview 1"
+            },
+            {
+                "command": "webview-communication.openWebview2",
+                "title": "Open Webview 2"
+            }
+		]
+	},
+	"devDependencies": {
+		"@scala-js/vite-plugin-scalajs": "^1.0.0",
+		"typescript": "^5.6.3"
+	},
+	"dependencies": {
+		"@types/vscode": "^1.94.0",
+		"@types/vscode-webview": "^1.57.0",
+		"aurora-langium": "^0.2.4"
+	}
+
+}
