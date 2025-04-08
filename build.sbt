@@ -21,7 +21,7 @@ lazy val installDependencies = Def.task[Unit] {
   // Paths to copy
   val sourcePackDir = auroraLangiumDir / "pack"
   val sourceSyntaxesDir = auroraLangiumDir / "syntaxes"
-  val targetDir = base / "out"
+  val targetDir = base
 
   def copyDir(source: File, target: File): Unit = {
     if (source.exists && source.isDirectory) {
