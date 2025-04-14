@@ -52,6 +52,12 @@ The project uses the following:
 * **sbt** for building the project: [SBT]
 * **scalajs-bundler** for bundling the JavaScript dependencies: [scalajs-bundler].
 
+## Running the Patient Tracker (Available in the `patient-tracker` branch)
+
+* Launch the extension and execute the **Patient Tracker** command from the Command Palette (`⇧⌘P`) in the newly opened VSCode window.
+
+**Important:** Ensure that your Docker database is running and the [patient-server] is up and operational.
+
 ## Open Points
 
 * Publishing to the Marketplace.
@@ -63,3 +69,4 @@ The project uses the following:
 [SBT]: https://www.scala-sbt.org
 [ScalaJS]: http://www.scala-js.org
 [scalajs-bundler]: https://github.com/scalacenter/scalajs-bundler
+[patient-server]: https://github.com/yash-a-18/patient-server.git
