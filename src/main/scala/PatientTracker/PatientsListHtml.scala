@@ -9,7 +9,7 @@ object PatientsListHtml:
         val nonce = getNonce()
         // Create an HTML unordered list from the content
         // val listItems = patient.map(item => s"<li>${item.unitNumber}</li>").mkString("\n")
-        val scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, "media", "NewAuroraMain.js")).toString;
+        val scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, "media", "PatientTrackerMain.js")).toString;
         // println(s"Script URI: $scriptUri");
         s"""
             |<!DOCTYPE html>
