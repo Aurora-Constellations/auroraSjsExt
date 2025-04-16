@@ -65,16 +65,6 @@ lazy val copyToMedia = Def.task[Unit] {
 
 
 // --- Custom Task: Launch VS Code Extension Host Preview ---
-// lazy val open = taskKey[Unit]("Open VS Code extension preview")
-
-// open := {
-//   val log = streams.value.log
-//   val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
-//   val cmd = if (isWindows) Seq("cmd", "/c", "code", "--extensionDevelopmentPath=.") else Seq("code", "--extensionDevelopmentPath=.")
-//   val result = Process(cmd, baseDirectory.value).!
-//   if (result != 0) log.error("Failed to open VS Code in extension dev mode")
-// }
-
 lazy val open = taskKey[Unit]("open vscode")
 def openVSCodeTask: Def.Initialize[Task[Unit]] =
   Def
@@ -91,6 +81,7 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
       s"$command --extensionDevelopmentPath=$path" ! log
       ()
     }
+    .dependsOn(copyToMedia)
 
 // --- Root Project ---
 lazy val root = project
