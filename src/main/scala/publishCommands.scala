@@ -4,11 +4,13 @@ import scala.scalajs.js
 import typings.vscode.anon.Dispose
 import scala.util.*
 import concurrent.ExecutionContext.Implicits.global
+import com.axiom.patientTracker.PatientsListHtml.getPatientsListHtml
 
 object PublishCommands:
     def publishCommands(context: ExtensionContext): Unit = {
         val commands = List(
-            ("AuroraSjsExt.aurora", showHello())
+            ("AuroraSjsExt.aurora", showHello()),
+            ("AuroraSjsExt.patients", showPatients(context))
         )
 
         commands.foreach { case (name, fun) =>
@@ -28,3 +30,24 @@ object PublishCommands:
             }
         }
     }
+
+    def showPatients(context: ExtensionContext): js.Function1[Any, Any] =
+      (args) => {
+        val path = js.Dynamic.global.require("path")
+        val panel = vscode.window.createWebviewPanel(
+          "Patients", // Internal identifier of the webview panel
+          "Patient List", // Title of the panel displayed to the user
+          vscode.ViewColumn.One, // Editor column to show the new webview panel in
+          js.Dynamic
+            .literal( // Webview options
+              enableScripts = true, // Allow JavaScript in the webview
+              localResourceRoots = js.Array(
+                vscode.Uri.file(path.join(context.extensionPath, "media").toString),
+                vscode.Uri.file(path.join(context.extensionPath, "out").toString)
+              )
+            )
+            .asInstanceOf[vscode.WebviewPanelOptions & vscode.WebviewOptions]
+        )
+        // Set the HTML content for the panel
+        panel.webview.html = getPatientsListHtml(panel.webview, context)
+      }

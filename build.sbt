@@ -1,40 +1,79 @@
 import scala.sys.process._
+import org.scalajs.linker.interface.{ModuleSplitStyle, ModuleKind}
 
+// Common Settings
+ThisBuild / organization := "com.axiom"
+ThisBuild / version := "0.0.1"
+ThisBuild / scalaVersion := DependencyVersions.scala
+
+// --- Custom Task: Install Dependencies ---
 lazy val installDependencies = Def.task[Unit] {
-  val base = (ThisProject / baseDirectory).value
-  val log = (ThisProject / streams).value.log
+  val base = baseDirectory.value
+  val log = streams.value.log
   val nodeModulesDir = base / "node_modules"
   val auroraLangiumDir = nodeModulesDir / "aurora-langium"
 
-  if (!nodeModulesDir.exists) {
+  if (!nodeModulesDir.exists()) {
     val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
     val npmCommand = if (isWindows) "npm.cmd" else "npm"
-
-    val pb =
-      new java.lang.ProcessBuilder(npmCommand, "install")
-        .directory(base)
-        .redirectErrorStream(true)
-
+    val pb = new java.lang.ProcessBuilder(npmCommand, "install")
+      .directory(base)
+      .redirectErrorStream(true)
     pb ! log
   }
 
-  // Paths to copy
-  val sourcePackDir = auroraLangiumDir / "pack"
-  val sourceSyntaxesDir = auroraLangiumDir / "syntaxes"
-  val targetDir = base
-
-  def copyDir(source: File, target: File): Unit = {
-    if (source.exists && source.isDirectory) {
-      IO.copyDirectory(source, target)
-      log.info(s"Copied ${source.getName} to ${target.getAbsolutePath}")
+  def copyDir(src: File, dest: File): Unit = {
+    if (src.exists && src.isDirectory) {
+      IO.copyDirectory(src, dest)
+      log.info(s"Copied ${src.getName} to ${dest.getAbsolutePath}")
     } else {
-      log.warn(s"Directory ${source.getAbsolutePath} does not exist!")
+      log.warn(s"Directory ${src.getAbsolutePath} does not exist!")
     }
   }
 
-  copyDir(sourcePackDir, targetDir / "pack")
-  copyDir(sourceSyntaxesDir, targetDir / "syntaxes")
+  copyDir(auroraLangiumDir / "pack", base / "pack")
+  copyDir(auroraLangiumDir / "syntaxes", base / "syntaxes")
 }
+
+// --- Custom Task: Copy Scala.js output to media ---
+lazy val copyToMedia = Def.task[Unit] {
+  val log = streams.value.log
+  val base = baseDirectory.value
+  val outputDir = (axiompatienttracker / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
+  val mediaDir = base / "media"
+  val cssFile = base / "axiompatienttracker" / "src" / "styles.css"
+
+  IO.createDirectory(mediaDir)
+
+  // Copy JS files
+  val jsFiles = (outputDir ** "*.js").get
+  jsFiles.foreach { file =>
+    val target = mediaDir / file.name
+    IO.copyFile(file, target, preserveLastModified = true)
+    log.info(s"Copied ${file.getName} to media/")
+  }
+
+  // Copy styles.css
+  if (cssFile.exists()) {
+    val cssTarget = mediaDir / "styles.css"
+    IO.copyFile(cssFile, cssTarget, preserveLastModified = true)
+    log.info(s"Copied styles.css to media/")
+  } else {
+    log.warn("styles.css not found in axiompatienttracker/src/")
+  }
+}
+
+
+// --- Custom Task: Launch VS Code Extension Host Preview ---
+// lazy val open = taskKey[Unit]("Open VS Code extension preview")
+
+// open := {
+//   val log = streams.value.log
+//   val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
+//   val cmd = if (isWindows) Seq("cmd", "/c", "code", "--extensionDevelopmentPath=.") else Seq("code", "--extensionDevelopmentPath=.")
+//   val result = Process(cmd, baseDirectory.value).!
+//   if (result != 0) log.error("Failed to open VS Code in extension dev mode")
+// }
 
 lazy val open = taskKey[Unit]("open vscode")
 def openVSCodeTask: Def.Initialize[Task[Unit]] =
@@ -52,29 +91,56 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
       s"$command --extensionDevelopmentPath=$path" ! log
       ()
     }
-  .dependsOn(installDependencies)
 
-// Rest of the file remains EXACTLY THE SAME ▼▼▼
+// --- Root Project ---
 lazy val root = project
   .in(file("."))
+  .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
+  .dependsOn(axiompatienttracker)
   .settings(
-    scalaVersion := DependencyVersions.scala,
-    moduleName := "auroraSjsExt",
-    Compile / fastOptJS / artifactPath := baseDirectory.value / "out" / "extension.js",
-    Compile / fullOptJS / artifactPath := baseDirectory.value / "out" / "extension.js",
+    name := "auroraSjsExt",
     open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,
-    // CommonJS
+    Compile / fastOptJS := (Compile / fastOptJS)
+      .dependsOn(axiompatienttracker / Compile / fastLinkJS)
+      .dependsOn(copyToMedia)
+      .dependsOn(installDependencies)
+      .value,
+    Compile / fastOptJS / artifactPath := baseDirectory.value / "out" / "extension.js",
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
-    libraryDependencies ++= Dependencies.scalatest.value,
-
-    // Compile / npmDependencies ++= Seq("@types/vscode" -> "1.84.1"),
-    // Tell ScalablyTyped that we manage `npm install` ourselves
     externalNpm := baseDirectory.value,
+    libraryDependencies ++= Dependencies.scalatest.value,
     testFrameworks += new TestFramework("utest.runner.Framework")
-    // publishMarketplace := publishMarketplaceTask.dependsOn(fullOptJS in Compile).value
   )
-  .enablePlugins(
-    ScalaJSPlugin,
-    ScalablyTypedConverterExternalNpmPlugin
-    // ScalablyTypedConverterPlugin
+
+// --- Axiom Patient Tracker Frontend (Scala.js) ---
+lazy val axiompatienttracker = project
+  .in(file("axiompatienttracker"))
+  .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
+  .dependsOn(shared.js)
+  .settings(
+    name := "axiompatienttracker",
+    scalaJSUseMainModuleInitializer := true,
+    scalacOptions ++= Seq("-Yretain-trees", "-Xmax-inlines", "60"),
+    scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.ESModule)
+        .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("axiompatienttracker")))
+    },
+    externalNpm := baseDirectory.value,
+    resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
+    libraryDependencies ++= Dependencies.scalajsdom.value,
+    libraryDependencies ++= Dependencies.scalajsmacrotaskexecutor.value,
+    libraryDependencies ++= Dependencies.laminar.value,
+    libraryDependencies ++= Dependencies.scalatest.value,
+    libraryDependencies ++= Dependencies.aurorajslibs.value,
+    libraryDependencies ++= Dependencies.shapeless3.value
+  )
+
+// --- Shared Cross-Project (shared between frontend + backend) ---
+lazy val shared = crossProject(JSPlatform, JVMPlatform)
+  .in(file("shared"))
+  .settings(
+    libraryDependencies ++= Dependencies.borerJson.value
+  )
+  .jvmSettings(
+    libraryDependencies += "org.scala-js" %% "scalajs-stubs" % DependencyVersions.scalaJsStubs
   )

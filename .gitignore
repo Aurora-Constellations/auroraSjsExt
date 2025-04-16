@@ -12,3 +12,8 @@ out
 /.vscode/settings.json
 pack
 /syntaxes
+/axiompatienttracker/target
+# hidden cross project folders
+shared
+media
+.env
