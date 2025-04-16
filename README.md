@@ -58,6 +58,50 @@ The project uses the following:
 
 **Important:** Ensure that your Docker database is running and the [patient-server] is up and operational.
 
+## Quick Start Guide: Running the Repository
+
+Follow these steps to set up and run the project:
+
+1. Install Node.js dependencies:
+  ```bash
+  npm install
+  ```
+
+2. Navigate to the `axiompatienttracker` directory:
+  ```bash
+  cd axiompatienttracker
+  ```
+
+3. Install additional dependencies:
+  ```bash
+  npm install
+  ```
+
+4. Return to the root directory:
+  ```bash
+  cd ..
+  ```
+
+5. Start the Scala build tool (sbt):
+  ```bash
+  sbt
+  ```
+
+6. Choose one of the following options to run the project:
+
+  **Option 1: Open the Extension Host**
+  ```bash
+  open
+  ```
+
+  **Option 2: Continuously transpile to JavaScript and debug**
+  ```bash
+  ~fastOptJS
+  ```
+  Then press `F5` in VSCode to launch the extension in debug mode.
+
+By following these steps, you can quickly set up and execute the repository.
+
 ## Open Points
 
 * Publishing to the Marketplace.
