@@ -104,6 +104,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       cls := "table-container",  // Wrapper for both search bar and table
       div(
         cls := "search-bar",
+        // First span with the "Patient list" title
+        span(cls := "patient-title", "Patient list"),  // First title span
         // Search bar
         label("Search: "),
         marginBottom := "10px",

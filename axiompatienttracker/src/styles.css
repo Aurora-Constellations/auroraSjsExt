@@ -45,9 +45,18 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 
+.search-bar span {
+  display: inline-flex;
+  align-items: center;
+}
+
 .search-bar label {
   font-weight: 500;
   white-space: nowrap;
+}
+
+.search-bar span.label-wrapper {
+  flex-shrink: 0; /* Prevent label from shrinking */
 }
 
 .search-bar input {
@@ -59,9 +68,17 @@ body {
   color: var(--text-primary);
   transition: border-color var(--transition);
 }
+
 .search-bar input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.search-bar .patient-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 50px;
 }
 
 /* ===== Table container & scrolling ===== */
@@ -155,18 +172,70 @@ td img {
   background: #4f5bff;
 }
 
-/* Responsive tweaks */
+/* ===== Media query tweaks with spans for better wrapping ===== */
 @media (max-width: 768px) {
-  thead th, td {
-    padding: 0.5rem;
-    font-size: 0.85rem;
-  }
   .search-bar {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
+  .search-bar span {
+    flex: 1 0 100%; /* Stack span elements on smaller screens */
+  }
   .search-bar label {
-    flex: 0 0 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+  /* Table styling for smaller screens */
+  .table-container {
+    margin-top: 1rem;
+    overflow-x: auto; /* Horizontal scroll for tables */
+  }
+
+  table {
+    min-width: 600px; /* Make table narrower on small screens */
+  }
+
+  thead th {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  td {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    /* Wrapping rows into block elements */
+  }
+
+  tbody tr td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    font-size: 0.85rem;
+  }
+
+  /* Row hover and selected states */
+  tbody tr:hover {
+    background: var(--bg-row-odd) mix(var(--accent) 20%);
+  }
+  
+  /* Remove table borders for small screens */
+  td, th {
+    border: none;
+  }
+  
+  /* Button styling for small screens */
+  .details-column button {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
   }
 }
+
 
