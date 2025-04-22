@@ -95,15 +95,15 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     def headerRow(s:List[String]) = 
       List(tr(
           (s :+ "Details").map (s => { // Add Details column header
-            th(s, cls := "sticky-header", padding := "8px")
+            th(s, padding := "8px")
           })
         )
       )
 
     div(
-      cls := "table-container",  // Wrapper for both sticky bar and table
+      cls := "table-container",  // Wrapper for both search bar and table
       div(
-        cls := "sticky-bar",
+        cls := "search-bar",
         // Search bar
         label("Search: "),
         marginBottom := "10px",
@@ -123,7 +123,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         }
       ),
       table(
-        cls := "sticky-table",
         onKeyDown --> tableKeyboardHandler,//prevents default scrolling behaviour from various key strokes
         thead(
           children <-- colHeadersVar.signal.map{headerRow(_) }
