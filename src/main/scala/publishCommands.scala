@@ -66,6 +66,12 @@ object PublishCommands:
     )
     // Set the HTML content for the panel
     panel.webview.html = getPatientsListHtml(panel.webview, context)
+    // Handle disposal
+    panel.onDidDispose((_: Unit) => { // Changed the lambda to accept a Unit argument
+      println("Patient panel disposed.")
+      patientsPanel = None // Reset the panel reference
+    })
+
     // Store the panel reference and handle disposal
     patientsPanel = Some(panel)
   }
