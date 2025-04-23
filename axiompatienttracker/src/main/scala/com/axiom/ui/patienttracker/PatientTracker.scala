@@ -53,7 +53,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
   def columns(row:Int,p:Patient) =  
     val c = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).slice(1 ,numColumnsToShow)
-    c(0) = c(0).copy(text = s"*${c(0).text}*", color = "green")
+    c(0) = c(0).copy(text = s"${c(0).text}", color = "green")
     c.toList
 
   override def cctoData(row:Int,cc:Patient):List[CellData] = columns(row,cc)
@@ -139,24 +139,29 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   
   def row(cols:Row)  = 
     tr(
-    idAttr := s"row-${cols.head._2.row}",
+      idAttr := s"row-${cols.head._2.row}",
     backgroundColor <-- selectedRowVar.signal.map{ selRow => 
-      selRow match
+        selRow match
         case Some(row) if row == cols.head._2.row => "#32a852" //shade of green
-        case _ => "black"
-    },
-    cols.map{c => this.tableCell(c._2)},
-    td(
-      cls := "details-column",
-      button(
-        "View Details",
-        onClick --> { _ =>
-          println(s"Details clicked for row: ${cols.head._3.text}")
+          case _ => "black"
+      },
+      onDblClick --> { _ =>
+        val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
+        println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
+        renderPatientDetailsPage(unitNumber)
+      },
+      cols.map{c => this.tableCell(c._2)},
+      td(
+        cls := "details-column",
+        button(
+          "View Details",
+          onClick --> { _ =>
+            println(s"Details clicked for row: ${cols.head._3.text}")
           // TODO: Add your logic here for handling the "Details" button click
-        }
+          }
+        )
       )
     )
-  )
 
   def tableCell(colRow:ColRow) : HtmlElement  =
     td(

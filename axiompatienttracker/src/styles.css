@@ -172,8 +172,158 @@ td img {
   background: #4f5bff;
 }
 
+/* ===== Patient Details ===== */
+.patient-details-page {
+  font-family: 'Inter', Arial, sans-serif;
+  padding: 2rem;
+  background: var(--bg-container);
+  color: var(--text-primary);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  width: calc(100% - 4rem); /* Full width minus margin */
+  max-width: 1200px; /* Optional: Limit the maximum width */
+  margin: 2rem auto; /* Add margin on all sides */
+  min-height: 100vh; /* Full height of the viewport */
+  box-sizing: border-box; /* Include padding in width/height calculations */
+  border: 2px solid #444; /* Subtle gray border to match the theme */
+}
+
+.patient-details-page ul {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two equal columns */
+  gap: 1rem; /* Space between items */
+  list-style: none;
+  padding: 0;
+}
+
+.patient-details-page li {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: var(--bg-row-even);
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: space-between;
+}
+
+.patient-details-page h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: var(--accent);
+}
+
+.patient-details-page .field-name {
+  font-weight: bold;
+  color: var(--text-secondary);
+}
+
+.patient-details-page .field-value {
+  color: var(--text-primary);
+}
+
+.back-button {
+  display: block;
+  margin: 1.5rem auto 0;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background var(--transition);
+}
+
+.back-button:hover {
+  background: #4f5bff;
+}
+
+.details-section {
+  margin-bottom: 1.5rem;
+}
+
+.details-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 0.5rem;
+}
+
+.patient-details-container {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.patient-image-box {
+  background: var(--bg-row-odd);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.patient-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+}
+
+.patient-info-box {
+  background: var(--bg-row-odd);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  flex: 1;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.patient-info {
+  flex: 1;
+}
+
+/* ===== Error Page ===== */
+.error-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--bg-container);
+  color: var(--text-primary);
+}
+
+.error-container {
+  text-align: center;
+  padding: 2rem;
+  background: var(--bg-row-odd);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  border: 2px solid #444;
+}
+
+.error-title {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
 /* ===== Media query tweaks with spans for better wrapping ===== */
 @media (max-width: 768px) {
+  .patient-details-page ul {
+    grid-template-columns: 1fr; /* Single column on smaller screens */
+  }
+  
   .search-bar {
     flex-wrap: wrap;
     gap: 0.5rem;

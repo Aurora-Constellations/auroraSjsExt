@@ -45,6 +45,14 @@ object ModelFetch :
       .map(s => s.data.fromJson[List[Patient]])
       .map(r => r.toOption.getOrElse(Nil))
 
+  def fetchPatientDetails(unitNumber: String): Future[Option[Patient]] =
+    Fetch.get(s"http://localhost:8080/patients/$unitNumber").future.text(abortController)
+      .map(response => response.data.fromJson[Patient].toOption)
+      .recover {
+        case ex =>
+          println(s"Error fetching patient details for unit number $unitNumber: ${ex.getMessage}")
+          None
+      }
     
 
 
