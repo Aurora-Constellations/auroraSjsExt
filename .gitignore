@@ -1,0 +1,14 @@
+node_modules
+/.metals/
+/target/
+/.idea/
+out
+/.bloop/
+/project/.bloop/
+/project/metals.sbt
+/project/project/
+/project/target/
+/.bsp/
+/.vscode/settings.json
+pack
+/syntaxes
