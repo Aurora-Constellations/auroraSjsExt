@@ -38,6 +38,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   val selectedCellVar:Var[Option[ColRow]] = Var(None)
   val selectedRowVar:Var[Option[Int]] = Var(None)
   val searchQueryVar: Var[String] = Var("")
+  val numColumnsToShow = 10
 
   selectedCellVar.signal.map {
     case Some(sel) => Some(sel.row)
@@ -48,10 +49,10 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     scrollToSelectedRow(rowIdxOpt)
   }
   
-  val colHeadersVar:Var[List[String]] = Var(ShapelessFieldNameExtractor.fieldNames[Patient].take(10))
+  val colHeadersVar:Var[List[String]] = Var(ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow))
 
   def columns(row:Int,p:Patient) =  
-    val c = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).take(10)
+    val c = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).slice(1 ,numColumnsToShow)
     c(0) = c(0).copy(text = s"*${c(0).text}*", color = "green")
     c.toList
 
@@ -163,7 +164,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
       data(colRow).map{ gcdTuple =>
-        if (gcdTuple._2.col == 4 ){ //Index 4 is for gender
+        if (gcdTuple._2.col == 3 ){ //Index 3 is for gender, starting index is 0
           if (gcdTuple._3.text == "M" || gcdTuple._3.text == "Male") {
             img(
               src := "https://img.icons8.com/color/48/male.png",

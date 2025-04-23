@@ -13,14 +13,10 @@ object Main :
      dom.console.log(s"%c $msg","background: #222; color: #bada55")
   }
   @main def entrypoint(): Unit = 
-
-    consoleOut ("Hello, world from console!!!!???")
-    println("Hello, world!")
+    consoleOut ("Hello, Patient Tracker from console!")
+    println("Hello, Patient Tracker!")
     // Scala.js outputs to the browser dev console, not the sbt session
     // Always have the browser dev console open when developing web UIs.
-    println("-- Scala.js app start --")
-
 
     val element = dom.document.querySelector("#app")
-    ModelFetch.fetchPatients
     renderOnDomContentLoaded(element,AxiomPatientTracker())

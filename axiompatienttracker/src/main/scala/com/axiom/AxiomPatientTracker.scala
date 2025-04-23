@@ -23,8 +23,8 @@ object AxiomPatientTracker :
     
 
   def applyx():HtmlElement = 
-    Model.fetchPatients
-    val numColumnsToShow = 10
+    val patientTracker = new PatientTracker()
+    val numColumnsToShow = patientTracker.numColumnsToShow
 
 
     val headerElementsSignal: Signal[List[HtmlElement]] = Model.colHeadersVar.signal.map { fieldNames =>
