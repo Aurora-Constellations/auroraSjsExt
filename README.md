@@ -56,7 +56,14 @@ The project uses the following:
 
 * Launch the extension and execute the **Patient Tracker** command from the Command Palette (`⇧⌘P`) in the newly opened VSCode window.
 
-**Important:** Ensure that your Docker database is running and the [patient-server] is up and operational.
+### Important Prerequisites:
+
+ Ensure that your Docker database is running and the [patient-server] is up and operational.
+
+This project also depends on the `dataimportcsv3s` repository. Ensure that it is published locally on your system.
+
+Clone the repository from GitHub:
+[https://github.com/yash-a-18/dataimportcsv3s.git](https://github.com/yash-a-18/dataimportcsv3s.git)
 
 ## Quick Start Guide: Running the Repository
 
