@@ -24,7 +24,6 @@ object PatientsListHtml:
             |</head>
             |<body>
             |    <script type="module" src="${scriptUri}" nonce="${nonce}"></script>
-            |    <h1>Patient List</h1>
             |    <div id="app"></div>
             |</body>
             |</html>

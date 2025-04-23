@@ -84,7 +84,7 @@ body {
 /* ===== Table container & scrolling ===== */
 .table-container {
   width: 100%;
-  overflow-x: auto;       /* horizontal scroll on small screens */
+  /* overflow-x: auto;       horizontal scroll on small screens */
   margin-top: 1rem;
   background: var(--bg-container);
   border-radius: var(--border-radius);
