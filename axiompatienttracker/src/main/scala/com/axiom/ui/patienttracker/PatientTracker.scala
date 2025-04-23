@@ -111,7 +111,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         marginBottom := "10px",
         input(
           typ := "text",
-          marginLeft := "10px",
           placeholder := "Search patients here...",
           inContext { thisNode =>
             onInput.mapTo(thisNode.ref.value) --> searchQueryVar
@@ -148,8 +147,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     cols.map{c => this.tableCell(c._2)},
     td(
       cls := "details-column",
-      padding := "5px",
-      whiteSpace := "nowrap",
       button(
         "View Details",
         onClick --> { _ =>
@@ -162,8 +159,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
   def tableCell(colRow:ColRow) : HtmlElement  =
     td(
-      padding := "5px",
-      whiteSpace := "nowrap",
       tabIndex := colRow.row*9000 + colRow.col, //apparently I need this capture keyboard events
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
@@ -172,16 +167,12 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           if (gcdTuple._3.text == "M" || gcdTuple._3.text == "Male") {
             img(
               src := "https://img.icons8.com/color/48/male.png",
-              alt := "Male",
-              width := "30px",
-              height := "30px"
+              alt := "Male"
             )
           } else {
             img(
               src := "https://img.icons8.com/color/48/female.png",
-              alt := "Female",
-              width := "30px",
-              height := "30px"
+              alt := "Female"
             )
           }
         }

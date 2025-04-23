@@ -10,7 +10,7 @@
   --text-secondary: #bbb;
   --accent: #646cff;
   --border-radius: 6px;
-  --padding: 0.75rem;
+  --padding: 0.35rem;
   --transition: 0.2s ease-in-out;
 
   /* Typography */
@@ -29,7 +29,7 @@ body {
 #app {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  /* padding: 2rem 1rem; */
 }
 
 /* ===== Search bar styling ===== */
