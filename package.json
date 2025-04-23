@@ -6,10 +6,16 @@
 	"engines": {
 		"vscode": "^1.90.0"
 	},
-	"publisher": "com.axiommd",
+	"publisher": "axiommd",
 	"categories": [
 		"Other"
 	],
+    "activationEvents": [
+     "onCommand:AuroraSjsExt.aurora",
+     "onCommand:webview-communication.openWebview1",
+    "onCommand:webview-communication.openWebview2"
+    ],
+    "repository": "https://github.com/Aurora-Constellations/auroraSjsExt",
 	"main": "./out/extension",
 	"contributes": {
 		"languages": [
