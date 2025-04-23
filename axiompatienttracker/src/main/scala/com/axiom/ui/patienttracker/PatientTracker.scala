@@ -191,35 +191,79 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     */
   def tableKeyboardHandler(e:KeyboardEvent)  =
     e.keyCode match 
-      case 40 => e.preventDefault()
-      case 38 => e.preventDefault()
-      case 37 => e.preventDefault()
-      case 39 => e.preventDefault()
-      case 32 => e.preventDefault()
+      case 40 | 38 => e.preventDefault() // Prevent default scrolling behavior for up/down arrows
       case _  => ()  
 
     
 
-  def keyboardHandler(e:KeyboardEvent)  =
+  // Variables to track long key press
+  private var keyPressInterval: Option[js.timers.SetIntervalHandle] = None
+  private var activeKey: Option[Int] = None // Track the currently pressed key
+
+  def keyboardHandler(e: KeyboardEvent): Unit = {
     val selectedCellOpt = selectedCellVar.now()
-    def conditionalUpdate(vector:ColRow):Unit =
-      selectedCellOpt.foreach {currentColRow =>
+
+    def conditionalUpdate(vector: ColRow): Unit =
+      selectedCellOpt.foreach { currentColRow =>
         val newColRow = currentColRow.add(vector)
-        inBounds(newColRow) match
-          case true => selectedCellVar.set(Some(newColRow))
-          case _ => ()
+        if (inBounds(newColRow)) {
+          selectedCellVar.set(Some(newColRow))
+          scrollToSelectedRow(Some(newColRow.row)) // Ensure scrolling happens
+        }
       }
-    e.keyCode match
-      case 40 =>  //down cursor
-        conditionalUpdate(ColRow(0,1))
-      case 38 => //up cursor
-        conditionalUpdate(ColRow(0,-1))
-      case 37 => //left cursor
-        conditionalUpdate(ColRow(-1,0))
-      case 39 => //right cursor
-        conditionalUpdate(ColRow(-1,0))
-      case 9 => //tab
-        // dom.window.console.log(s"tabbed ${gd.coordinate}tab tab tab ")
-      case _ => ()
+
+    e.keyCode match {
+      case 40 => // Down arrow
+        startKeyPressHandler(e.keyCode, () => moveAndScroll(1)) // Move down
+      case 38 => // Up arrow
+        startKeyPressHandler(e.keyCode, () => moveAndScroll(-1)) // Move up
+      case _ =>
+    }
+  }
+
+  // Start handling long key press
+  private def startKeyPressHandler(keyCode: Int, action: () => Unit): Unit = {
+    // If the key is already active, do nothing
+    if (activeKey.contains(keyCode)) return
+
+    // Mark the key as active
+    activeKey = Some(keyCode)
+
+    // Execute the action immediately
+    action()
+
+    // Clear any existing interval
+    keyPressInterval.foreach(js.timers.clearInterval)
+
+    // Start a new interval for continuous execution
+    keyPressInterval = Some(js.timers.setInterval(100)(action()))
+  }
+
+  // Stop handling long key press
+  def stopKeyPressHandler(e: KeyboardEvent): Unit = {
+    // Only stop if the released key matches the active key
+    if (activeKey.contains(e.keyCode)) {
+      keyPressInterval.foreach(js.timers.clearInterval)
+      keyPressInterval = None
+      activeKey = None
+    }
+  }
+
+  // Add event listeners for keyup to stop the interval
+  dom.window.addEventListener("keyup", (e: KeyboardEvent) => stopKeyPressHandler(e))
+
+  // Move the selected row and scroll the page
+  private def moveAndScroll(step: Int): Unit = {
+    val currentRowOpt = selectedRowVar.now()
+    val totalRows = gcdVar.now().size
+
+    currentRowOpt.foreach { currentRow =>
+      val newRow = (currentRow + step).max(0).min(totalRows - 1) // Ensure bounds
+      if (newRow != currentRow) {
+        selectedRowVar.set(Some(newRow))
+        scrollToSelectedRow(Some(newRow))
+      }
+    }
+  }
 
 
