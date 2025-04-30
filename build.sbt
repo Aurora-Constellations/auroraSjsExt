@@ -63,7 +63,6 @@ lazy val copyToMedia = Def.task[Unit] {
   }
 }
 
-
 // --- Custom Task: Launch VS Code Extension Host Preview ---
 lazy val open = taskKey[Unit]("open vscode")
 def openVSCodeTask: Def.Initialize[Task[Unit]] =
@@ -73,8 +72,6 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
       val log = streams.value.log
 
       val path = base.getCanonicalPath
-      s"code.cmd --extensionDevelopmentPath=$path" ! log
-
       val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
 
       val command = if (isWindows) "code.cmd" else "code"
@@ -100,6 +97,7 @@ lazy val root = project
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
     externalNpm := baseDirectory.value,
     libraryDependencies ++= Dependencies.scalatest.value,
+    libraryDependencies += "org.typelevel" %%% "cats-core" % "2.13.0",
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 

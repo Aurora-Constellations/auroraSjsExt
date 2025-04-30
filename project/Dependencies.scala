@@ -27,6 +27,11 @@ object Dependencies {
        "com.axiom" %%% "dataimportcsv3s" % "0.0.1-SNAPSHOT"
     )
   }
+    val cats = Def.setting {
+    Seq(
+       "org.typelevel" %%% "cats-core" % "2.13.0"
+    )
+  }
 
 
   //NOte I could not get scalatest to work in this project.  It seems to relate to the vscode dependency
