@@ -157,7 +157,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           "View Details",
           onClick --> { _ =>
             println(s"Details clicked for row: ${cols.head._3.text}")
-          // TODO: Add your logic here for handling the "Details" button click
+            val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
+            renderPatientDetailsPage(unitNumber)
           }
         )
       )
