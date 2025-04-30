@@ -7,6 +7,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 def renderPatientDetailsPage(unitNumber: String): Unit = {
   println(s"Fetching details for unit number: $unitNumber")
+  val container = dom.document.getElementById("app")
+  if (container != null) {
+    container.innerHTML = "" // Clear only the container
+  } else {
+    println("Error: Container element not found!")
+  }
 
   // Fetch patient details using the unit number
   ModelFetch.fetchPatientDetails(unitNumber).map {
@@ -42,7 +48,7 @@ def renderPatientDetailsPage(unitNumber: String): Unit = {
         "Collaborator 1" -> patient.collab1.getOrElse(""),
         "Collaborator 2" -> patient.collab2.getOrElse(""),
         "Aurora File" -> patient.auroraFile.getOrElse("")
-      ).filterNot { case (_, value) => value.isEmpty }
+      ).filterNot { case (key, value) => value.isEmpty && key != "Aurora File" }
 
       val detailsPage = div(
         cls := "patient-details-page",
@@ -72,22 +78,23 @@ def renderPatientDetailsPage(unitNumber: String): Unit = {
         ),
         div(
           cls := "back-to-list",
-          a(
+          button(
             "Back to List",
-            href := "http://localhost:5173",
             cls := "back-button",
+            width:= "100%",
             onClick --> { _ =>
               println("Back to list clicked")
               val patientTracker = new PatientTracker()
-              dom.document.body.innerHTML = ""
-              dom.document.body.appendChild(patientTracker.renderHtml.ref)
+              ModelFetch.fetchPatients.foreach{ p => 
+                patientTracker.populate(p)
+              }
+              container.innerHTML = "" // Clear only the container
+              render(container, patientTracker.renderHtml)
             }
           )
         )
       )
-
-      dom.document.body.innerHTML = ""
-      dom.document.body.appendChild(detailsPage.ref)
+      render(container, detailsPage)
 
     case None =>
       println(s"No details found for unit number: $unitNumber")
@@ -99,22 +106,24 @@ def renderPatientDetailsPage(unitNumber: String): Unit = {
           p(cls := "error-message", s"No patient details found for unit number: $unitNumber"),
           div(
             cls := "back-to-list",
-            a(
+            button(
               "Back to List",
-              href := "http://localhost:5173",
               cls := "back-button",
+              width:= "100%",
               onClick --> { _ =>
                 println("Back to list clicked")
                 val patientTracker = new PatientTracker()
-                dom.document.body.innerHTML = ""
-                dom.document.body.appendChild(patientTracker.renderHtml.ref)
+                ModelFetch.fetchPatients.foreach{ p => 
+                  patientTracker.populate(p)
+                }
+                container.innerHTML = "" // Clear only the container
+                render(container, patientTracker.renderHtml)
               }
             )
           )
         )
       )
-      dom.document.body.innerHTML = ""
-      dom.document.body.appendChild(errorPage.ref)
+      render(container, errorPage)
   }
 }
 
@@ -125,10 +134,36 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
     ul(
       details.filter { case (fieldName, _) => fields.contains(fieldName) }
       .map { case (fieldName, fieldValue) =>
-        li(
-          span(cls := "field-name", s"$fieldName: "),
-          span(cls := "field-value", fieldValue)
-        )
+        if (fieldName == "Aurora File") {
+          li(
+            span(cls := "field-name", s"$fieldName: "),
+            if (fieldValue.isEmpty) {
+              button(
+                cls := "create-button",
+                "Create File",
+                onClick --> { _ =>
+                  println("Creating new Aurora File")
+                  // TODO: Add logic to create a new file
+                }
+              )
+            } else {
+              button(
+                cls := "open-button",
+                "Open File",
+                onClick --> { _ =>
+                  println(s"Opening the Aurora File: $fieldValue")
+                  // TODO: Add logic to open aurora file
+                }
+              )
+            }
+          )
+        } 
+        else{
+          li(
+            span(cls := "field-name", s"$fieldName: "),
+            span(cls := "field-value", fieldValue)
+          )
+        }
       }
     )
   )
