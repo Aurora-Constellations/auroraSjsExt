@@ -31,9 +31,6 @@ object ModelFetch :
     c.toList
 
 
-  def fetch = Fetch.get("http://localhost:8080/patients").future.text(abortController)
-    .map(s => s.data.fromJson[List[Patient]])
-    .map(r => r.toOption.getOrElse(Nil))
 
 
   def fetchPatients = 

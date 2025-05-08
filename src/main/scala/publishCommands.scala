@@ -5,6 +5,12 @@ import typings.vscode.anon.Dispose
 import scala.util.*
 import concurrent.ExecutionContext.Implicits.global
 import com.axiom.patientTracker.PatientsListHtml.getPatientsListHtml
+import docere.sjsast.*
+import cats.implicits.toShow
+import cats.syntax.all.toShow
+import docere.sjsast.toShow
+import cats.syntax.show.toShow
+import com.axiom.MergePCM.MergePCM.*
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -12,7 +18,8 @@ object PublishCommands:
   def publishCommands(context: ExtensionContext): Unit = {
       val commands = List(
           ("AuroraSjsExt.aurora", showHello()),
-          ("AuroraSjsExt.patients", showPatients(context))
+          ("AuroraSjsExt.patients", showPatients(context)),
+          ("AuroraSjsExt.processDSL", processDSL(context))
       )
 
       commands.foreach { case (name, fun) =>
@@ -22,6 +29,22 @@ object PublishCommands:
                   .asInstanceOf[Dispose]
           )
       }
+  }
+
+  def processDSL(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    val editor = vscode.window.activeTextEditor
+    editor.foreach { ed =>
+      val document = ed.document
+      val text = document.getText()
+      val issuesSection = text.split("\n").takeWhile(!_.startsWith("//")).mkString("\n")
+      val moduleNames = parseIssues(issuesSection)
+      val modules = loadModules(moduleNames)
+      val generatedDSL = generateDSL(modules)
+      generatedDSL.onComplete {
+        case Success(result) => updateCurrentFile(context, result)
+        case Failure(e)      => vscode.window.showErrorMessage(s"Error generating DSL: ${e.getMessage}")
+      }
+    }
   }
   
   def showHello(): js.Function1[Any, Any] = {
