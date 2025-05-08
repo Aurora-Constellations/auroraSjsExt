@@ -44,17 +44,25 @@ object MergePCM:
 
         try {
             val pcmFutures = modulePaths.map { modulePath =>
-                parse(modulePath).toFuture.map(PCM(_))
+                parse(modulePath).toFuture.map { parsed =>
+                    try {
+                        val pcm = PCM(parsed)
+                        pcm
+                    } catch {
+                        case e: Exception =>
+                            println(s"Failed to build PCM from AST: ${e.getMessage}")
+                            PCM(Map.empty)
+                    }
+                }
             }
-            println(s"Parsed PCM Futures: ${pcmFutures}")
             for{
                 pcms <- Future.sequence(pcmFutures)
             } yield {
-                println(s"Parsed PCMs: $pcms")
+                // println(s"Parsed PCMs: $pcms")
                 val mergedPCM = pcms.reduce(_.merge(_))
-                println(s"Merged PCM: ${mergedPCM.cio.map(_._2)}")
+                println(s"Merged PCM keys: ${mergedPCM.cio.keys}")
                 val mergedResults = prettyPrint(mergedPCM)
-                println(s"Merged results: $mergedResults")
+                // println(s"Merged results: $mergedResults")
                 mergedResults
             }
         } catch {
@@ -64,14 +72,14 @@ object MergePCM:
     }
 
     def updateCurrentFile(context: ExtensionContext, generatedDSL: String): Unit = {
-        println(s"Updating current file with generated DSL: $generatedDSL")
+        println(s"Updating current file with generated DSL...")
         val editor = vscode.window.activeTextEditor
         editor.foreach { ed =>
             val document = ed.document
             val lastLine = document.lineCount - 1
             val position = document.lineAt(lastLine).range.end
             ed.edit(editBuilder => {
-            editBuilder.insert(position, generatedDSL)
+            editBuilder.insert(position, s"\n\n$generatedDSL") // Add new line before inserting
             })
         }
     }
