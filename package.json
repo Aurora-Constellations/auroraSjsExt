@@ -61,16 +61,8 @@
 				"title": "Patient Tracker"
 			},
 			{
-				"command": "AuroraSjsExt.mergepcm",
-				"title": "Merge Patients"
-			},
-			{
-				"command": "webview-communication.openWebview1",
-				"title": "Open Webview 1"
-			},
-			{
-				"command": "webview-communication.openWebview2",
-				"title": "Open Webview 2"
+				"command": "AuroraSjsExt.processDSL",
+				"title": "Merge PCMs"
 			}
 		]
 	},
@@ -81,7 +73,6 @@
 	"dependencies": {
 		"@types/vscode": "^1.94.0",
 		"@types/vscode-webview": "^1.57.0",
-		"aurora-langium": "^0.2.8",
-		"dotenv": "^16.5.0"
+		"aurora-langium": "^0.2.16"
 	}
 }

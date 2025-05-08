@@ -97,7 +97,7 @@ lazy val root = project
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
     externalNpm := baseDirectory.value,
     libraryDependencies ++= Dependencies.scalatest.value,
-    libraryDependencies += "org.typelevel" %%% "cats-core" % "2.13.0",
+    libraryDependencies ++= Dependencies.cats.value,
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 

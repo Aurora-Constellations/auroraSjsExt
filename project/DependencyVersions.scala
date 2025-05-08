@@ -12,5 +12,6 @@ object DependencyVersions {
   val waypoint          = "8.0.1"
   val scalaJsStubs      = "1.1.0"
   val shapeless3        = "3.4.3"
-
+  val scalaAsync        = "1.0.1"
+  val cats              = "2.13.0"
 }

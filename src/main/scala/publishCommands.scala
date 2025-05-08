@@ -6,11 +6,11 @@ import scala.util.*
 import concurrent.ExecutionContext.Implicits.global
 import com.axiom.patientTracker.PatientsListHtml.getPatientsListHtml
 import docere.sjsast.*
-export typings.auroraLangium.cliMod.parse
 import cats.implicits.toShow
 import cats.syntax.all.toShow
 import docere.sjsast.toShow
 import cats.syntax.show.toShow
+import com.axiom.MergePCM.MergePCM.*
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -19,7 +19,7 @@ object PublishCommands:
       val commands = List(
           ("AuroraSjsExt.aurora", showHello()),
           ("AuroraSjsExt.patients", showPatients(context)),
-          ("AuroraSjsExt.mergepcm", mergePCM(context))
+          ("AuroraSjsExt.processDSL", processDSL(context))
       )
 
       commands.foreach { case (name, fun) =>
@@ -29,6 +29,22 @@ object PublishCommands:
                   .asInstanceOf[Dispose]
           )
       }
+  }
+
+  def processDSL(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    val editor = vscode.window.activeTextEditor
+    editor.foreach { ed =>
+      val document = ed.document
+      val text = document.getText()
+      val issuesSection = text.split("\n").takeWhile(!_.startsWith("//")).mkString("\n")
+      val moduleNames = parseIssues(issuesSection)
+      val modules = loadModules(moduleNames)
+      val generatedDSL = generateDSL(modules)
+      generatedDSL.onComplete {
+        case Success(result) => updateCurrentFile(context, result)
+        case Failure(e)      => vscode.window.showErrorMessage(s"Error generating DSL: ${e.getMessage}")
+      }
+    }
   }
   
   def showHello(): js.Function1[Any, Any] = {
@@ -82,117 +98,3 @@ object PublishCommands:
     // Store the panel reference and handle disposal
     patientsPanel = Some(panel)
   }
-
-  def mergePCM(context: ExtensionContext): js.Function1[Any, Any] =
-    (args) => {
-      //context |+| context
-      mergeissues(context)
-    }
-
-def prettyPrint(pcm: PCM): String = {
-  val sb = new StringBuilder
-
-  // Print issues
-  pcm.cio.get("Issues") match {
-    case Some(issues: Issues) =>
-      sb.append("Issues: ")
-      if issues.narrative.nonEmpty then
-        val narratives = issues.narrative.map(_.name).toList.sorted
-        sb.append(narratives.mkString(" "))
-        sb.append("\n")
-      issues.ics.toList.sortBy(_.name).foreach { ic =>
-      val narrativeStr = 
-        if (ic.narrative.nonEmpty)
-          " " + ic.narrative.map(_.name).mkString("; ")
-        else ""
-      sb.append(s"${ic.name}$narrativeStr\n")
-    }
-      sb.append("\n")
-    case _ =>
-  }
-
-  // Print orders
-  pcm.cio.get("Orders") match {
-    case Some(orders: Orders) =>
-      sb.append("Orders:\n")
-      orders.ngo.foreach { ngo =>
-        sb.append(s"${ngo.name}\n")
-        ngo.orderCoordinates.foreach { oc =>
-          val refsStr = oc.refs.map(_.name).mkString(",")
-          if (refsStr.nonEmpty)
-            sb.append(s"${oc.name}($refsStr) \n")
-          else
-            sb.append(s"${oc.name} \n")
-        }
-        sb.append("\n")
-      }
-    case _ =>
-  }
-
-  sb.toString()
-}
-
-def mergeissues(context: ExtensionContext): Unit = {
-  val fs = js.Dynamic.global.require("fs")
-  val path = js.Dynamic.global.require("path")
-
-  for {
-    file1Uris <- vscode.window.showOpenDialog(
-      js.Dynamic.literal(
-        canSelectMany = false,
-        openLabel = "Select the first file"
-      ).asInstanceOf[vscode.OpenDialogOptions]
-    ).toFuture
-    file2Uris <- vscode.window.showOpenDialog(
-      js.Dynamic.literal(
-        canSelectMany = false,
-        openLabel = "Select the second file"
-      ).asInstanceOf[vscode.OpenDialogOptions]
-    ).toFuture
-  } {
-    (file1Uris.toOption, file2Uris.toOption) match {
-    case (Some(file1Uris), Some(file2Uris)) if file1Uris.length > 0 && file2Uris.length > 0 =>
-      val file1 = file1Uris(0).asInstanceOf[vscode.Uri]
-      val file2 = file2Uris(0).asInstanceOf[vscode.Uri]
-
-      val file1Path = file1.fsPath.trim
-      val file2Path = file2.fsPath.trim
-
-      val fs = js.Dynamic.global.require("fs")
-      try {
-        //val file1Content = fs.readFileSync(file1Path, "utf8").asInstanceOf[String]
-        //val file2Content = fs.readFileSync(file2Path, "utf8").asInstanceOf[String]
-        for {
-          p1 <-  parse(file1Path.asInstanceOf[String]).toFuture  
-          p2 <-  parse(file2Path.asInstanceOf[String]).toFuture
-          }
-        yield {
-            val result = (PCM(p1)).merge(PCM(p2))
-            
-            val merged_results = prettyPrint(result)
-            println("printing output")
-            println(result)
-            val examplesPath = path.join(context.extensionPath, "examples").toString
-              fs.mkdirSync(examplesPath)
-
-
-            val outputFilePath = path.join(examplesPath, "merged_output.aurora").toString
-
-            // Write the result to the file
-            fs.writeFileSync(outputFilePath, merged_results, "utf8")
-
-            // Notify the user
-            vscode.window.showInformationMessage(s"Result saved to $outputFilePath")
-        }
-        //fs.writeFileSync(file2Path, mergedContent, "utf8")
-
-        vscode.window.showInformationMessage("Files merged successfully.")
-      } catch {
-        case e: Throwable =>
-          vscode.window.showErrorMessage("Failed to merge files: " + e.getMessage())
-      }
-    case _ =>
-      vscode.window.showWarningMessage("Both files must be selected.")
-  }
-}
-}
