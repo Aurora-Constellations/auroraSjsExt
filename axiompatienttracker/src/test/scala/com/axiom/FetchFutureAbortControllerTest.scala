@@ -1,15 +1,22 @@
 package com.axiom
+import testutils._
 
-import org.scalatest._
-import wordspec._
-import matchers._
+import scala.concurrent.Future
 
+class FetchFutureAbortControllerTest extends AuroraAsyncTesting {
 
-
-class FetchFutureAbortControllerTest extends AnyWordSpec with should.Matchers{
   "this" should {
     "work" in {
         true should be(true)
+
+        for{
+          a <- Future{1+1}
+          b <- Future{2+2}
+          
+        } yield  {
+          info(s"result = ${a*b}")
+          true should be(true)
+        }
     }
   }
 }

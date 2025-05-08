@@ -1,11 +1,9 @@
 package com.axiom
-import org.scalatest._
-import wordspec._
-import matchers._
+import testutils.*
 
 import shapeless3.deriving.*
 
-class ShapelessTableColPropertiesTest extends AnyWordSpec with should.Matchers{
+class ShapelessTableColPropertiesTest extends AuroraTesting:
   "this" should {
     "work" in {
       case class Person(name:String, age: Int, exists:Option[Boolean])
@@ -21,4 +19,3 @@ class ShapelessTableColPropertiesTest extends AnyWordSpec with should.Matchers{
 
     }
   }
-}

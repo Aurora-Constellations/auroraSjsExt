@@ -1,13 +1,12 @@
 package com.axiom
-import org.scalatest._
-import wordspec._
-import matchers._
-
+import testutils.*
 import shapeless3.deriving.*
 import org.scalactic.Bool
 
 
-class ShapelessFieldNameExtractorTest extends AnyWordSpec with should.Matchers{
+class ShapelessFieldNameExtractorTest extends AuroraTesting :
+  
+  
   "Extracting field names" should {
     case class Person(name:String,male:Boolean,age:Int)
     "work like this" in {
@@ -15,4 +14,3 @@ class ShapelessFieldNameExtractorTest extends AnyWordSpec with should.Matchers{
          result should be(List("name", "male", "age"))
     }
   }
-}

@@ -1,8 +1,6 @@
 package com.axiom
-import org.scalatest._
-import wordspec._
-import matchers._
 
+import testutils.*
 import shapeless3.deriving.*
 
 import scala.deriving.*
@@ -19,7 +17,7 @@ object Tuples:
   ): A = mirror.fromProduct(value)
 
 
-class Scala3CaseClassTupleTest extends AnyWordSpec with should.Matchers{
+class Scala3CaseClassTupleTest extends AuroraTesting{
   "this" should {
     "work" in {
 

@@ -1,8 +1,5 @@
 package com.axiom
-import org.scalatest._
-import wordspec._
-import matchers._
-
+import testutils.*
 import shapeless3.deriving.*
 
 trait Show[A]:
@@ -29,11 +26,10 @@ object Show:
   inline given derived[A](using gen: K0.Generic[A]): Show[A] =
     gen.derive(deriveShowProduct, deriveShowSum)
 
-class ShapelessShowTest extends AnyWordSpec with should.Matchers{
+class ShapelessShowTest extends AuroraTesting :
   "this" should {
     "work" in {
         summon[Show[Int]].show(3) should be("3")
         summon[Show[Option[Int]]].show(Some(3)) should be("Some(value = 3)")  
     }
   }
-}

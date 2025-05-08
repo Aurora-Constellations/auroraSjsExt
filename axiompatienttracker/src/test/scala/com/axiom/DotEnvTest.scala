@@ -1,12 +1,9 @@
 package com.axiom
 
-import org.scalatest._
-import wordspec._
-import matchers._
+import testutils.*
 
 
-
-class DotEnvTest extends AnyWordSpec with should.Matchers{
+class DotEnvTest extends AuroraTesting :
   "properties from .env" should {
     "be accessible" in {
       import scala.scalajs.js
@@ -19,4 +16,3 @@ class DotEnvTest extends AnyWordSpec with should.Matchers{
 
     }
   }
-}

@@ -1,13 +1,9 @@
 package com.axiom
 
-import org.scalatest._
-import wordspec._
-import matchers._
+import testutils.*
 import scala.util.Try
 
-
-
-class IndexedSeqTest extends AnyWordSpec with should.Matchers {
+class IndexedSeqTest extends AuroraTesting {
   "this" should {
     "work" in {
 

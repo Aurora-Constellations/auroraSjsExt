@@ -1,12 +1,9 @@
 package com.axiom
 
-import org.scalatest._
-import wordspec._
-import matchers._
+import testutils.*
 
 
-
-class FirstTest extends AnyWordSpec with should.Matchers{
+class FirstTest extends AuroraTesting{
   "this" should {
     "work" in {
         true should be(true)

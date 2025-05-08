@@ -1,14 +1,9 @@
 
 package com.axiom
 
-import org.scalatest._
+import testutils.*
 
-import wordspec._
-import matchers._
-import scala.concurrent.Future
-
-
-class FirstAsyncTest extends wordspec.AsyncWordSpec with should.Matchers{
+class FirstAsyncTest extends AuroraAsyncTesting{
   implicit override def executionContext = org.scalajs.macrotaskexecutor.MacrotaskExecutor
   "this" should {
     "work" in {
