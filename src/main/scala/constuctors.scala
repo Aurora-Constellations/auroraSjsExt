@@ -15,6 +15,6 @@ object contructors:
   val ngoY = List("NGOX1", "NGOY2")
 
   def refs(names: Set[String]) = names.toSet.map { RefCoordinate(_) }
-  def ocoords(names: Set[String], refs: Set[RefCoordinate]) = names.toSet.map { x => OrderCoordinate(x, refs) }
-  def icoords(names: Set[String], refs: Set[RefCoordinate]) = names.toSet.map { x => IssueCoordinate(x, refs) }
+  def ocoords(names: Set[String], refs: Set[RefCoordinate]) = names.toSet.map { x => OrderCoordinate(x,Set.empty, refs) }
+  def icoords(names: Set[String], refs: Set[RefCoordinate]) = names.toSet.map { x => IssueCoordinate(x,Set.empty) }
   def ccoords(names: Set[String], narrative:Set[NL_STATEMENT],refs: Set[RefCoordinate]) = names.toSet.map { x => ClinicalCoordinate(x, narrative, refs) }

@@ -84,7 +84,14 @@ object MergePCM:
         }
     }
 
-    def prettyPrint(pcm: PCM): String = {
+    //TODO fix this
+    def prettyPrint(pcm:PCM):String = 
+        import ShowAurora.{given}
+        pcm.show
+        
+        
+        
+    def prettyPrintx(pcm: PCM): String = {
         val sb = new StringBuilder
 
         // Print issues
@@ -97,8 +104,8 @@ object MergePCM:
                 sb.append("\n")
             issues.ics.toList.sortBy(_.name).foreach { ic =>
             val narrativeStr = 
-                if (ic.narrative.nonEmpty)
-                " " + ic.narrative.map(_.name).mkString("; ")
+                if (ic.narratives.nonEmpty)
+                " " + ic.narratives.mkString(" ")
                 else ""
             sb.append(s"${ic.name}$narrativeStr\n")
             }

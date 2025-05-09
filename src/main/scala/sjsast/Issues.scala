@@ -5,7 +5,7 @@ case class Issues(ics: Set[IssueCoordinate], narrative:Set[NL_STATEMENT]=Set.emp
 
   def merge(i: Issues): Issues =
     val narratives = narrative |+| i.narrative
-    val x = ics merge i.ics
+    val x = ics.merge( i.ics)
     Issues(x, narratives)
 
   override def merge(i: SjsNode): SjsNode =
