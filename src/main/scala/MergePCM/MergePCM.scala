@@ -84,52 +84,9 @@ object MergePCM:
         }
     }
 
-    //TODO fix this
     def prettyPrint(pcm:PCM):String = 
         import ShowAurora.{given}
         pcm.show
         
         
         
-    def prettyPrintx(pcm: PCM): String = {
-        val sb = new StringBuilder
-
-        // Print issues
-        pcm.cio.get("Issues") match {
-            case Some(issues: Issues) =>
-            sb.append("Issues: ")
-            if issues.narrative.nonEmpty then
-                val narratives = issues.narrative.map(_.name).toList.sorted
-                sb.append(narratives.mkString(" "))
-                sb.append("\n")
-            issues.ics.toList.sortBy(_.name).foreach { ic =>
-            val narrativeStr = 
-                if (ic.narratives.nonEmpty)
-                " " + ic.narratives.mkString(" ")
-                else ""
-            sb.append(s"${ic.name}$narrativeStr\n")
-            }
-            sb.append("\n")
-            case _ =>
-        }
-
-        // Print orders
-        pcm.cio.get("Orders") match {
-            case Some(orders: Orders) =>
-            sb.append("Orders:\n")
-            orders.ngo.foreach { ngo =>
-                sb.append(s"${ngo.name}\n")
-                ngo.orderCoordinates.foreach { oc =>
-                val refsStr = oc.refs.map(_.name).mkString(",")
-                if (refsStr.nonEmpty)
-                    sb.append(s"${oc.name}($refsStr) \n")
-                else
-                    sb.append(s"${oc.name} \n")
-                }
-                sb.append("\n")
-            }
-            case _ =>
-        }
-
-        sb.toString()
-    }
