@@ -8,12 +8,17 @@ case class PCM(cio:Map[String,CIO]) extends SjsNode :
   def merge(p:PCM):PCM = 
     PCM( cio |+| p.cio)
 
+
   override def merge(p: SjsNode): SjsNode = merge(p.asInstanceOf[PCM])
 
 
 object PCM :      
-  def apply(p:GenAst.PCM) :PCM = 
-    val i:Map[String,CIO] = p.elements.toList
+
+    
+  private def cioFromModuleOrElse (p:GenAst.PCM):Map[String,CIO] = 
+    p.module.map{_.elements}
+    .getOrElse(p.elements)
+    .toList
       .map(x => x.$type -> x)
       .map{(t,o) =>
         t match {
@@ -23,5 +28,8 @@ object PCM :
         }
 
       }.toMap
-    PCM(i)
+
+  def apply(p:GenAst.PCM) :PCM = 
+    val cio = cioFromModuleOrElse(p)
+    PCM(cio)
 

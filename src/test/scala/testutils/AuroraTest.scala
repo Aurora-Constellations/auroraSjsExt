@@ -6,8 +6,8 @@ import matchers._
 
 class AuroraTest extends AnyWordSpec with should.Matchers{
   def ppinfo(a:Any) = {
-    val s = pprint.apply(a)
-    info(s"${s}")
+    // val s = pprint.apply(a)
+    // info(s"${s}")
   }
 
 
