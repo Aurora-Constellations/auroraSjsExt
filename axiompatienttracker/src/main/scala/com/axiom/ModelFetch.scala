@@ -30,9 +30,6 @@ object ModelFetch :
     c(0) = c(0).copy(text = s"*${c(0).text}*", color = "green")
     c.toList
 
-
-
-
   def fetchPatients = 
     import java.time._ //cross scalajs and jvm compatible
     import com.axiom.model.shared.dto.Patient 
@@ -51,11 +48,12 @@ object ModelFetch :
           None
       }
     
-
-
-
-
-
-
-
- //************************************************
+  def addPatientAuroraFile(unitNumber: String): Future[Option[Patient]] =
+    val auroraFile = s"""{"auroraFile": "$unitNumber.aurora"}"""
+    Fetch.put(s"http://localhost:8080/patients/update/$unitNumber", auroraFile).future.text(abortController)
+      .map(response => response.data.fromJson[Patient].toOption)
+      .recover {
+        case ex =>
+          println(s"Error adding patient aurora file for unit number $unitNumber: ${ex.getMessage}")
+          None
+      }

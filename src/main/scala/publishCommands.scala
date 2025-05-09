@@ -89,6 +89,34 @@ object PublishCommands:
     )
     // Set the HTML content for the panel
     panel.webview.html = getPatientsListHtml(panel.webview, context)
+    
+    // Handle messages from the webview
+    panel.webview.onDidReceiveMessage { (message: Any) =>
+      // Since we're using a general 'Any' type, we can cast to a js.Dynamic safely here
+      val msg = message.asInstanceOf[js.Dynamic]
+      val command = msg.command.asInstanceOf[String]
+      val filename = msg.filename.asInstanceOf[String]
+
+      // Handle the message based on command
+      command match {
+        case "createAuroraFile" =>
+          vscode.window.showInformationMessage(s"Creating file: $filename")
+          // Call the function to create the file
+          // handleCreate(filename)
+        
+        case "addedToDB" =>
+          vscode.window.showInformationMessage(s"Added to Database: $filename")
+
+        case "openAuroraFile" =>
+          vscode.window.showInformationMessage(s"Opening file: $filename")
+          // Call the function to open the file
+          // handleOpen(filename)
+
+        case other =>
+          vscode.window.showWarningMessage(s"Unknown command: $other")
+      }
+    }
+
     // Handle disposal
     panel.onDidDispose((_: Unit) => { // Changed the lambda to accept a Unit argument
       println("Patient panel disposed.")

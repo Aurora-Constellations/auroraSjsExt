@@ -4,6 +4,7 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import com.axiom.ModelFetch
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Success, Failure}
 
 def renderPatientDetailsPage(unitNumber: String): Unit = {
   println(s"Fetching details for unit number: $unitNumber")
@@ -128,6 +129,7 @@ def renderPatientDetailsPage(unitNumber: String): Unit = {
 }
 
 private def renderDetails(cssClass:String, heading:String, details: List[(String, String)], fields: Set[String]) = {
+  val unitNumber = details(1)._2
   val section = div(
     cls := cssClass,
     h2(heading),
@@ -142,8 +144,16 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                 cls := "create-button",
                 "Create File",
                 onClick --> { _ =>
-                  println("Creating new Aurora File")
-                  // TODO: Add logic to create a new file
+                  println(s"Creating new Aurora File: ${unitNumber}")
+                  sendMessageToVSCode("createAuroraFile", s"$unitNumber.aurora")
+                  // Add the aurora file to database
+                  ModelFetch.addPatientAuroraFile(unitNumber).map {
+                    case Some(_) =>
+                      println(s"Aurora file created successfully: ${unitNumber}.aurora")
+                    case None => 
+                      println(s"Failed to create Aurora file for unit number: ${unitNumber}")
+                  }
+                  sendMessageToVSCode("addedToDB", s"$unitNumber.aurora")
                 }
               )
             } else {
@@ -152,7 +162,7 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                 "Open File",
                 onClick --> { _ =>
                   println(s"Opening the Aurora File: $fieldValue")
-                  // TODO: Add logic to open aurora file
+                  sendMessageToVSCode("openAuroraFile", s"$unitNumber.aurora")
                 }
               )
             }
