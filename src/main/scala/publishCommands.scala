@@ -11,6 +11,8 @@ import cats.syntax.all.toShow
 import docere.sjsast.toShow
 import cats.syntax.show.toShow
 import com.axiom.MergePCM.MergePCM.*
+import com.axiom.AuroraFile.{handleCreate, handleOpen}
+
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -102,7 +104,7 @@ object PublishCommands:
         case "createAuroraFile" =>
           vscode.window.showInformationMessage(s"Creating file: $filename")
           // Call the function to create the file
-          // handleCreate(filename)
+          handleCreate(filename)
         
         case "addedToDB" =>
           vscode.window.showInformationMessage(s"Added to Database: $filename")
@@ -110,7 +112,7 @@ object PublishCommands:
         case "openAuroraFile" =>
           vscode.window.showInformationMessage(s"Opening file: $filename")
           // Call the function to open the file
-          // handleOpen(filename)
+          handleOpen(filename)
 
         case other =>
           vscode.window.showWarningMessage(s"Unknown command: $other")
