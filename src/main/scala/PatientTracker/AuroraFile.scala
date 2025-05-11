@@ -19,7 +19,9 @@ def handleCreate(filename: String): Unit = {
 
       // If the file doesn't exist, create it
       if (!fs.existsSync(fullPath)) {
-        fs.writeFileSync(fullPath, "")
+        val defaultContent =
+          s"""module: ${filename.split('.').head}\n\nIssues:\n\nOrders:\n"""
+        fs.writeFileSync(fullPath, defaultContent)
       }
 
       // Open the file in the editor
