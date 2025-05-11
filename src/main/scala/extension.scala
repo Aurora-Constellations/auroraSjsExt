@@ -13,6 +13,19 @@ object AuroraSjsExt {
 
   @JSExportTopLevel("activate")
   def activate(context: vscode.ExtensionContext): Unit = {
+
+    // Extension to open a specific folder, i.e. "auroraFiles"
+    val path = js.Dynamic.global.require("path")
+    val defaultPath = path.join(context.extensionPath, "auroraFiles").toString
+    println(s"Default path: $defaultPath") // Debugging line
+    // Create URI and ask to open it as workspace
+    val folderUri = vscode.Uri.file(defaultPath)
+    /* Note:
+      extensions cannot directly change or open a workspace folder programmatically on activation 
+      due to VS Code's security and UX model. But here is an acceptable approach
+    */
+    vscode.commands.executeCommand("vscode.openFolder", folderUri, false)
+
     langConfig.setServerModule(context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs"))
     println(langConfig.getServerModule())
     langConfig.initialize(context)
