@@ -73,6 +73,6 @@
 	"dependencies": {
 		"@types/vscode": "^1.94.0",
 		"@types/vscode-webview": "^1.57.0",
-		"aurora-langium": "^0.2.16"
+		"aurora-langium": "^0.2.19"
 	}
 }

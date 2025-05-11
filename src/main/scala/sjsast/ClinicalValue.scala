@@ -1,5 +1,7 @@
 package docere.sjsast
 
+import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.extractQURefsArray
+
 case class ClinicalValue (name :String, narrative:Set[NL_STATEMENT]=Set.empty, refs: Set[RefCoordinate] = Set.empty,qu: Set[QU] = Set.empty) extends SjsNode:
 
   def merge(cv:ClinicalValue):ClinicalValue =
@@ -12,8 +14,9 @@ case class ClinicalValue (name :String, narrative:Set[NL_STATEMENT]=Set.empty, r
 
 object ClinicalValue{
   def apply (c: GenAst.ClinicalValue): ClinicalValue = 
+    val qusrc = extractQURefsArray(c.qurc)
     val narratives = c.narrative.toList.map{n =>  NL_STATEMENT(n.name)}.toSet
-    val x = c.refs.toList.map { r => RefCoordinate(r.$refText) }.toSet
+    val x = qusrc.refs.toList.map { r => RefCoordinate(r.$refText) }.toSet
     val qus = c.qu.toList.map{p =>  QU(p.query)}.toSet
     ClinicalValue(c.name, narratives, x, qus)
 }

@@ -1,6 +1,7 @@
 package docere.sjsast
 
 import scala.scalajs.js
+import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.extractQURefsArray
 
 case class NGC(
   name: String,
@@ -24,7 +25,8 @@ case class NGC(
 
 object NGC:
   def apply(n: GenAst.NGC): NGC =
+    val qusrc = extractQURefsArray(n.qurc)
     val narratives = n.narrative.toList.map(n => NL_STATEMENT(n.name)).toSet
     val cc = n.coord.toList.map(c => ClinicalCoordinateValue(c)).toSet
-    val refs = n.refs.toList.map(r => RefCoordinate(r.$refText)).toSet
+    val refs = qusrc.refs.toList.map(r => RefCoordinate(r.$refText)).toSet
     NGC(n.name, cc, narratives, refs)

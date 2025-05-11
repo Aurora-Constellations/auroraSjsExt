@@ -1,5 +1,7 @@
 package docere.sjsast
 
+import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.extractQURefsArray
+
 case class OrderCoordinate (name:String, narratives:Set[String],refs:Set[RefCoordinate]=Set.empty) extends SjsNode:
   def merge (oc:OrderCoordinate):OrderCoordinate = 
     val narratives = this.narratives |+| oc.narratives
@@ -11,7 +13,8 @@ case class OrderCoordinate (name:String, narratives:Set[String],refs:Set[RefCoor
 
 object OrderCoordinate :
   def apply(o: GenAst.OrderCoordinate): OrderCoordinate = 
-    val refs = o.refs.toList.map{r =>  RefCoordinate(r.$refText)}.toSet
+    val qusrc = extractQURefsArray(o.qurc)
+    val refs = qusrc.refs.toList.map{r =>  RefCoordinate(r.$refText)}.toSet
     val narratives = o.narrative.toList.map{n => n.name}.toSet
     OrderCoordinate(o.name,narratives,refs)
 
