@@ -17,6 +17,7 @@ import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.vscode.mod.OutputChannel
 import typings.auroraLangium.distTypesSrcExtensionSrcCommandsToggleDiagramLayoutCommandMod.toggleDiagramLayout
+import com.axiom.Narratives.ManageNarratives.changeNarrativesType
 
 
 object PublishCommands:
@@ -27,7 +28,8 @@ object PublishCommands:
           ("AuroraSjsExt.aurora", showHello()),
           ("AuroraSjsExt.patients", showPatients(context)),
           ("AuroraSjsExt.processDSL", processDSL(context)),
-          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig))
+          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
+          ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context))
       )
 
       commands.foreach { case (name, fun) =>
