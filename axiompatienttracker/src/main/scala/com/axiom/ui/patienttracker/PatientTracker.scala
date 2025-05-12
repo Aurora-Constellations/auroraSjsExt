@@ -48,15 +48,21 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   selectedRowVar.signal.foreach { rowIdxOpt => 
     scrollToSelectedRow(rowIdxOpt)
   }
-  val excludedFields = Set("hcn")
-  val colHeadersVar:Var[List[String]] = Var("STATUS"+: ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow).filterNot(excludedFields.contains))
+  
+  val colsToRemove = Set("hcn", "dob") // Use Set for faster lookup
+  val colHeadersVar:Var[List[String]] = 
+    val headers = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow)
+    Var(headers.filterNot(name => colsToRemove.contains(name)))
 
-  def columns(row: Int, p: Patient) =
-    val visibleHeaders = colHeadersVar.now().tail // drop "STATUS"
-    val fieldData = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow).zip(CellDataConvertor.derived[Patient].celldata(p).slice(1, numColumnsToShow))
-    val c = mutable.IndexedSeq.from(fieldData.collect {case (field, cell) if visibleHeaders.contains(field) => cell})
-    c(0) = c(0).copy(text = s"${c(0).text}", color = "green")
-    CellData("urgency", "transparent") +: c.toList
+  def columns(row: Int, p: Patient) = 
+    // Get original headers and cell data
+    val headers = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow)
+    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).slice(1, numColumnsToShow)
+    val zipped = headers.zip(cellData)
+    // Filter out the column with name "hcn"
+    val filtered = zipped.filterNot { case (name, _) => colsToRemove.contains(name) }
+    val filteredCellData = filtered.map(_._2)
+    filteredCellData
   
   override def cctoData(row:Int,cc:Patient):List[CellData] = columns(row,cc)
 
@@ -97,7 +103,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   def renderHtml: L.Element = 
     def headerRow(s:List[String]) = 
       List(tr(
-          (s :+ "Details").map (s => { // Add Details column header
+          (List("STATUS") ++ s :+ "Details").map (s => { // Add Details column header
             th(s, padding := "8px")
           })
         )
@@ -148,18 +154,44 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           case _ => "black"
       },
       onDblClick --> { _ =>
-        val unitNumber = cols(1)._3.text // Assuming the first column contains the unit number
+        val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
         renderPatientDetailsPage(unitNumber)
       },
+      td (
+        if (cols.head._2.row % 2 == 0) then
+          div(
+            cls := "status-column",
+            img(
+            src := "https://img.icons8.com/color/48/high-priority.png",
+            alt := "Urgency", 
+            width := "20px",
+            height := "20px"
+            ),
+            img(
+              src := "https://img.icons8.com/color-glass/48/pencil.png",
+              alt := "Draft", 
+              width := "20px",
+              height := "20px"
+            )
+          )
+        else
+          img(
+              src := "https://img.icons8.com/color/48/ok--v1.png",
+              alt := "Stable", 
+              width := "20px",
+              height := "20px"
+            )
+      ),
+        
       cols.map{c => this.tableCell(c._2)},
       td(
         cls := "details-column",
         button(
           "View Details",
           onClick --> { _ =>
-            println(s"Details clicked for row: ${cols(1)._3.text}")
-            val unitNumber = cols(1)._3.text // Assuming the first column contains the unit number
+            println(s"Details clicked for row: ${cols.head._3.text}")
+            val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
             renderPatientDetailsPage(unitNumber)
           }
         )
@@ -172,33 +204,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
       data(colRow).map { gcdTuple =>
-        val colIndex = gcdTuple._2.col
-      
-        if (colIndex == 0) {
-          // URGENCY icon
-          img(
-            src := "https://img.icons8.com/?size=100&id=72xTAy8tXrTD&format=png&color=000000",
-            alt := "Urgency",
-            width := "24px",
-            height := "24px"
-          )
-        } else if (colIndex == 4) {
-          // SEX column — show male/female icon
-          val gender = gcdTuple._3.text.trim.toLowerCase
-          if (gender == "m" || gender == "male") {
-            img(
-              src := "https://img.icons8.com/color/48/male.png",
-              alt := "Male"
-            )
-          } else {
-            img(
-              src := "https://img.icons8.com/color/48/female.png",
-              alt := "Female"
-            )
-          }
-        } else {
-          span(gcdTuple._3.text)
-        }
+        span(gcdTuple._3.text)
       }.getOrElse("---")
       
     )
