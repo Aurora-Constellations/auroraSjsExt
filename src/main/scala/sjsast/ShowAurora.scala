@@ -1,6 +1,7 @@
 package docere.sjsast
 import cats.Show
 import cats.syntax.show._ 
+import typings.auroraLangium.distTypesLanguageGeneratedAstMod.ReferenceCoordinate
 
 object ShowAurora:
   val newline = "\n"
@@ -28,16 +29,16 @@ object ShowAurora:
     }
   
   given Show[OrderCoordinate] = Show.show{
-      (oc: OrderCoordinate) => 
-        val qrefs = oc.refs
-        val narratives = oc.narratives.mkString(" ")
-        val name = oc.name
-        s"$name($qrefs) $narratives"
+      (rc: OrderCoordinate) => 
+        val result = rc.refs.show
+        val narratives = rc.narratives.mkString(" ")
+        val name = rc.name
+        s"$name($result) $narratives"
       }
       
   given Show[NGO] = Show.show{
       (ng: NGO) => 
-        val result =  ng.orderCoordinates.map{(oc:OrderCoordinate) => oc.show}.mkString(newline)
+        val result = ng.orderCoordinates.map{(oc:OrderCoordinate) => oc.show}.mkString(newline)
         val name = ng.name
         s"$name$newline$result"
     }
