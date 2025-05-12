@@ -163,13 +163,13 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           div(
             cls := "status-column",
             img(
-            src := "https://img.icons8.com/color/48/high-priority.png",
+            src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png",
             alt := "Urgency", 
             width := "20px",
             height := "20px"
             ),
             img(
-              src := "https://img.icons8.com/color-glass/48/pencil.png",
+              src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png",
               alt := "Draft", 
               width := "20px",
               height := "20px"
@@ -177,7 +177,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           )
         else
           img(
-              src := "https://img.icons8.com/color/48/ok--v1.png",
+              src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
               alt := "Stable", 
               width := "20px",
               height := "20px"
