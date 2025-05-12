@@ -12,16 +12,22 @@ import docere.sjsast.toShow
 import cats.syntax.show.toShow
 import com.axiom.MergePCM.MergePCM.*
 import com.axiom.AuroraFile.{handleCreate, handleOpen}
+import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
+import typings.vscode.mod.TextDocument
+import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
+import typings.vscode.mod.OutputChannel
+import typings.auroraLangium.distTypesSrcExtensionSrcCommandsToggleDiagramLayoutCommandMod.toggleDiagramLayout
 
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
 
-  def publishCommands(context: ExtensionContext): Unit = {
+  def publishCommands(context: ExtensionContext, langConfig: LanguageClientConfigSingleton): Unit = {
       val commands = List(
           ("AuroraSjsExt.aurora", showHello()),
           ("AuroraSjsExt.patients", showPatients(context)),
-          ("AuroraSjsExt.processDSL", processDSL(context))
+          ("AuroraSjsExt.processDSL", processDSL(context)),
+          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig))
       )
 
       commands.foreach { case (name, fun) =>
@@ -72,6 +78,7 @@ object PublishCommands:
           createPatientsPanel(context)
       }
     }
+
   
   def createPatientsPanel(context: ExtensionContext): Unit = {
     val path = js.Dynamic.global.require("path")
@@ -127,4 +134,18 @@ object PublishCommands:
 
     // Store the panel reference and handle disposal
     patientsPanel = Some(panel)
+  }
+
+  def toggleLayout(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+    (args) => {
+      toggleDiagramLayout(langConfig)
+    }
+  }
+
+  def refreshDiagram(document: TextDocument, langConfig: LanguageClientConfigSingleton): Unit = {
+        val wvp = langConfig.webviewViewProvider.asInstanceOf[LspSprottyViewProvider]
+        wvp.openDiagram(document.uri).toFuture.onComplete {
+              case Success(_) => println("Diagram has been refreshed.")
+              case Failure(e) => println(s"Failed to refresh diagram: ${e}")
+        }
   }
