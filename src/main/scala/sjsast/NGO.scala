@@ -1,11 +1,11 @@
 package docere.sjsast
 
-import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.extractQURefsArray
 
-case class NGO( name:String, orderCoordinates:Set[OrderCoordinate], narrative:Set[NL_STATEMENT]=Set.empty, refs: Set[RefCoordinate] = Set.empty, qu: Set[QU] = Set.empty)   extends SjsNode:
+
+case class NGO( name:String, orderCoordinates:Set[OrderCoordinate], narrative:Set[NL_STATEMENT]=Set.empty, quRefs:QuReferences, qu: Set[QU] = Set.empty)   extends SjsNode:
   def merge(n:NGO):NGO = 
     val narratives = narrative |+| n.narrative
-    val refmerge = refs |+| n.refs
+    val refmerge = quRefs.merge(n.quRefs)
     val qumerge = qu |+| n.qu
     NGO(name,combine(orderCoordinates,n.orderCoordinates), narratives, refmerge, qumerge)
 
@@ -15,11 +15,10 @@ case class NGO( name:String, orderCoordinates:Set[OrderCoordinate], narrative:Se
 
 object NGO :
   def apply(n: GenAst.NGO): NGO = 
-    val qusrc = extractQURefsArray(n.qurc)
     val ocoords = n.orders.toList
     .map{o =>  OrderCoordinate(o.asInstanceOf[GenAst.OrderCoordinate])}
     .toSet
     val narratives = n.narrative.toList.map{p =>  NL_STATEMENT(p.name)}.toSet
-    val refx = qusrc.refs.toList.map { r => RefCoordinate(r.$refText) }.toSet
+    val quRefs = QuReferences(n.qurc.toOption)
     val qus = n.qu.toList.map{p =>  QU(p.query)}.toSet
-    NGO(n.name,ocoords, narratives, refx, qus)    
+    NGO(n.name,ocoords, narratives, quRefs, qus)    
