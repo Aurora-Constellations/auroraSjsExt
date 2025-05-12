@@ -48,14 +48,16 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   selectedRowVar.signal.foreach { rowIdxOpt => 
     scrollToSelectedRow(rowIdxOpt)
   }
-  
-  val colHeadersVar:Var[List[String]] = Var(ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow))
+  val excludedFields = Set("hcn")
+  val colHeadersVar:Var[List[String]] = Var("STATUS"+: ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow).filterNot(excludedFields.contains))
 
-  def columns(row:Int,p:Patient) =  
-    val c = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).slice(1 ,numColumnsToShow)
+  def columns(row: Int, p: Patient) =
+    val visibleHeaders = colHeadersVar.now().tail // drop "STATUS"
+    val fieldData = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow).zip(CellDataConvertor.derived[Patient].celldata(p).slice(1, numColumnsToShow))
+    val c = mutable.IndexedSeq.from(fieldData.collect {case (field, cell) if visibleHeaders.contains(field) => cell})
     c(0) = c(0).copy(text = s"${c(0).text}", color = "green")
-    c.toList
-
+    CellData("urgency", "transparent") +: c.toList
+  
   override def cctoData(row:Int,cc:Patient):List[CellData] = columns(row,cc)
 
   // Rudimentary serach filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
@@ -146,7 +148,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           case _ => "black"
       },
       onDblClick --> { _ =>
-        val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
+        val unitNumber = cols(1)._3.text // Assuming the first column contains the unit number
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
         renderPatientDetailsPage(unitNumber)
       },
@@ -156,8 +158,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         button(
           "View Details",
           onClick --> { _ =>
-            println(s"Details clicked for row: ${cols.head._3.text}")
-            val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
+            println(s"Details clicked for row: ${cols(1)._3.text}")
+            val unitNumber = cols(1)._3.text // Assuming the first column contains the unit number
             renderPatientDetailsPage(unitNumber)
           }
         )
@@ -169,9 +171,21 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       tabIndex := colRow.row*9000 + colRow.col, //apparently I need this capture keyboard events
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
-      data(colRow).map{ gcdTuple =>
-        if (gcdTuple._2.col == 3 ){ //Index 3 is for gender, starting index is 0
-          if (gcdTuple._3.text == "M" || gcdTuple._3.text == "Male") {
+      data(colRow).map { gcdTuple =>
+        val colIndex = gcdTuple._2.col
+      
+        if (colIndex == 0) {
+          // URGENCY icon
+          img(
+            src := "https://img.icons8.com/?size=100&id=72xTAy8tXrTD&format=png&color=000000",
+            alt := "Urgency",
+            width := "24px",
+            height := "24px"
+          )
+        } else if (colIndex == 4) {
+          // SEX column — show male/female icon
+          val gender = gcdTuple._3.text.trim.toLowerCase
+          if (gender == "m" || gender == "male") {
             img(
               src := "https://img.icons8.com/color/48/male.png",
               alt := "Male"
@@ -182,11 +196,11 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
               alt := "Female"
             )
           }
+        } else {
+          span(gcdTuple._3.text)
         }
-        else{
-          span(s"${gcdTuple._3.text}") // Wrap the string in a span
-        }
-      }.getOrElse("---") // Ensure fallback is also wrapped in a span
+      }.getOrElse("---")
+      
     )
 
   /**
