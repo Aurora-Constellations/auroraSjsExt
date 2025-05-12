@@ -1,13 +1,12 @@
 package docere.sjsast
 
 import scala.scalajs.js
-import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.extractQURefsArray
 
 case class NGC(
   name: String,
   ccoords: Set[ClinicalCoordinateValue],
   narrative: Set[NL_STATEMENT] = Set.empty,
-  refs: Set[RefCoordinate] = Set.empty
+  quRefs: QuReferences 
 ) extends SjsNode:
 
   def merge(n: NGC): NGC =
@@ -17,16 +16,15 @@ case class NGC(
       .toSet
 
     val mergedNarratives = narrative |+| n.narrative
-    val mergedRefs = refs |+| n.refs
-
+    val mergedRefs = quRefs.merge(n.quRefs)
     NGC(name, mergedCoords, mergedNarratives, mergedRefs)
 
   override def merge(p: SjsNode): SjsNode = merge(p.asInstanceOf[NGC])
 
 object NGC:
   def apply(n: GenAst.NGC): NGC =
-    val qusrc = extractQURefsArray(n.qurc)
+
+    val quRefs = QuReferences(n.qurc.toOption)
     val narratives = n.narrative.toList.map(n => NL_STATEMENT(n.name)).toSet
     val cc = n.coord.toList.map(c => ClinicalCoordinateValue(c)).toSet
-    val refs = qusrc.refs.toList.map(r => RefCoordinate(r.$refText)).toSet
-    NGC(n.name, cc, narratives, refs)
+    NGC(n.name, cc, narratives, quRefs)
