@@ -20,7 +20,7 @@ def handleCreate(filename: String): Unit = {
       // If the file doesn't exist, create it
       if (!fs.existsSync(fullPath)) {
         val defaultContent =
-          s"""module: ${filename.split('.').head}\n\nIssues:\n\nOrders:\n"""
+          s"""Issues:\n\nOrders:\n"""
         fs.writeFileSync(fullPath, defaultContent)
       }
 
