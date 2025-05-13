@@ -67,6 +67,10 @@
 			{
 				"command": "AuroraSjsExt.toggleDiagramLayout",
 				"title": "Toggle Diagram Layout"
+			},
+			{
+				"command": "AuroraSjsExt.hideNamedGroups",
+				"title": "Hide Named Groups"
 			}
 		]
 	},

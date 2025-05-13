@@ -17,6 +17,20 @@ import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.vscode.mod.OutputChannel
 import typings.auroraLangium.distTypesSrcExtensionSrcCommandsToggleDiagramLayoutCommandMod.toggleDiagramLayout
+import typings.vscode.mod.TextEditor
+import typings.auroraLangium.distTypesSrcExtensionSrcParserParserMod.parseFromText
+import typings.vscode.mod.QuickPickItem
+import typings.auroraLangium.cliMod.parse
+import typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod.PCM
+import typings.langium.libUtilsAstUtilsMod
+
+
+import typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod.Orders
+import typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod.NamedGroupOrder
+import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.clearNGOFilter
+import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.addToNGOFilter
+import typings.auroraLangium.distTypesSrcLanguageAuroraDiagramGeneratorMod.getNgoFilter
+
 
 
 object PublishCommands:
@@ -27,7 +41,8 @@ object PublishCommands:
           ("AuroraSjsExt.aurora", showHello()),
           ("AuroraSjsExt.patients", showPatients(context)),
           ("AuroraSjsExt.processDSL", processDSL(context)),
-          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig))
+          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
+          ("AuroraSjsExt.hideNamedGroups", hideNGOs(langConfig))
       )
 
       commands.foreach { case (name, fun) =>
@@ -142,10 +157,51 @@ object PublishCommands:
     }
   }
 
+  def hideNGOs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+    (args) => {
+      val activeEditor: Option[TextEditor] = Option(vscode.window.activeTextEditor.asInstanceOf[TextEditor])
+      activeEditor match {
+        case Some(editor) => {
+          parse(editor.document.uri.fsPath).toFuture.onComplete{
+            case Success(pcm) => {
+              val ngoNames = pcm.elements.filter(e => e.$type == "Orders")
+                                .map(o => o.asInstanceOf[Orders])
+                                .flatMap(o => o.namedGroups)
+                                .map(ngo => ngo.asInstanceOf[NamedGroupOrder])
+                                .map(ngo => ngo.name)
+              val quickPickItems = ngoNames.map(name => js.Dynamic.literal(label = name).asInstanceOf[QuickPickItem])
+              generateQuickPick(quickPickItems, true, addToNGOFilter)
+              println(getNgoFilter())
+              refreshDiagram(editor.document, langConfig)
+            }
+            case Failure(e) => println(s"Failed to parse PCM: ${e}")
+          }
+        }
+        case None => println("No active editor found.")
+      }
+    }
+  }
+
   def refreshDiagram(document: TextDocument, langConfig: LanguageClientConfigSingleton): Unit = {
         val wvp = langConfig.webviewViewProvider.asInstanceOf[LspSprottyViewProvider]
         wvp.openDiagram(document.uri).toFuture.onComplete {
               case Success(_) => println("Diagram has been refreshed.")
               case Failure(e) => println(s"Failed to refresh diagram: ${e}")
         }
+  }
+
+  def generateQuickPick(items: js.Array[QuickPickItem], 
+                       canSelectMany: Boolean = false, 
+                       onSelectedDoThis: js.Array[String] => Unit): Unit = {
+    val quickPick = vscode.window.createQuickPick[QuickPickItem]()
+    quickPick.items = items 
+    quickPick.canSelectMany = canSelectMany
+    quickPick.show()
+    quickPick.onDidChangeSelection((selected) => {
+      val selectedElements = selected.map(qpi => qpi.label.dropRight(1))
+      onSelectedDoThis(selectedElements)
+    })
+    quickPick.onDidAccept((args) => {
+      quickPick.dispose()
+    })
   }
