@@ -15,7 +15,7 @@ case class QuReferences (refs: Set[docere.sjsast.QuReference]=Set.empty) extends
 
 object QuReferences:
   def apply[T](optQuRefs:Option[GenAst.QuReferences]): QuReferences = 
-    val s:Set[docere.sjsast.QuReference] = optQuRefs.map{x => x.quRefs.toList}
+    val s:Set[QuReference] = optQuRefs.map{x => x.quRefs.toList}
       .getOrElse(Nil).map{(x:GenAst.QuReference) => QuReference(x)}.toSet
     QuReferences(s)
 
