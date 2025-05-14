@@ -9,7 +9,7 @@ import PublishCommands.publishCommands
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
-import PublishCommands.refreshDiagram
+import PublishCommands.{refreshDiagram, sendMessageToPatientTracker}
 
 object AuroraSjsExt {
   val langConfig = LanguageClientConfigSingleton.getInstance()
@@ -29,10 +29,14 @@ object AuroraSjsExt {
     */
     vscode.commands.executeCommand("vscode.openFolder", folderUri, false) 
      
-    vscode.workspace.onDidSaveTextDocument((doc: TextDocument) => {
-      refreshDiagram(doc, langConfig)}
-      , js.undefined
-      , js.undefined)
+    vscode.workspace.onDidSaveTextDocument(
+      (doc: TextDocument) => {
+        refreshDiagram(doc, langConfig)
+        sendMessageToPatientTracker()
+        }, 
+      js.undefined,
+      js.undefined
+    )
     
     langConfig.setServerModule(context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs"))
     println(langConfig.getServerModule())

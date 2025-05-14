@@ -67,6 +67,10 @@
 			{
 				"command": "AuroraSjsExt.toggleDiagramLayout",
 				"title": "Toggle Diagram Layout"
+			},
+			{
+				"command": "AuroraSjsExt.changeNarrativeType",
+				"title": "Change Narrative Type"
 			}
 		]
 	},

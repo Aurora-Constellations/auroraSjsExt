@@ -17,6 +17,7 @@ import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.vscode.mod.OutputChannel
 import typings.auroraLangium.distTypesSrcExtensionSrcCommandsToggleDiagramLayoutCommandMod.toggleDiagramLayout
+import com.axiom.Narratives.ManageNarratives.changeNarrativesType
 
 
 object PublishCommands:
@@ -27,7 +28,8 @@ object PublishCommands:
           ("AuroraSjsExt.aurora", showHello()),
           ("AuroraSjsExt.patients", showPatients(context)),
           ("AuroraSjsExt.processDSL", processDSL(context)),
-          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig))
+          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
+          ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context))
       )
 
       commands.foreach { case (name, fun) =>
@@ -104,22 +106,25 @@ object PublishCommands:
       // Since we're using a general 'Any' type, we can cast to a js.Dynamic safely here
       val msg = message.asInstanceOf[js.Dynamic]
       val command = msg.command.asInstanceOf[String]
-      val filename = msg.filename.asInstanceOf[String]
+      val response = msg.filename.asInstanceOf[String]
 
       // Handle the message based on command
       command match {
         case "createAuroraFile" =>
-          vscode.window.showInformationMessage(s"Creating file: $filename")
+          vscode.window.showInformationMessage(s"Creating file: $response")
           // Call the function to create the file
-          handleCreate(filename)
+          handleCreate(response)
         
         case "addedToDB" =>
-          vscode.window.showInformationMessage(s"Added to Database: $filename")
+          vscode.window.showInformationMessage(s"Added to Database: $response")
 
         case "openAuroraFile" =>
-          vscode.window.showInformationMessage(s"Opening file: $filename")
+          vscode.window.showInformationMessage(s"Opening file: $response")
           // Call the function to open the file
-          handleOpen(filename)
+          handleOpen(response)
+
+        case "updatedNarratives" =>
+          vscode.window.showInformationMessage(s"$response")
 
         case other =>
           vscode.window.showWarningMessage(s"Unknown command: $other")
@@ -148,4 +153,21 @@ object PublishCommands:
               case Success(_) => println("Diagram has been refreshed.")
               case Failure(e) => println(s"Failed to refresh diagram: ${e}")
         }
+  }
+
+  def sendMessageToPatientTracker(): Unit = {
+    patientsPanel match {
+      case Some(p) =>
+        p.reveal(null, preserveFocus = false)
+        p.webview.postMessage(js.Dynamic.literal(
+          command = "updateNarratives",
+          payload = js.Dynamic.literal(draft = true, 
+            urgent = true,
+            normal = false
+          )
+        ))
+        vscode.window.showInformationMessage("Message sent to Patient Tracker.")
+      case None =>
+        vscode.window.showWarningMessage("Patient Panel not found, updates will not be sent.")
+    }
   }
