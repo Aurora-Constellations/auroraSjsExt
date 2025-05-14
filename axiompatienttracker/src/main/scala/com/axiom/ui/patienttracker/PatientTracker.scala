@@ -40,30 +40,59 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   val searchQueryVar: Var[String] = Var("")
   val numColumnsToShow = 10
 
-  selectedCellVar.signal.map {
-    case Some(sel) => Some(sel.row)
-    case None => None
-  }.foreach(selectedRowVar.set)
-  
-  selectedRowVar.signal.foreach { rowIdxOpt => 
-    scrollToSelectedRow(rowIdxOpt)
+  val colsToRemove = Set("hcn", "dob") // Use Set for faster lookup
+  val colHeadersVar: Var[List[String]] = {
+    val headers = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow)
+    val newHeaders = "STATUS" :: headers.toList
+    Var(newHeaders.filterNot(name => colsToRemove.contains(name)))
   }
   
-  val colsToRemove = Set("hcn", "dob") // Use Set for faster lookup
-  val colHeadersVar:Var[List[String]] = 
-    val headers = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow)
-    Var(headers.filterNot(name => colsToRemove.contains(name)))
 
-  def columns(row: Int, p: Patient) = 
+  selectedCellVar.signal.map {
+      case Some(sel) => Some(sel.row)
+    case None => None
+  }.foreach(selectedRowVar.set)
+
+  selectedRowVar.signal.foreach { rowIdxOpt =>
+    scrollToSelectedRow(rowIdxOpt)
+  }
+
+  def getSpecificCellData(columnName: String, p: Patient): CellData = {
     // Get original headers and cell data
-    val headers = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow)
+    val headers = ShapelessFieldNameExtractor.fieldNames[Patient]
+    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*)
+    val columnIndexOpt = headers.indexOf(columnName) match
+      case -1 => None
+      case i  => Some(i)
+
+    println(columnIndexOpt)
+
+    // Get the cell data for the specific column
+    val specificCellData = columnIndexOpt
+      .filter(_ < cellData.length) // Ensure the index is within bounds
+      .map(cellData(_))
+      .getOrElse(CellData("", "")) // Default CellData if column not found or out of bounds
+    specificCellData
+  }
+
+  def columns(row: Int, p: Patient) =
+    // Get original headers and cell data
+    val headers = colHeadersVar.now()
     val cellData = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).slice(1, numColumnsToShow)
-    val zipped = headers.zip(cellData)
+
+    // Get the cell data for the specific column
+    val statusCellData = getSpecificCellData("flag", p)
+    val newCellData = List(statusCellData) ++ cellData.toList
+    println(s" ${headers.length}, ${newCellData.length}")
+
+    val zipped = headers.zip(newCellData)
+    println(zipped.length)
+
     // Filter out the column with name "hcn"
     val filtered = zipped.filterNot { case (name, _) => colsToRemove.contains(name) }
     val filteredCellData = filtered.map(_._2)
     filteredCellData
-  
+
   override def cctoData(row:Int,cc:Patient):List[CellData] = columns(row,cc)
 
   // Rudimentary serach filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
@@ -89,21 +118,21 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
           if (!isInView) {
             element.asInstanceOf[js.Dynamic].scrollIntoView(
-              js.Dynamic.literal(
-                behavior = "smooth",
-                block = "nearest"
+                js.Dynamic.literal(
+                  behavior = "smooth",
+                  block = "nearest"
+                )
               )
-            )
           }
         }
       case None => // Do nothing
     }
   }
 
-  def renderHtml: L.Element = 
+  def renderHtml: L.Element =
     def headerRow(s:List[String]) = 
       List(tr(
-          (List("STATUS") ++ s :+ "Details").map (s => { // Add Details column header
+          (s :+ "Details").map (s => { // Add Details column header
             th(s, padding := "8px")
           })
         )
@@ -144,7 +173,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         )
       )
     )
-  
+
   def row(cols:Row)  = 
     tr(
       idAttr := s"row-${cols.head._2.row}",
@@ -154,59 +183,80 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           case _ => "black"
       },
       onDblClick --> { _ =>
-        val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
+        val unitNumber = cols(1)._3.text // Assuming the second column contains the unit number
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
         renderPatientDetailsPage(unitNumber)
       },
-      td (
-        if (cols.head._2.row % 2 == 0) then
-          div(
-            cls := "status-column",
-            img(
-            src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png",
-            alt := "Urgency", 
-            width := "20px",
-            height := "20px"
-            ),
-            img(
-              src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png",
-              alt := "Draft", 
-              width := "20px",
-              height := "20px"
-            )
-          )
-        else
-          img(
-              src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
-              alt := "Stable", 
-              width := "20px",
-              height := "20px"
-            )
-      ),
-        
-      cols.map{c => this.tableCell(c._2)},
+      cols.map { c => this.tableCell(c._2) },
       td(
         cls := "details-column",
         button(
           "View Details",
           onClick --> { _ =>
-            println(s"Details clicked for row: ${cols.head._3.text}")
-            val unitNumber = cols.head._3.text // Assuming the first column contains the unit number
+            println(s"Details clicked for row: ${cols(1)._3.text}")
+            val unitNumber = cols(1)._3.text // Assuming the second column contains the unit number
             renderPatientDetailsPage(unitNumber)
           }
         )
       )
     )
 
-  def tableCell(colRow:ColRow) : HtmlElement  =
+  def tableCell(colRow: ColRow): HtmlElement =
     td(
-      tabIndex := colRow.row*9000 + colRow.col, //apparently I need this capture keyboard events
+      tabIndex := colRow.row * 9000 + colRow.col, // apparently I need this capture keyboard events
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
-      data(colRow).map { gcdTuple =>
-        span(gcdTuple._3.text)
-      }.getOrElse("---")
-      
+      data(colRow)
+        .map { gcdTuple =>
+          if (colRow.col == 0) {
+            if (gcdTuple._3.text == "0") then
+              img(
+                src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
+                alt := "Stable",
+                width := "20px",
+                height := "20px"
+              )
+            else if (gcdTuple._3.text == "1") then // Urgency
+              img(
+                src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png",
+                alt := "Urgency",
+                width := "20px",
+                height := "20px"
+              )
+            else if (gcdTuple._3.text == "2") then // Draft
+              img(
+                src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png",
+                alt := "Draft",
+                width := "20px",
+                height := "20px"
+              )
+            else if (gcdTuple._3.text == "12") then // Urgency + Draft
+              div(
+                cls := "status-column",
+                img(
+                  src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png",
+                  alt := "Urgency",
+                  width := "20px",
+                  height := "20px"
+                ),
+                img(
+                  src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png",
+                  alt := "Draft",
+                  width := "20px",
+                  height := "20px"
+                )
+              )
+            else
+              img(
+                src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
+                alt := "Stable",
+                width := "20px",
+                height := "20px"
+              )
+          } else
+            span(gcdTuple._3.text)
+        }
+        .getOrElse("---")
     )
 
   /**
@@ -216,7 +266,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     * @param e
     */
   def tableKeyboardHandler(e:KeyboardEvent)  =
-    e.keyCode match 
+    e.keyCode match
       case 40 | 38 => e.preventDefault() // Prevent default scrolling behavior for up/down arrows
       case _  => ()  
 
