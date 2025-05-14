@@ -65,8 +65,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       case -1 => None
       case i  => Some(i)
 
-    println(columnIndexOpt)
-
     // Get the cell data for the specific column
     val specificCellData = columnIndexOpt
       .filter(_ < cellData.length) // Ensure the index is within bounds
@@ -77,16 +75,13 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
   def columns(row: Int, p: Patient) =
     // Get original headers and cell data
-    val headers = colHeadersVar.now()
+    val headers = ShapelessFieldNameExtractor.fieldNames[Patient]
     val cellData = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).slice(1, numColumnsToShow)
 
     // Get the cell data for the specific column
     val statusCellData = getSpecificCellData("flag", p)
     val newCellData = List(statusCellData) ++ cellData.toList
-    println(s" ${headers.length}, ${newCellData.length}")
-
     val zipped = headers.zip(newCellData)
-    println(zipped.length)
 
     // Filter out the column with name "hcn"
     val filtered = zipped.filterNot { case (name, _) => colsToRemove.contains(name) }
@@ -95,7 +90,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
   override def cctoData(row:Int,cc:Patient):List[CellData] = columns(row,cc)
 
-  // Rudimentary serach filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
+  // Rudimentary search filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
   def searchFilterFunction(): Unit = {
     val query = searchQueryVar.now().toLowerCase.trim
     println(s"Searching for: $query")

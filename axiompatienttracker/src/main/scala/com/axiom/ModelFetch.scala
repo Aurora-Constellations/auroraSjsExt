@@ -57,3 +57,13 @@ object ModelFetch :
           println(s"Error adding patient aurora file for unit number $unitNumber: ${ex.getMessage}")
           None
       }
+  
+  def addNarrativesFlag(unitNumber: String, flag: String): Future[Option[Patient]] =
+    val narrativeFlag = s"""{"flag": "$flag"}"""
+    Fetch.put(s"http://localhost:8080/patients/update/$unitNumber", narrativeFlag).future.text(abortController)
+      .map(response => response.data.fromJson[Patient].toOption)
+      .recover {
+        case ex =>
+          println(s"Error adding narrative flag for unit number $unitNumber: ${ex.getMessage}")
+          None
+      }

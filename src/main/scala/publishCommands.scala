@@ -156,18 +156,24 @@ object PublishCommands:
   }
 
   def sendMessageToPatientTracker(): Unit = {
-    patientsPanel match {
-      case Some(p) =>
-        p.reveal(null, preserveFocus = false)
-        p.webview.postMessage(js.Dynamic.literal(
-          command = "updateNarratives",
-          payload = js.Dynamic.literal(draft = true, 
-            urgent = true,
-            normal = false
-          )
-        ))
-        vscode.window.showInformationMessage("Message sent to Patient Tracker.")
-      case None =>
-        vscode.window.showWarningMessage("Patient Panel not found, updates will not be sent.")
+    // Get current active editor's file name and send it to the patient tracker
+    val editor = vscode.window.activeTextEditor
+    editor.foreach { ed =>
+      val document = ed.document
+      val path = js.Dynamic.global.require("path")
+      val fileName = path.basename(document.fileName).asInstanceOf[String] // Extract the file name
+      val unitNumber = fileName.split("\\.").head
+      patientsPanel match {
+        case Some(p) =>
+          p.reveal(null, preserveFocus = false)
+          p.webview.postMessage(js.Dynamic.literal(
+            command = "updateNarratives",
+            unitNumber = unitNumber,
+            flag = "12" // TODO: payload flag needs to be set to 1 or 0 depending on the narratives type
+          ))
+          vscode.window.showInformationMessage(s"Message sent to Patient Tracker: $unitNumber")
+        case None =>
+          vscode.window.showWarningMessage("Patient Panel not found, message will not be sent.")
+      }
     }
   }
