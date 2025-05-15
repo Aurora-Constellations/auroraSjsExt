@@ -36,5 +36,10 @@ object TypeClass :
     inline given derived[A](using gen: K0.Generic[A]): CellDataConvertor[A] =
       gen.derive(deriveShowProduct, deriveShowSum)
 
+    given optionCellDataConvertor[T](using ev: CellDataConvertor[T]): CellDataConvertor[Option[T]] =
+      case Some(value) => ev.celldata(value)
+      case None        => List(CellData("", "gray")) // Or choose a suitable fallback
+      
+
   
 

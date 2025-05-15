@@ -10,7 +10,7 @@
   --text-secondary: #bbb;
   --accent: #646cff;
   --border-radius: 6px;
-  --padding: 0.35rem;
+  --padding: 0.15rem;
   --transition: 0.2s ease-in-out;
 
   /* Typography */
@@ -152,6 +152,12 @@ td img {
   margin: 0 auto;
   width: 24px;
   height: 24px;
+}
+
+/* Status Cell */
+.status-column {
+  display: flex;
+  align-items: center;
 }
 
 /* Details button cell */
