@@ -171,7 +171,7 @@ object PublishCommands:
       val unitNumber = fileName.split("\\.").head
       patientsPanel match {
         case Some(p) =>
-          p.reveal(null, preserveFocus = false)
+          p.reveal(null, preserveFocus = true)
           p.webview.postMessage(js.Dynamic.literal(
             command = "updateNarratives",
             unitNumber = unitNumber,
