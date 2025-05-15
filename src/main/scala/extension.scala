@@ -10,6 +10,7 @@ import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageCl
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import PublishCommands.{refreshDiagram, sendMessageToPatientTracker}
+import com.axiom.Narratives.ManageNarratives.getParseNarratives
 
 object AuroraSjsExt {
   val langConfig = LanguageClientConfigSingleton.getInstance()
@@ -20,7 +21,6 @@ object AuroraSjsExt {
     // Extension to open a specific folder, i.e. "auroraFiles"
     val path = js.Dynamic.global.require("path")
     val defaultPath = path.join(context.extensionPath, "auroraFiles").toString
-    println(s"Default path: $defaultPath") // Debugging line
     // Create URI and ask to open it as workspace
     val folderUri = vscode.Uri.file(defaultPath)
     /* Note:
@@ -32,7 +32,12 @@ object AuroraSjsExt {
     vscode.workspace.onDidSaveTextDocument(
       (doc: TextDocument) => {
         refreshDiagram(doc, langConfig)
-        sendMessageToPatientTracker()
+        getParseNarratives(context).onComplete {
+          case Success(categories) =>
+            sendMessageToPatientTracker(categories)
+          case Failure(e) =>
+            println(s"Failed with error: ${e.getMessage}")
+        }
         }, 
       js.undefined,
       js.undefined
