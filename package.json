@@ -71,6 +71,14 @@
 			{
 				"command": "AuroraSjsExt.changeNarrativeType",
 				"title": "Change Narrative Type"
+			},
+			{
+				"command": "AuroraSjsExt.hideNarratives",
+				"title": "Hide Narratives"
+			},
+			{
+				"command": "AuroraSjsExt.hideNamedGroups",
+				"title": "Hide Named Groups"
 			}
 		]
 	},
@@ -81,6 +89,6 @@
 	"dependencies": {
 		"@types/vscode": "^1.94.0",
 		"@types/vscode-webview": "^1.57.0",
-		"aurora-langium": "^0.2.25"
+		"aurora-langium": "0.2.26"
 	}
 }

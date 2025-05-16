@@ -18,6 +18,10 @@ import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageCl
 import typings.vscode.mod.OutputChannel
 import typings.auroraLangium.distTypesSrcExtensionSrcCommandsToggleDiagramLayoutCommandMod.toggleDiagramLayout
 import com.axiom.Narratives.ManageNarratives.changeNarrativesType
+import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNarrativesCommandMod.hideNarratives
+import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNgosCommandMod.hideNGOs
+import typings.vscode.mod.TextEditor
+import typings.auroraLangium.cliMod.parse
 
 
 object PublishCommands:
@@ -29,7 +33,9 @@ object PublishCommands:
           ("AuroraSjsExt.patients", showPatients(context)),
           ("AuroraSjsExt.processDSL", processDSL(context)),
           ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
-          ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context))
+          ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
+          ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
+          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig))
       )
 
       commands.foreach { case (name, fun) =>
@@ -182,4 +188,29 @@ object PublishCommands:
           vscode.window.showWarningMessage("Patient Panel not found, message will not be sent.")
       }
     }
+  }
+
+  def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+    (args) => {
+      performActionOnActivePCM(langConfig, hideNarratives)
+    }
+  }
+
+  def hideNamedGroups(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+    (args) => {
+      performActionOnActivePCM(langConfig, hideNGOs)     
+    }
+  }
+
+  def performActionOnActivePCM(langConfig: LanguageClientConfigSingleton, f: (typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod.PCM, LanguageClientConfigSingleton) => Unit): Unit = {
+    val activeEditor = vscode.window.activeTextEditor
+    if (activeEditor != null && activeEditor != js.undefined) {
+      val t = activeEditor.asInstanceOf[TextEditor]
+      parse(t.document.uri.fsPath).toFuture.onComplete {
+        case Success(value) => f(value, langConfig)
+        case Failure(e) => println(e)
+      }
+    } else { 
+      println("No active text editor found.")
+    }  
   }

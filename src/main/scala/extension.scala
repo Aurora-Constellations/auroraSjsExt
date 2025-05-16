@@ -50,6 +50,7 @@ object AuroraSjsExt {
     val outputChannel = vscode.window.createOutputChannel("My Extension")  
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
     outputChannel.show(preserveFocus = true)
+
     publishCommands(context, langConfig)
   }
 
