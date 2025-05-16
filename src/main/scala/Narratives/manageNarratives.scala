@@ -91,5 +91,5 @@ object ManageNarratives:
 
   def updateNarrativeType(line: String, newPrefix: String): String = {
     val pattern = raw"""(--|\?\?|!!|xx|\.\.)""".r
-    pattern.replaceFirstIn(line, newPrefix)
+    pattern.replaceAllIn(line, newPrefix)
   }
