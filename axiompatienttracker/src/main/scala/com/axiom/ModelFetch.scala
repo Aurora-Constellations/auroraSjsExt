@@ -4,6 +4,7 @@ import org.scalajs.dom
 import com.axiom.model.shared.dto.Patient
 import com.axiom.TableColProperties
 import io.laminext.fetch._
+
 import org.scalajs.dom.AbortController
 import com.axiom.ShapelessFieldNameExtractor.fieldNames
 
@@ -20,10 +21,11 @@ object ModelFetch :
 
   val abortController = new AbortController()
 
-  val headers =  
-    val l = mutable.IndexedSeq(ShapelessFieldNameExtractor.fieldNames[Patient]*) //(0) = "hi"
+  val columnHeaders =  
+    val l = mutable.IndexedSeq(ShapelessFieldNameExtractor.fieldNames[Patient]*)
     l(0) = "*column 0*" 
     l.toList
+
   
   def columns(p:Patient) =  
     val c = mutable.IndexedSeq(TableColProperties.derived[Patient].element(p)*)
@@ -67,3 +69,55 @@ object ModelFetch :
           println(s"Error adding narrative flag for unit number $unitNumber: ${ex.getMessage}")
           None
       }
+
+  def createPatient(patient: Patient): Future[Option[Patient]] = {
+  import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
+  import scala.scalajs.js
+  import scala.scalajs.js.Thenable.Implicits._
+  import zio.json._
+
+  val jsonBody = patient.toJson
+
+  // Helper to validate date fields
+  def validateField[T](label: String, value: Option[T]): Boolean = {
+    value match {
+      case Some(v) =>
+        println(s"$label: $v")
+        true
+      case None =>
+        println(s"Invalid or missing $label!")
+        false
+    }
+  }
+
+  // Validate dates before sending
+  val isValid = validateField("Date of Birth", patient.dob) &&
+                validateField("Admission Date", patient.admitDate)
+
+  if (!isValid) return Future.successful(None)
+
+  // Set headers
+  val httpHeaders = new DomHeaders()
+  httpHeaders.set("Content-Type", "application/json")
+
+  // Prepare request
+  val reqInit = new RequestInit {
+    method = HttpMethod.POST
+    body = jsonBody
+    headers = httpHeaders
+  }
+
+  // Execute POST request and decode JSON
+  org.scalajs.dom.experimental.Fetch
+    .fetch("http://localhost:8080/patients", reqInit)
+    .toFuture
+    .flatMap(_.text().toFuture)
+    .map(_.fromJson[Patient].toOption)
+    .recover {
+      case ex =>
+        println("Exception while creating patient:")
+        println(s"Message: ${ex.getMessage}")
+        ex.printStackTrace()
+        None
+    }
+}

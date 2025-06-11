@@ -11,7 +11,8 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
-import com.axiom.ModelFetch.headers
+import com.axiom.ModelFetch.columnHeaders
+
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import io.bullet.borer.derivation.key
@@ -40,6 +41,12 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   val searchQueryVar: Var[String] = Var("")
   val numColumnsToShow = 10
 
+  
+  // Flag For create patient form
+  val showCreatePatientForm = Var(false)
+  def openCreatePatientModal(): Unit = showCreatePatientForm.set(true)
+  def closeCreatePatientModal(): Unit = showCreatePatientForm.set(false)
+
   val colsToRemove = Set("hcn", "dob") // Use Set for faster lookup
   val colHeadersVar: Var[List[String]] = {
     val headers = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow)
@@ -56,6 +63,26 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   selectedRowVar.signal.foreach { rowIdxOpt =>
     scrollToSelectedRow(rowIdxOpt)
   }
+  
+
+  //Create Patient Form input variables for dynamic patient creation
+  case class FormState(
+  firstNameVar: Var[String] = Var(""),
+  lastNameVar: Var[String] = Var(""),
+  unitNumberVar: Var[String] = Var(""),
+  accountNumberVar: Var[String] = Var(""),
+  sexVar: Var[String] = Var(""),
+  dobVar: Var[String] = Var(""),
+  admitDateVar: Var[String] = Var(""),
+  floorVar: Var[String] = Var(""),
+  roomVar: Var[String] = Var(""),
+  bedVar: Var[String] = Var(""),
+  hospVar: Var[String] = Var(""),
+  auroraFileVar: Var[String] = Var("")
+)
+  lazy val createPatientFormState = FormState()
+
+
 
   def getSpecificCellData(columnName: String, p: Patient): CellData = {
     // Get original headers and cell data
@@ -124,6 +151,98 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     }
   }
 
+  
+  def createPatientForm: HtmlElement =
+  div(
+    className := "create-patient-modal-overlay",
+    display <-- showCreatePatientForm.signal.map(if (_) "flex" else "none"),
+
+    child <-- showCreatePatientForm.signal.map {
+      case true =>
+        div(
+          className := "create-patient-modal",
+          h2("Create New Patient"),
+          form(
+            onSubmit.preventDefault --> { _ =>
+              //  patient object 
+              val state = createPatientFormState
+              val patient: Patient = Patient(
+                  accountNumber = state.accountNumberVar.now(),
+                  unitNumber = state.unitNumberVar.now(),
+                  lastName = state.lastNameVar.now(),
+                  firstName = state.firstNameVar.now(),
+                  sex = state.sexVar.now(),
+                  dob = Some(LocalDate.parse(state.dobVar.now())),
+                  hcn = None,
+                  admitDate = Some(LocalDateTime.parse(state.admitDateVar.now())),
+                  floor = Some(state.floorVar.now()),
+                  room = Some(state.roomVar.now()),
+                  bed = Some(state.bedVar.now()),
+                  mrp = None,
+                  admittingPhys = None,
+                  family = None,
+                  famPriv = None,
+                  hosp = Some(state.hospVar.now()),
+                  flag = None,
+                  service = None,
+                  address1 = None,
+                  address2 = None,
+                  city = None,
+                  province = None,
+                  postalCode = None,
+                  homePhoneNumber = None,
+                  workPhoneNumber = None,
+                  ohip = None,
+                  attending = None,
+                  collab1 = None,
+                  collab2 = None,
+                  auroraFile = None
+                )
+
+                // POST Api call
+                ModelFetch.createPatient(patient)
+                closeCreatePatientModal()
+              },
+            Seq(
+              "First Name" -> createPatientFormState.firstNameVar,
+              "Last Name" -> createPatientFormState.lastNameVar,
+              "Unit Number" -> createPatientFormState.unitNumberVar,
+              "Account Number" -> createPatientFormState.accountNumberVar,
+              "Gender" -> createPatientFormState.sexVar,
+              "DOB (yyyy-MM-dd)" -> createPatientFormState.dobVar,
+              "Admit Date (yyyy-MM-ddTHH:mm:ss)" -> createPatientFormState.admitDateVar,
+              "Floor" -> createPatientFormState.floorVar,
+              "Room" -> createPatientFormState.roomVar,
+              "Bed" -> createPatientFormState.bedVar,
+              "Hospital" -> createPatientFormState.hospVar,
+              // "Aurora File" -> auroraFileVar
+            ).map { case (labelText, varRef) =>
+              div(
+                marginBottom := "12px",
+                label(labelText, display.block, marginBottom := "4px"),
+                input(
+                  typ := "text",
+                  typ := "text",
+                  className := "input", 
+                  onInput.mapToValue --> varRef
+                )
+              )
+            },
+
+            //buttons
+            div(
+              className := "create-patient-modal-buttons",
+              button("Submit", className := "submit-btn"),
+              button("Cancel", className := "cancel-btn", onClick --> (_ => closeCreatePatientModal()))
+
+            )
+          )
+        )
+      case false => emptyNode
+    }
+  )
+  end createPatientForm
+
   def renderHtml: L.Element =
     def headerRow(s:List[String]) = 
       List(tr(
@@ -148,26 +267,40 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           inContext { thisNode =>
             onInput.mapTo(thisNode.ref.value) --> searchQueryVar
           }
+          
+
         ),
-        // Add a listener to print the input value
-        onMountCallback { _ =>
-          searchQueryVar.signal.foreach { query =>
-            searchFilterFunction() // Example usage of the filter function
-          }
-        }
-      ),
-      table(
-        onKeyDown --> tableKeyboardHandler,//prevents default scrolling behaviour from various key strokes
-        thead(
-          children <-- colHeadersVar.signal.map{headerRow(_) }
-        ),
-        tbody(
-          children <-- showGcdVar.signal.map{ 
-            (rowList:GCD) => rowList.map(tup => row(tup))
-          }
-        )
-      )
-    )
+        button(
+            "Create Patient",
+            cls := "create-patient-button",
+            onClick --> { _ => 
+            println("Create Patient button clicked")
+            openCreatePatientModal() }, 
+            cls := "create-patient-button"
+),
+              // Add a listener to print the input value
+              onMountCallback { _ =>
+                searchQueryVar.signal.foreach { query =>
+                  searchFilterFunction() // Example usage of the filter function
+                }
+              }
+            ),
+            table(
+              onKeyDown --> tableKeyboardHandler,//prevents default scrolling behaviour from various key strokes
+              thead(
+                children <-- colHeadersVar.signal.map{headerRow(_) }
+              ),
+              tbody(
+                children <-- showGcdVar.signal.map{ 
+                  (rowList:GCD) => rowList.map(tup => row(tup))
+                }
+              )
+            ),
+              createPatientForm
+
+
+          )
+
 
   def row(cols:Row)  = 
     tr(
