@@ -178,6 +178,27 @@ td img {
   background: #4f5bff;
 }
 
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.back-button {
+  background-color: #f44336;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+
 /* ===== Patient Details ===== */
 .patient-details-page {
   font-family: 'Inter', Arial, sans-serif;
@@ -391,6 +412,7 @@ td img {
   .details-column button {
     font-size: 0.75rem;
     padding: 0.3rem 0.6rem;
+    margin-right: 8px;
   }
 }
 

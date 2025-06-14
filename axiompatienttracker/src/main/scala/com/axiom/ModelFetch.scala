@@ -4,6 +4,9 @@ import org.scalajs.dom
 import com.axiom.model.shared.dto.Patient
 import com.axiom.TableColProperties
 import io.laminext.fetch._
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 
 import org.scalajs.dom.AbortController
 import com.axiom.ShapelessFieldNameExtractor.fieldNames
@@ -121,3 +124,31 @@ object ModelFetch :
         None
     }
 }
+  def updatePatientDetails(unitNumber: String, patient: Patient): Future[Option[Patient]] = {
+    import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
+    import scala.scalajs.js
+    import scala.scalajs.js.Thenable.Implicits._
+    import zio.json._
+
+    val jsonBody = patient.toJson
+
+    val customHeaders = new DomHeaders()
+    customHeaders.set("Content-Type", "application/json")
+
+    val reqInit = new RequestInit {
+      method = HttpMethod.PUT
+      body = jsonBody
+      this.headers = customHeaders
+    }
+
+    val url = s"http://localhost:8080/patients/update/$unitNumber"
+
+    dom.experimental.Fetch.fetch(url, reqInit)
+      .toFuture
+      .flatMap(_.text().toFuture.map(_.fromJson[Patient].toOption))
+      .recover { case ex =>
+        println(s"Update failed: ${ex.getMessage}")
+        None
+      }
+  }
+

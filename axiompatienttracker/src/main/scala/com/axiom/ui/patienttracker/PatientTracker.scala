@@ -320,14 +320,21 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         cls := "details-column",
         button(
           "View Details",
+          marginRight := "8px",
           onClick --> { _ =>
             println(s"Details clicked for row: ${cols(1)._3.text}")
             val unitNumber = cols(1)._3.text // Assuming the second column contains the unit number
             renderPatientDetailsPage(unitNumber)
           }
-        )
-      )
-    )
+        ),
+        button(
+          "Edit",
+           onClick --> { _ =>
+              val unitNumber = cols(1)._3.text
+              renderPatientDetailsPage(unitNumber, editable = true)
+            }
+          )
+        ))
 
   def tableCell(colRow: ColRow): HtmlElement =
     td(
