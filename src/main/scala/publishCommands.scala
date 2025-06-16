@@ -179,6 +179,7 @@ object PublishCommands:
         case Some(p) =>
           p.reveal(null, preserveFocus = true)
           p.webview.postMessage(js.Dynamic.literal(
+            source = "vscode-extension",
             command = "updateNarratives",
             unitNumber = unitNumber,
             flag = flag
