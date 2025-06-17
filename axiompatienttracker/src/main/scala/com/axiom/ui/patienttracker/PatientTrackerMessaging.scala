@@ -6,7 +6,7 @@ import scala.scalajs.js.annotation._
 import com.axiom.ModelFetch
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
-
+import com.axiom.messaging.*
 
 // TODO: Make Case Class for Message and Payloads
 
@@ -26,20 +26,21 @@ object ScalaJSGlobal {
   lazy val vscodeapi: Option[VSCodeApi] = Try(Globals.acquireVsCodeApi()).toOption
 }
 
-@JSExportTopLevel("sendMessageToVSCode")
-def sendMessageToVSCode(command: String, filename: String): Unit = {
+@JSExportTopLevel("sendRequestToVSCode")
+// Function to send Request to VSCode
+def sendRequestToVSCode[T <: ToJsObject](request: Request[T]): Unit = {
   val vscode = ScalaJSGlobal.vscodeapi
-  if (command.nonEmpty || filename.nonEmpty) {
-    vscode.foreach(_.postMessage(js.Dynamic.literal(
-      command = command,
-      filename = filename
-    )))
-  } else {
-    println("Command or filename is empty. Not sending message.")
-  }
+  vscode.foreach(_.postMessage(request.data.toJsObject(request.command)))
 }
 
-// Function to handle incoming messages
+@JSExportTopLevel("sendResponseToVSCode")
+// Function to send Response to VSCode
+def sendResponseToVSCode[R <: ToJsObject](response: Response[R]): Unit = {
+  val vscode = ScalaJSGlobal.vscodeapi
+  vscode.foreach(_.postMessage(response.result.toJsObject(response.command)))
+}
+
+// Function to handle incoming Requests or Responses from VSCode
 @JSExportTopLevel("initializeMessageListener")
 def initializeMessageListener(): Unit = {
   dom.window.addEventListener("message", { (event: dom.MessageEvent) =>
@@ -61,10 +62,10 @@ def initializeMessageListener(): Unit = {
             ModelFetch.addNarrativesFlag(unitNumber, flag).map {
               case Some(_) =>
                 println(s"Narrative Flag updated successfully for unit number: ${unitNumber}")
-                sendMessageToVSCode("updatedNarratives", s"Narratives updated successfully for $unitNumber.aurora")
+                sendResponseToVSCode(Response("updatedNarratives", UpdatedNarratives(s"Narratives updated successfully for $unitNumber.aurora")))
               case None =>
                 println(s"Failed to update Narrative Flag for unit number: ${unitNumber}")
-                sendMessageToVSCode("updatedNarratives", s"Failed to update Narratives updated for $unitNumber.aurora")
+                sendResponseToVSCode(Response("updatedNarratives", UpdatedNarratives(s"Failed to update Narratives updated for $unitNumber.aurora")))
             }
           case other =>
             println(s"Unknown command: $other")

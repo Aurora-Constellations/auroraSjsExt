@@ -109,33 +109,33 @@ object PublishCommands:
     
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage { (message: Any) =>
-      // Since we're using a general 'Any' type, we can cast to a js.Dynamic safely here
-      val msg = message.asInstanceOf[js.Dynamic]
-      val command = msg.command.asInstanceOf[String]
-      val response = msg.filename.asInstanceOf[String]
+  val msg = message.asInstanceOf[js.Dynamic]
+  val command = msg.command.asInstanceOf[String]
 
-      // Handle the message based on command
-      command match {
-        case "createAuroraFile" =>
-          vscode.window.showInformationMessage(s"Creating file: $response")
-          // Call the function to create the file
-          handleCreate(response)
-        
-        case "addedToDB" =>
-          vscode.window.showInformationMessage(s"Added to Database: $response")
+  command match {
+    case "createAuroraFile" =>
+      val fileName = msg.fileName.asInstanceOf[String]
+      vscode.window.showInformationMessage(s"Creating file: $fileName")
+      handleCreate(fileName)
 
-        case "openAuroraFile" =>
-          vscode.window.showInformationMessage(s"Opening file: $response")
-          // Call the function to open the file
-          handleOpen(response)
+    case "openAuroraFile" =>
+      val fileName = msg.fileName.asInstanceOf[String]
+      vscode.window.showInformationMessage(s"Opening file: $fileName")
+      handleOpen(fileName)
 
-        case "updatedNarratives" =>
-          vscode.window.showInformationMessage(s"$response")
+    case "addedToDB" =>
+      val fileName = msg.fileName.asInstanceOf[String]
+      vscode.window.showInformationMessage(s"Added to Database: $fileName")
 
-        case other =>
-          vscode.window.showWarningMessage(s"Unknown command: $other")
-      }
-    }
+    case "updatedNarratives" =>
+      val messageText = msg.message.asInstanceOf[String] // Previously used filename to send status message
+      vscode.window.showInformationMessage(s"$messageText")
+
+    case other =>
+      vscode.window.showWarningMessage(s"Unknown command: $other")
+  }
+}
+
 
     // Handle disposal
     panel.onDidDispose((_: Unit) => { // Changed the lambda to accept a Unit argument

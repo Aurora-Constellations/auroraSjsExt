@@ -5,6 +5,8 @@ import org.scalajs.dom
 import com.axiom.ModelFetch
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
+import com.axiom.messaging.*
+
 
 def renderPatientDetailsPage(unitNumber: String): Unit = {
   println(s"Fetching details for unit number: $unitNumber")
@@ -145,7 +147,7 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                 "Create File",
                 onClick --> { _ =>
                   println(s"Creating new Aurora File: ${unitNumber}")
-                  sendMessageToVSCode("createAuroraFile", s"$unitNumber.aurora")
+                  sendRequestToVSCode(Request("createAuroraFile", CreateAuroraFile(s"$unitNumber.aurora")))
                   // Add the aurora file to database
                   ModelFetch.addPatientAuroraFile(unitNumber).map {
                     case Some(_) =>
@@ -153,7 +155,7 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                     case None => 
                       println(s"Failed to create Aurora file for unit number: ${unitNumber}")
                   }
-                  sendMessageToVSCode("addedToDB", s"$unitNumber.aurora")
+                  sendResponseToVSCode(Response("addedToDB", AddedToDB(s"$unitNumber.aurora")))
                 }
               )
             } else {
@@ -162,7 +164,7 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                 "Open File",
                 onClick --> { _ =>
                   println(s"Opening the Aurora File: $fieldValue")
-                  sendMessageToVSCode("openAuroraFile", s"$unitNumber.aurora")
+                  sendRequestToVSCode(Request("openAuroraFile", OpenAuroraFile(s"$unitNumber.aurora")))
                 }
               )
             }

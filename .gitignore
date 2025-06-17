@@ -15,7 +15,8 @@ pack
 /axiompatienttracker/target
 /PowerShell 7.5.1
 # hidden cross project folders
-shared
+shared/js
+shared/jvm
 media
 .env
 auroraFiles
