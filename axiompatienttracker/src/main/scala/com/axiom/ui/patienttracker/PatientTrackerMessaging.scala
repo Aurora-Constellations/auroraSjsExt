@@ -8,8 +8,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 import com.axiom.messaging.*
 
-// TODO: Make Case Class for Message and Payloads
-
 @js.native
 trait VSCodeApi extends js.Object {
   def postMessage(message: js.Any): Unit = js.native
@@ -50,27 +48,7 @@ def initializeMessageListener(): Unit = {
     val isFromVsCode = !js.isUndefined(data.source) && data.source.toString == "vscode-extension"
 
     if (isFromVsCode) {
-      if(js.isUndefined(data.command)) {
-        println("Received message does not contain `command` field.")
-      } else {
-        val command = data.command.asInstanceOf[String]
-        val unitNumber = data.unitNumber.asInstanceOf[String]
-        val flag = data.flag.asInstanceOf[String]
-        command match {
-          case "updateNarratives" =>
-            //update to Database
-            ModelFetch.addNarrativesFlag(unitNumber, flag).map {
-              case Some(_) =>
-                println(s"Narrative Flag updated successfully for unit number: ${unitNumber}")
-                sendResponseToVSCode(Response("updatedNarratives", UpdatedNarratives(s"Narratives updated successfully for $unitNumber.aurora")))
-              case None =>
-                println(s"Failed to update Narrative Flag for unit number: ${unitNumber}")
-                sendResponseToVSCode(Response("updatedNarratives", UpdatedNarratives(s"Failed to update Narratives updated for $unitNumber.aurora")))
-            }
-          case other =>
-            println(s"Unknown command: $other")
-        }
-      }
+      CommandDispatcher.dispatch(data)
     }
     // If not from VSCode, do nothing (no return needed)
   }: js.Function1[dom.MessageEvent, Unit]) // Explicit JS function type for Scala.js
