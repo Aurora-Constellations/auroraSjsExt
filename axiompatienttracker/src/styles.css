@@ -524,3 +524,29 @@ td img {
   align-items: center;
   justify-content: center;
 }
+/*Styling for delete button*/
+.icon-button { /*Trash icon button*/
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+.delete-icon {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 0;
+  display: block;
+}
+
+.details-column {
+  display: flex;
+  justify-content: center;  
+  gap: 0.5rem;                 
+  padding-right: 0.25rem;        
+  align-items: center;
+}
+

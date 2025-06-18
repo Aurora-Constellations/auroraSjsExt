@@ -16,6 +16,8 @@ import com.axiom.ModelFetch.columnHeaders
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import io.bullet.borer.derivation.key
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 type PatientList = CCRowList[Patient]
 
@@ -302,20 +304,26 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           )
 
 
-  def row(cols:Row)  = 
+  def row(cols:Row)  = {
+
+    val showConfirm = Var(false)
     tr(
+      
       idAttr := s"row-${cols.head._2.row}",
+      
     backgroundColor <-- selectedRowVar.signal.map{ selRow => 
         selRow match
         case Some(row) if row == cols.head._2.row => "#32a852" //shade of green
           case _ => "black"
       },
       onDblClick --> { _ =>
-        val unitNumber = cols(1)._3.text // Assuming the second column contains the unit number
+        val unitNumber = cols(1)._3.text
+         // Assuming the second column contains the unit number
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
         renderPatientDetailsPage(unitNumber)
       },
       cols.map { c => this.tableCell(c._2) },
+      
       td(
         cls := "details-column",
         button(
@@ -333,8 +341,58 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
               val unitNumber = cols(1)._3.text
               renderPatientDetailsPage(unitNumber, editable = true)
             }
-          )
-        ))
+          ),
+          //Logic for Delete option. Double confirmation before deleting
+        div(
+            child <-- showConfirm.signal.map {
+              case false =>
+                button(
+                  cls := "icon-button delete-button",
+                  onClick.mapTo(true) --> showConfirm,
+                  img(
+                    src := "https://img.icons8.com/ios-filled/24/ffffff/delete-forever.png", // trash icon
+                    alt := "Delete",
+                    cls := "delete-icon",
+                    onClick.mapTo(true) --> showConfirm
+                  )
+
+                )
+              case true =>
+                div(
+                  span("Are you sure? "),
+                  button(
+                    "Yes",
+                    cls := "confirm-button",
+                    onClick --> { _ =>
+                      val unitNumber = cols(1)._3.text
+                      ModelFetch.deletePatient(unitNumber).foreach { //Delete using unitNumber 
+                        case true =>
+                          println("Deleted successfully")
+                          // Refresh the patient tracker
+                          val tracker = new PatientTracker()
+                          ModelFetch.fetchPatients.foreach(tracker.populate)
+                          val container = dom.document.getElementById("app")
+                          if (container != null) {
+                            container.innerHTML = ""
+                            render(container, tracker.renderHtml)
+                          }
+                        case false =>
+                          println("Failed to delete patient")
+                      }
+                      showConfirm.set(false)
+                    }
+                  ),
+                  button(
+                    "Cancel",
+                    cls := "cancel-button",
+                    onClick.mapTo(false) --> showConfirm
+              )
+            )
+          }
+        )
+        )
+        )
+  }
 
   def tableCell(colRow: ColRow): HtmlElement =
     td(
