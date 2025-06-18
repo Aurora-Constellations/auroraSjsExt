@@ -6,23 +6,8 @@ import scala.scalajs.js.annotation._
 import com.axiom.ModelFetch
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
+import com.axiom.vscode.ScalaJSGlobal
 import com.axiom.messaging.*
-
-@js.native
-trait VSCodeApi extends js.Object {
-  def postMessage(message: js.Any): Unit = js.native
-}
-
-@js.native
-@JSGlobalScope
-object Globals extends js.Object {
-  def acquireVsCodeApi(): VSCodeApi = js.native
-}
-
-//Converting Facade to a singleton object
-object ScalaJSGlobal {
-  lazy val vscodeapi: Option[VSCodeApi] = Try(Globals.acquireVsCodeApi()).toOption
-}
 
 @JSExportTopLevel("sendRequestToVSCode")
 // Function to send Request to VSCode
