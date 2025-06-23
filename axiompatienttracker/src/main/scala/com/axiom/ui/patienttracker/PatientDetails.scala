@@ -9,18 +9,18 @@ import com.axiom.model.shared.dto.Patient
 import java.time.{LocalDate, LocalDateTime}
 
 //Added case class to tag editable values
- case class PatientFormState (
-        firstName: Var[String],
-        lastName: Var[String],
-        dob: Var[String],
-        sex: Var[String],
-        hcn: Var[String],
-        family: Var[String],
-        famPriv: Var[String],
-        service: Var[String],
-        attending: Var[String],
-        auroraFile: Var[String]
-      )
+case class PatientFormState (
+    firstName: Var[String],
+    lastName: Var[String],
+    dob: Var[String],
+    sex: Var[String],
+    hcn: Var[String],
+    family: Var[String],
+    famPriv: Var[String],
+    service: Var[String],
+    attending: Var[String],
+    auroraFile: Var[String]
+)
 def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Unit = {
   println(s"Fetching details for unit number: $unitNumber")
   val container = dom.document.getElementById("app")
@@ -78,7 +78,7 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
       service = Var(patient.service.getOrElse("")),
       attending = Var(patient.attending.getOrElse("")),
       auroraFile = Var(patient.auroraFile.getOrElse(""))
-)
+      )
 
       val detailsPage = div(
         cls := "patient-details-page",
@@ -107,7 +107,7 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
           )
         ),
         div(
-          // adding save changes but only if the form is being opened for editing. 
+          // adding save changes button only if the editable flag is true
           if (editable) { 
             button(
               "Save Changes",
@@ -151,22 +151,20 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
 
                 // Call the backend update API by passing the updated values
                 ModelFetch.updatePatientDetails(unitNumber, updatedPatient).foreach {
-            case Some(updated) =>
-              println(s"Patient updated successfully: ${updated.unitNumber}")
-              val tracker = new PatientTracker()
-              ModelFetch.fetchPatients.foreach { patients =>
-                tracker.populate(patients)
+                  case Some(updated) =>
+                    println(s"Patient updated successfully: ${updated.unitNumber}")
+                    val tracker = new PatientTracker()
+                    ModelFetch.fetchPatients.foreach { patients =>
+                      tracker.populate(patients)
+                    }
+                    container.innerHTML = ""
+                    render(container, tracker.renderHtml)
+                  case None =>
+                    println("Failed to update patient.")
+                  }
               }
-              container.innerHTML = ""
-              render(container, tracker.renderHtml)
-            case None =>
-              println("Failed to update patient.")
-          }
-        }
-    )
-  }else {
-    emptyNode // or just omit this part if no fallback needed
-  },
+            )
+          }else emptyNode ,
           
           button(
             "Back to List",
@@ -219,6 +217,21 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
 
 private def renderDetails(cssClass:String, heading:String, details: List[(String, String)], fields: Set[String], editable: Boolean, formState: Option[PatientFormState]) = {
   val unitNumber = details(1)._2
+  
+  def renderEditableField(fieldName: String, fieldValue: String): HtmlElement = fieldName match {
+    case "First Name"         => input(value := formState.get.firstName.now(), onInput.mapToValue --> formState.get.firstName)
+    case "Last Name"          => input(value := formState.get.lastName.now(), onInput.mapToValue --> formState.get.lastName)
+    case "Gender" | "Sex"     => input(value := formState.get.sex.now(), onInput.mapToValue --> formState.get.sex)
+    case "Date of Birth"      => input(value := formState.get.dob.now(), onInput.mapToValue --> formState.get.dob)
+    case "Health Card Number" => input(value := formState.get.hcn.now(), onInput.mapToValue --> formState.get.hcn)
+    case "Family"             => input(value := formState.get.family.now(), onInput.mapToValue --> formState.get.family)
+    case "Family Privacy"     => input(value := formState.get.famPriv.now(), onInput.mapToValue --> formState.get.famPriv)
+    case "Service"            => input(value := formState.get.service.now(), onInput.mapToValue --> formState.get.service)
+    case "Attending"          => input(value := formState.get.attending.now(), onInput.mapToValue --> formState.get.attending)
+    case "Aurora File"        => input(value := formState.get.auroraFile.now(), onInput.mapToValue --> formState.get.auroraFile)
+    case _                    => span(cls := "field-value", fieldValue)
+  }
+
   val section = div(
     cls := cssClass,
     h2(heading),
@@ -261,46 +274,13 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
           li(
             //Rendering inputs conditionally. 
             span(cls := "field-name", s"$fieldName: "),
-            //if editable inputs are added like this
-            fieldName match {
-                case "First Name" if editable =>
-                  input(value := formState.get.firstName.now(), onInput.mapToValue --> formState.get.firstName)
-
-                case "Last Name" if editable =>
-                  input(value := formState.get.lastName.now(), onInput.mapToValue --> formState.get.lastName)
-
-                case "Gender" | "Sex" if editable =>
-                  input(value := formState.get.sex.now(), onInput.mapToValue --> formState.get.sex)
-
-                case "Date of Birth" if editable =>
-                  input(value := formState.get.dob.now(), onInput.mapToValue --> formState.get.dob)
-
-                case "Health Card Number" if editable =>
-                  input(value := formState.get.hcn.now(), onInput.mapToValue --> formState.get.hcn)
-
-                case "Family" if editable =>
-                  input(value := formState.get.family.now(), onInput.mapToValue --> formState.get.family)
-
-                case "Family Privacy" if editable =>
-                  input(value := formState.get.famPriv.now(), onInput.mapToValue --> formState.get.famPriv)
-
-                case "Service" if editable =>
-                  input(value := formState.get.service.now(), onInput.mapToValue --> formState.get.service)
-
-                case "Attending" if editable =>
-                  input(value := formState.get.attending.now(), onInput.mapToValue --> formState.get.attending)
-
-                case "Aurora File" if editable =>
-                  input(value := formState.get.auroraFile.now(), onInput.mapToValue --> formState.get.auroraFile)
-
-                //If not editable then render the fields as it is
-                case _ =>
-                  span(cls := "field-value", fieldValue)
+            //if editable inputs are added 
+             if (editable) {
+                renderEditableField(fieldName, fieldValue)
+              } else {
+                span(cls := "field-value", fieldValue)
               }
-
           )
-
-
         }
       }
     )

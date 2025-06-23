@@ -101,7 +101,7 @@ table {
 
 thead th {
   position: sticky;
-  top: 3.5rem;           /* height of your sticky bar + padding */
+  top: 0;           /* height of your sticky bar + padding */
   background: var(--bg-header);
   color: var(--text-primary);
   padding: var(--padding);
@@ -111,6 +111,18 @@ thead th {
   border-bottom: 1px solid #444;
   z-index: 5;
 }
+
+.table-scroll-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-header);
+  z-index: 5;
+} */
 
 tbody tr {
   transition: background var(--transition);
@@ -372,10 +384,6 @@ td img {
     min-width: 600px; /* Make table narrower on small screens */
   }
 
-  thead th {
-    padding: 0.75rem;
-    font-size: 0.8rem;
-  }
 
   td {
     padding: 0.5rem;
@@ -548,5 +556,21 @@ td img {
   gap: 0.5rem;                 
   padding-right: 0.25rem;        
   align-items: center;
+}
+.sticky-header-container {
+  position: sticky;
+  top: 0;
+  background: var(--bg-header);
+  z-index: 15;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.header-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.table-scroll-body {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 

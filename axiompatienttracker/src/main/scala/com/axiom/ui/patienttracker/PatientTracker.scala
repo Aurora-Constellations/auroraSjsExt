@@ -2,6 +2,7 @@ package com.axiom.ui.patienttracker
 
 import scala.scalajs.js
 import com.axiom.ui.tableutils.*
+import com.axiom.ui.tableutils.GridT
 import com.axiom.model.shared.dto.Patient
 import scala.collection.mutable
 import com.axiom.ShapelessFieldNameExtractor
@@ -12,6 +13,7 @@ import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
+
 
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
@@ -27,7 +29,7 @@ trait RenderHtml :
 
 case class CellData(text:String,color:String) 
 
-//TODO[populate] PatientGridData
+
 case class PatientGridData(grid: PatientTracker,colrow:ColRow, data:CellData) 
     extends GridDataT[PatientTracker,Patient,CellData](grid,colrow,data) with RenderHtml :
   def renderHtml = td(data.text,backgroundColor:=data.color)
@@ -120,7 +122,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   override def cctoData(row:Int,cc:Patient):List[CellData] = columns(row,cc)
 
   // Rudimentary search filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
-  def searchFilterFunction(): Unit = {
+   def searchFilterFunction(): Unit = {
     val query = searchQueryVar.now().toLowerCase.trim
     println(s"Searching for: $query")
     // Filter rows where any cell in the row contains the query
@@ -154,97 +156,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   }
 
   
-  def createPatientForm: HtmlElement =
-  div(
-    className := "create-patient-modal-overlay",
-    display <-- showCreatePatientForm.signal.map(if (_) "flex" else "none"),
-
-    child <-- showCreatePatientForm.signal.map {
-      case true =>
-        div(
-          className := "create-patient-modal",
-          h2("Create New Patient"),
-          form(
-            onSubmit.preventDefault --> { _ =>
-              //  patient object 
-              val state = createPatientFormState
-              val patient: Patient = Patient(
-                  accountNumber = state.accountNumberVar.now(),
-                  unitNumber = state.unitNumberVar.now(),
-                  lastName = state.lastNameVar.now(),
-                  firstName = state.firstNameVar.now(),
-                  sex = state.sexVar.now(),
-                  dob = Some(LocalDate.parse(state.dobVar.now())),
-                  hcn = None,
-                  admitDate = Some(LocalDateTime.parse(state.admitDateVar.now())),
-                  floor = Some(state.floorVar.now()),
-                  room = Some(state.roomVar.now()),
-                  bed = Some(state.bedVar.now()),
-                  mrp = None,
-                  admittingPhys = None,
-                  family = None,
-                  famPriv = None,
-                  hosp = Some(state.hospVar.now()),
-                  flag = None,
-                  service = None,
-                  address1 = None,
-                  address2 = None,
-                  city = None,
-                  province = None,
-                  postalCode = None,
-                  homePhoneNumber = None,
-                  workPhoneNumber = None,
-                  ohip = None,
-                  attending = None,
-                  collab1 = None,
-                  collab2 = None,
-                  auroraFile = None
-                )
-
-                // POST Api call
-                ModelFetch.createPatient(patient)
-                closeCreatePatientModal()
-              },
-            Seq(
-              "First Name" -> createPatientFormState.firstNameVar,
-              "Last Name" -> createPatientFormState.lastNameVar,
-              "Unit Number" -> createPatientFormState.unitNumberVar,
-              "Account Number" -> createPatientFormState.accountNumberVar,
-              "Gender" -> createPatientFormState.sexVar,
-              "DOB (yyyy-MM-dd)" -> createPatientFormState.dobVar,
-              "Admit Date (yyyy-MM-ddTHH:mm:ss)" -> createPatientFormState.admitDateVar,
-              "Floor" -> createPatientFormState.floorVar,
-              "Room" -> createPatientFormState.roomVar,
-              "Bed" -> createPatientFormState.bedVar,
-              "Hospital" -> createPatientFormState.hospVar,
-              // "Aurora File" -> auroraFileVar
-            ).map { case (labelText, varRef) =>
-              div(
-                marginBottom := "12px",
-                label(labelText, display.block, marginBottom := "4px"),
-                input(
-                  typ := "text",
-                  typ := "text",
-                  className := "input", 
-                  onInput.mapToValue --> varRef
-                )
-              )
-            },
-
-            //buttons
-            div(
-              className := "create-patient-modal-buttons",
-              button("Submit", className := "submit-btn"),
-              button("Cancel", className := "cancel-btn", onClick --> (_ => closeCreatePatientModal()))
-
-            )
-          )
-        )
-      case false => emptyNode
-    }
-  )
-  end createPatientForm
-
   def renderHtml: L.Element =
     def headerRow(s:List[String]) = 
       List(tr(
@@ -269,7 +180,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           inContext { thisNode =>
             onInput.mapTo(thisNode.ref.value) --> searchQueryVar
           }
-          
+
 
         ),
         button(
@@ -278,27 +189,38 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
             onClick --> { _ => 
             println("Create Patient button clicked")
             openCreatePatientModal() }, 
-            cls := "create-patient-button"
-),
+        ),
               // Add a listener to print the input value
               onMountCallback { _ =>
                 searchQueryVar.signal.foreach { query =>
-                  searchFilterFunction() // Example usage of the filter function
+                  searchFilterFunction()  // Example usage of the filter function
                 }
               }
+      
             ),
-            table(
-              onKeyDown --> tableKeyboardHandler,//prevents default scrolling behaviour from various key strokes
-              thead(
+            // table(
+            //   cls := "header-table",
+            //   onKeyDown --> tableKeyboardHandler,//prevents default scrolling behaviour from various key strokes
+            //   thead(
+            //     children <-- colHeadersVar.signal.map{headerRow(_) }
+            //   ),
+            //   )
+            
+            div(
+              cls := "table-scroll-body",
+              table(
+                onKeyDown --> tableKeyboardHandler,
+                thead(
                 children <-- colHeadersVar.signal.map{headerRow(_) }
               ),
-              tbody(
-                children <-- showGcdVar.signal.map{ 
-                  (rowList:GCD) => rowList.map(tup => row(tup))
-                }
+                tbody(
+                  children <-- showGcdVar.signal.map { rowList =>
+                    rowList.map(tup => row(tup))
+                  }
+                )
               )
             ),
-              createPatientForm
+              PatientActions.createPatientForm(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
 
 
           )
@@ -341,55 +263,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
               val unitNumber = cols(1)._3.text
               renderPatientDetailsPage(unitNumber, editable = true)
             }
-          ),
-          //Logic for Delete option. Double confirmation before deleting
-        div(
-            child <-- showConfirm.signal.map {
-              case false =>
-                button(
-                  cls := "icon-button delete-button",
-                  onClick.mapTo(true) --> showConfirm,
-                  img(
-                    src := "https://img.icons8.com/ios-filled/24/ffffff/delete-forever.png", // trash icon
-                    alt := "Delete",
-                    cls := "delete-icon",
-                    onClick.mapTo(true) --> showConfirm
-                  )
-
-                )
-              case true =>
-                div(
-                  span("Are you sure? "),
-                  button(
-                    "Yes",
-                    cls := "confirm-button",
-                    onClick --> { _ =>
-                      val unitNumber = cols(1)._3.text
-                      ModelFetch.deletePatient(unitNumber).foreach { //Delete using unitNumber 
-                        case true =>
-                          println("Deleted successfully")
-                          // Refresh the patient tracker
-                          val tracker = new PatientTracker()
-                          ModelFetch.fetchPatients.foreach(tracker.populate)
-                          val container = dom.document.getElementById("app")
-                          if (container != null) {
-                            container.innerHTML = ""
-                            render(container, tracker.renderHtml)
-                          }
-                        case false =>
-                          println("Failed to delete patient")
-                      }
-                      showConfirm.set(false)
-                    }
-                  ),
-                  button(
-                    "Cancel",
-                    cls := "cancel-button",
-                    onClick.mapTo(false) --> showConfirm
-              )
-            )
-          }
-        )
+          )
         )
         )
   }
@@ -534,5 +408,4 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       }
     }
   }
-
 

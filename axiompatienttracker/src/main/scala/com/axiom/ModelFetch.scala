@@ -151,25 +151,26 @@ object ModelFetch :
             None
           }
       }
-  def deletePatient(unitNumber: String): Future[Boolean] = {
-      import org.scalajs.dom.experimental.{HttpMethod, RequestInit, Headers => DomHeaders}
-      import scala.scalajs.js.Thenable.Implicits._
+      // API call to delete the patient details 
+  // def deletePatient(unitNumber: String): Future[Boolean] = {
+  //     import org.scalajs.dom.experimental.{HttpMethod, RequestInit, Headers => DomHeaders}
+  //     import scala.scalajs.js.Thenable.Implicits._
 
-      val httpHeaders = new DomHeaders()
-      httpHeaders.set("Content-Type", "application/json")
+  //     val httpHeaders = new DomHeaders()
+  //     httpHeaders.set("Content-Type", "application/json")
 
-      val reqInit = new RequestInit {
-        method = HttpMethod.DELETE
-        this.headers = httpHeaders
-      }
+  //     val reqInit = new RequestInit {
+  //       method = HttpMethod.DELETE
+  //       this.headers = httpHeaders
+  //     }
 
-      val url = s"http://localhost:8080/patients/delete/$unitNumber"
+  //     val url = s"http://localhost:8080/patients/delete/$unitNumber"
 
-      org.scalajs.dom.experimental.Fetch.fetch(url, reqInit)
-        .toFuture
-        .map(_.ok)
-        .recover { case ex =>
-          println(s"Failed to delete patient: ${ex.getMessage}")
-          false
-        }
-    }
+  //     org.scalajs.dom.experimental.Fetch.fetch(url, reqInit)
+  //       .toFuture
+  //       .map(_.ok)
+  //       .recover { case ex =>
+  //         println(s"Failed to delete patient: ${ex.getMessage}")
+  //         false
+  //       }
+  //   }
