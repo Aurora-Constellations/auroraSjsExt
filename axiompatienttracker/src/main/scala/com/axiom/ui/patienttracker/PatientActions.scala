@@ -8,6 +8,10 @@ import com.raquo.laminar.api.L._
 import org.scalajs.dom
 import java.time.{LocalDate, LocalDateTime}
 import com.axiom.model.shared.dto.Patient
+import scala.util.{Success, Failure}
+import scala.concurrent.ExecutionContext.Implicits.global
+
+
 
 object PatientActions:
 
@@ -28,6 +32,13 @@ object PatientActions:
             h2("Create New Patient"),
             form(
               onSubmit.preventDefault --> { _ =>
+                // 🔧 Fix for parsing admit date safely
+                val admitDateRaw = state.admitDateVar.now()
+                val formattedAdmitDate =
+                  if (admitDateRaw.length == 16) s"$admitDateRaw:00" else admitDateRaw
+                val admitDateOpt = Some(LocalDateTime.parse(formattedAdmitDate))
+                println(s"Formatted Admit Date: $formattedAdmitDate")
+
                 val patient = Patient(
                   accountNumber = state.accountNumberVar.now(),
                   unitNumber = state.unitNumberVar.now(),
@@ -60,8 +71,23 @@ object PatientActions:
                   collab2 = None,
                   auroraFile = None
                 )
-                ModelFetch.createPatient(patient)
-                onClose()
+                ModelFetch.createPatient(patient).onComplete {
+                  case Success(_) =>
+                    println("Patient created successfully, reloading tracker")
+                    val container = dom.document.getElementById("app")
+                    if (container != null) {
+                      container.innerHTML = ""
+                      val tracker = new PatientTracker()
+                      ModelFetch.fetchPatients.foreach { patients =>
+                        tracker.populate(patients)
+                        render(container, tracker.renderHtml)
+                      }
+                    }
+                    onClose()
+                    
+                  case Failure(ex) =>
+                    println(s"Failed to create patient: ${ex.getMessage}")
+                }
               },
               Seq(
                 "First Name" -> state.firstNameVar,

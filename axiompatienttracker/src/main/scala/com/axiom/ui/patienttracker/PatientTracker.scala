@@ -198,14 +198,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
               }
       
             ),
-            // table(
-            //   cls := "header-table",
-            //   onKeyDown --> tableKeyboardHandler,//prevents default scrolling behaviour from various key strokes
-            //   thead(
-            //     children <-- colHeadersVar.signal.map{headerRow(_) }
-            //   ),
-            //   )
-            
             div(
               cls := "table-scroll-body",
               table(
@@ -221,7 +213,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
               )
             ),
               PatientActions.createPatientForm(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
-
 
           )
 

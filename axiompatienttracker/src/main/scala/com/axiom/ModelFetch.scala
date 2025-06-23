@@ -6,21 +6,11 @@ import com.axiom.TableColProperties
 import io.laminext.fetch._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-
+import zio.json._
+import scala.collection.mutable
 import org.scalajs.dom.AbortController
-import com.axiom.ShapelessFieldNameExtractor.fieldNames
 
-import com.raquo.airstream.ownership.OneTimeOwner
-  
 object ModelFetch :
-  import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-  import zio.json._
-
-  import io.laminext.fetch._
-  import scala.concurrent.{Future,Promise}
-  import org.scalajs.dom.AbortController
-  import scala.collection.mutable
 
   val abortController = new AbortController()
 
@@ -77,21 +67,20 @@ object ModelFetch :
     import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
     import scala.scalajs.js
     import scala.scalajs.js.Thenable.Implicits._
-    import zio.json._
+    
 
     val jsonBody = patient.toJson
-
+    println(" Sending Patient JSON:")
+    println(jsonBody)
     // Helper to validate date fields
-      def validateField[T](label: String, value: Option[T]): Boolean = {
-        value match {
-          case Some(v) =>
-            println(s"$label: $v")
-            true
-          case None =>
-            println(s"Invalid or missing $label!")
-            false
-        }
-      }
+    def validateField[T](label: String, value: Option[T]): Boolean = 
+      value match 
+        case Some(v) =>
+          println(s"$label: $v")
+          true
+        case None =>
+          println(s"Invalid or missing $label!")
+          false
 
     // Validate dates before sending
     val isValid = validateField("Date of Birth", patient.dob) &&
@@ -111,9 +100,13 @@ object ModelFetch :
     }
 
     // Execute POST request and decode JSON
-    org.scalajs.dom.experimental.Fetch
+    dom.experimental.Fetch
       .fetch("http://localhost:8080/patients", reqInit)
       .toFuture
+      .map { response =>
+        println(s"Server responded with status: ${response.status}")
+        response
+      }
       .flatMap(_.text().toFuture)
       .map(_.fromJson[Patient].toOption)
       .recover {
@@ -128,7 +121,6 @@ object ModelFetch :
       import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
       import scala.scalajs.js
       import scala.scalajs.js.Thenable.Implicits._
-      import zio.json._
 
       val jsonBody = patient.toJson
 
@@ -143,13 +135,12 @@ object ModelFetch :
 
       val url = s"http://localhost:8080/patients/update/$unitNumber"
 
-        dom.experimental.Fetch.fetch(url, reqInit)
-          .toFuture
-          .flatMap(_.text().toFuture.map(_.fromJson[Patient].toOption))
-          .recover { case ex =>
-            println(s"Update failed: ${ex.getMessage}")
-            None
-          }
+      dom.experimental.Fetch.fetch(url, reqInit)
+        .toFuture
+        .flatMap(_.text().toFuture.map(_.fromJson[Patient].toOption))
+        .recover { case ex =>
+          println(s"Update failed: ${ex.getMessage}")
+          None          }
       }
       // API call to delete the patient details 
   // def deletePatient(unitNumber: String): Future[Boolean] = {
