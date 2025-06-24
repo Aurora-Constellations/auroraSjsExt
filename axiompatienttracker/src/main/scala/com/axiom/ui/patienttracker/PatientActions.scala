@@ -123,3 +123,18 @@ object PatientActions:
       }
     )
   
+  //Helper function to render "View Details" and "Edit" actions on the patient tracker
+
+  def renderActionButtons(unitNumber: String): HtmlElement =
+  td(
+    cls := "details-column",
+    button(
+      "View Details", 
+      marginRight := "8px", 
+      onClick --> { _ => 
+        renderPatientDetailsPage(unitNumber) }),
+    button(
+      "Edit", 
+      onClick --> { _ => 
+        renderPatientDetailsPage(unitNumber, editable = true) })
+  )

@@ -13,7 +13,8 @@ import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
-import com.axiom.ui.patienttracker.PatientStatusIcons.renderStatusIcon
+import com.axiom.ui.patienttracker.PatientStatusIcons.renderStatusIcon 
+
 
 
 import com.raquo.airstream.ownership.OneTimeOwner
@@ -218,46 +219,66 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           )
 
 
-  def row(cols:Row)  = {
+  // def row(cols:Row)  = {
 
+  //   val showConfirm = Var(false)
+  //   tr(
+      
+  //     idAttr := s"row-${cols.head._2.row}",
+      
+  //   backgroundColor <-- selectedRowVar.signal.map{ selRow => 
+  //       selRow match
+  //       case Some(row) if row == cols.head._2.row => "#32a852" //shade of green
+  //         case _ => "black"
+  //     },
+  //     onDblClick --> { _ =>
+  //       val unitNumber = cols(1)._3.text
+  //        // Assuming the second column contains the unit number
+  //       println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
+  //       renderPatientDetailsPage(unitNumber)
+  //     },
+  //     cols.map { c => this.tableCell(c._2) },
+      
+  //     td(
+  //       cls := "details-column",
+  //       button(
+  //         "View Details",
+  //         marginRight := "8px",
+  //         onClick --> { _ =>
+  //           println(s"Details clicked for row: ${cols(1)._3.text}")
+  //           val unitNumber = cols(1)._3.text // Assuming the second column contains the unit number
+  //           renderPatientDetailsPage(unitNumber)
+  //         }
+  //       ),
+  //       button(
+  //         "Edit",
+  //          onClick --> { _ =>
+  //             val unitNumber = cols(1)._3.text
+  //             renderPatientDetailsPage(unitNumber, editable = true)
+  //           }
+  //         )
+  //       )
+  //       )
+  // }
+  def row(cols: Row): HtmlElement = {
     val showConfirm = Var(false)
+    val rowIdx = cols.head._2.row //Extracted Once for consistennt row ID reference
+    val unitNumber = cols(1)._3.text //Making it globally available
+
     tr(
-      
-      idAttr := s"row-${cols.head._2.row}",
-      
-    backgroundColor <-- selectedRowVar.signal.map{ selRow => 
-        selRow match
-        case Some(row) if row == cols.head._2.row => "#32a852" //shade of green
-          case _ => "black"
+      idAttr := s"row-$rowIdx",
+      backgroundColor <-- selectedRowVar.signal.map {
+        case Some(row) if row == rowIdx => "#32a852" //shade of green
+        case _ => "black"
       },
-      onDblClick --> { _ =>
-        val unitNumber = cols(1)._3.text
-         // Assuming the second column contains the unit number
+      onDblClick --> { _ => 
+        // Assuming the second column contains the unit number
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
-        renderPatientDetailsPage(unitNumber)
+        renderPatientDetailsPage(unitNumber) 
       },
-      cols.map { c => this.tableCell(c._2) },
-      
-      td(
-        cls := "details-column",
-        button(
-          "View Details",
-          marginRight := "8px",
-          onClick --> { _ =>
-            println(s"Details clicked for row: ${cols(1)._3.text}")
-            val unitNumber = cols(1)._3.text // Assuming the second column contains the unit number
-            renderPatientDetailsPage(unitNumber)
-          }
-        ),
-        button(
-          "Edit",
-           onClick --> { _ =>
-              val unitNumber = cols(1)._3.text
-              renderPatientDetailsPage(unitNumber, editable = true)
-            }
-          )
-        )
-        )
+      cols.map(c => tableCell(c._2)),
+      PatientActions.renderActionButtons(unitNumber) //Helper Function to render the View Details an  Edit Buttons
+    )
   }
 
   def tableCell(colRow: ColRow): HtmlElement =
