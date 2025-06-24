@@ -13,6 +13,7 @@ import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
+import com.axiom.ui.patienttracker.PatientStatusIcons.renderStatusIcon
 
 
 import com.raquo.airstream.ownership.OneTimeOwner
@@ -266,57 +267,14 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
       data(colRow)
         .map { gcdTuple =>
-          if (colRow.col == 0) {
-            if (gcdTuple._3.text == "0") then
-              img(
-                src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
-                alt := "Stable",
-                width := "20px",
-                height := "20px"
-              )
-            else if (gcdTuple._3.text == "1") then // Urgency
-              img(
-                src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png",
-                alt := "Urgency",
-                width := "20px",
-                height := "20px"
-              )
-            else if (gcdTuple._3.text == "2") then // Draft
-              img(
-                src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png",
-                alt := "Draft",
-                width := "20px",
-                height := "20px"
-              )
-            else if (gcdTuple._3.text == "12") then // Urgency + Draft
-              div(
-                cls := "status-column",
-                img(
-                  src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png",
-                  alt := "Urgency",
-                  width := "20px",
-                  height := "20px"
-                ),
-                img(
-                  src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png",
-                  alt := "Draft",
-                  width := "20px",
-                  height := "20px"
-                )
-              )
-            else
-              img(
-                src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
-                alt := "Stable",
-                width := "20px",
-                height := "20px"
-              )
-          } else
+           if (colRow.col == 0)
+              renderStatusIcon(gcdTuple._3.text) // Helper Function to render the status Icons
+           else
             span(gcdTuple._3.text)
         }
-        .getOrElse("---")
-    )
-
+      .getOrElse("---")
+  )
+          
   /**
     * event handler at the table later to prevent default behaviour from key actions
     * that can cause the web page to scroll
