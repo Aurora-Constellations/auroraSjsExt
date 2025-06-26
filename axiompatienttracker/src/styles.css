@@ -84,7 +84,8 @@ body {
 /* ===== Table container & scrolling ===== */
 .table-container {
   width: 100%;
-  /* overflow-x: auto;       horizontal scroll on small screens */
+  overflow-x: auto;       /*horizontal scroll on small screens*/
+  height: 100vh; 
   margin-top: 1rem;
   background: var(--bg-container);
   border-radius: var(--border-radius);
@@ -113,8 +114,11 @@ thead th {
 }
 
 .table-scroll-body {
-  max-height: 70vh;
+  max-height: 90vh;
+  
+  flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 /* thead th {
@@ -375,11 +379,17 @@ td img {
     margin-bottom: 0.5rem;
   }
   /* Table styling for smaller screens */
-  .table-container {
+  /* .table-container {
     margin-top: 1rem;
     overflow-x: auto; /* Horizontal scroll for tables */
-  }
+  /* } */ */
 
+  .table-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* overflow: hidden; */
+}
   table {
     min-width: 600px; /* Make table narrower on small screens */
   }
@@ -569,8 +579,5 @@ td img {
   border-collapse: collapse;
   table-layout: fixed;
 }
-.table-scroll-body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
+
 

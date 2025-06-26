@@ -14,8 +14,7 @@ import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
 import com.axiom.ui.patienttracker.PatientStatusIcons.renderStatusIcon 
-
-
+import com.axiom.ui.patienttracker.KeyboardNavHelper
 
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
@@ -218,48 +217,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
           )
 
-
-  // def row(cols:Row)  = {
-
-  //   val showConfirm = Var(false)
-  //   tr(
-      
-  //     idAttr := s"row-${cols.head._2.row}",
-      
-  //   backgroundColor <-- selectedRowVar.signal.map{ selRow => 
-  //       selRow match
-  //       case Some(row) if row == cols.head._2.row => "#32a852" //shade of green
-  //         case _ => "black"
-  //     },
-  //     onDblClick --> { _ =>
-  //       val unitNumber = cols(1)._3.text
-  //        // Assuming the second column contains the unit number
-  //       println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
-  //       renderPatientDetailsPage(unitNumber)
-  //     },
-  //     cols.map { c => this.tableCell(c._2) },
-      
-  //     td(
-  //       cls := "details-column",
-  //       button(
-  //         "View Details",
-  //         marginRight := "8px",
-  //         onClick --> { _ =>
-  //           println(s"Details clicked for row: ${cols(1)._3.text}")
-  //           val unitNumber = cols(1)._3.text // Assuming the second column contains the unit number
-  //           renderPatientDetailsPage(unitNumber)
-  //         }
-  //       ),
-  //       button(
-  //         "Edit",
-  //          onClick --> { _ =>
-  //             val unitNumber = cols(1)._3.text
-  //             renderPatientDetailsPage(unitNumber, editable = true)
-  //           }
-  //         )
-  //       )
-  //       )
-  // }
   def row(cols: Row): HtmlElement = {
     val showConfirm = Var(false)
     val rowIdx = cols.head._2.row //Extracted Once for consistennt row ID reference
@@ -309,61 +266,20 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
     
 
-  // Variables to track long key press
-  private var keyPressInterval: Option[js.timers.SetIntervalHandle] = None
-  private var activeKey: Option[Int] = None // Track the currently pressed key
+// Key press state
+  val navHelper = new KeyboardNavHelper(moveAndScroll)
 
-  def keyboardHandler(e: KeyboardEvent): Unit = {
-    val selectedCellOpt = selectedCellVar.now()
-
-    def conditionalUpdate(vector: ColRow): Unit =
-      selectedCellOpt.foreach { currentColRow =>
-        val newColRow = currentColRow.add(vector)
-        if (inBounds(newColRow)) {
-          selectedCellVar.set(Some(newColRow))
-          scrollToSelectedRow(Some(newColRow.row)) // Ensure scrolling happens
-        }
-      }
-
-    e.keyCode match {
-      case 40 => // Down arrow
-        startKeyPressHandler(e.keyCode, () => moveAndScroll(1)) // Move down
-      case 38 => // Up arrow
-        startKeyPressHandler(e.keyCode, () => moveAndScroll(-1)) // Move up
-      case _ =>
-    }
-  }
-
-  // Start handling long key press
-  private def startKeyPressHandler(keyCode: Int, action: () => Unit): Unit = {
-    // If the key is already active, do nothing
-    if (activeKey.contains(keyCode)) return
-
-    // Mark the key as active
-    activeKey = Some(keyCode)
-
-    // Execute the action immediately
-    action()
-
-    // Clear any existing interval
-    keyPressInterval.foreach(js.timers.clearInterval)
-
-    // Start a new interval for continuous execution
-    keyPressInterval = Some(js.timers.setInterval(100)(action()))
-  }
-
-  // Stop handling long key press
-  def stopKeyPressHandler(e: KeyboardEvent): Unit = {
-    // Only stop if the released key matches the active key
-    if (activeKey.contains(e.keyCode)) {
-      keyPressInterval.foreach(js.timers.clearInterval)
-      keyPressInterval = None
-      activeKey = None
-    }
-  }
-
+  def keyboardHandler(e: KeyboardEvent): 
+    Unit = navHelper.keyboardHandler(e)
+  def startKeyPressHandler(keyCode: Int, action: () => Unit): Unit = 
+    navHelper.startKeyPressHandler(keyCode, action)
+  def stopKeyPressHandler(e: KeyboardEvent): Unit = 
+    navHelper.stopKeyPressHandler(e)
+  
   // Add event listeners for keyup to stop the interval
   dom.window.addEventListener("keyup", (e: KeyboardEvent) => stopKeyPressHandler(e))
+
+
 
   // Move the selected row and scroll the page
   private def moveAndScroll(step: Int): Unit = {
