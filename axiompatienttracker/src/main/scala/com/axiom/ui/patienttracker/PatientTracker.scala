@@ -20,22 +20,18 @@ import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import io.bullet.borer.derivation.key
 import scala.concurrent.ExecutionContext.Implicits.global
-
+import com.axiom.ui.patienttracker.SearchBar
 
 type PatientList = CCRowList[Patient]
-
 
 trait RenderHtml :
   def renderHtml:Element
 
 case class CellData(text:String,color:String) 
 
-
 case class PatientGridData(grid: PatientTracker,colrow:ColRow, data:CellData) 
     extends GridDataT[PatientTracker,Patient,CellData](grid,colrow,data) with RenderHtml :
   def renderHtml = td(data.text,backgroundColor:=data.color)
-
-
 
 
 class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
@@ -45,7 +41,9 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   val selectedRowVar:Var[Option[Int]] = Var(None)
   val searchQueryVar: Var[String] = Var("")
   val numColumnsToShow = 10
-
+  searchQueryVar.signal.foreach { _ =>
+      searchFilterFunction()
+    }
   
   // Flag For create patient form
   val showCreatePatientForm = Var(false)
@@ -86,8 +84,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   auroraFileVar: Var[String] = Var("")
 )
   lazy val createPatientFormState = FormState()
-
-
 
   def getSpecificCellData(columnName: String, p: Patient): CellData = {
     // Get original headers and cell data
@@ -155,7 +151,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       case None => // Do nothing
     }
   }
-
   
   def renderHtml: L.Element =
     def headerRow(s:List[String]) = 
@@ -167,55 +162,25 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       )
 
     div(
-      cls := "table-container",  // Wrapper for both search bar and table
+       cls := "table-container", // Wrapper for both search bar and table
+      // Modularized SearchBar
+      SearchBar(searchQueryVar, openCreatePatientModal),
       div(
-        cls := "search-bar",
-        // First span with the "Patient list" title
-        span(cls := "patient-title", "Patient list"),  // First title span
-        // Search bar
-        label("Search: "),
-        marginBottom := "10px",
-        input(
-          typ := "text",
-          placeholder := "Search patients here...",
-          inContext { thisNode =>
-            onInput.mapTo(thisNode.ref.value) --> searchQueryVar
-          }
-
-
-        ),
-        button(
-            "Create Patient",
-            cls := "create-patient-button",
-            onClick --> { _ => 
-            println("Create Patient button clicked")
-            openCreatePatientModal() }, 
-        ),
-              // Add a listener to print the input value
-              onMountCallback { _ =>
-                searchQueryVar.signal.foreach { query =>
-                  searchFilterFunction()  // Example usage of the filter function
-                }
-              }
-      
-            ),
-            div(
-              cls := "table-scroll-body",
-              table(
-                onKeyDown --> tableKeyboardHandler,
-                thead(
-                children <-- colHeadersVar.signal.map{headerRow(_) }
-              ),
-                tbody(
-                  children <-- showGcdVar.signal.map { rowList =>
-                    rowList.map(tup => row(tup))
-                  }
-                )
-              )
-            ),
-              PatientActions.createPatientForm(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
-
+        cls := "table-scroll-body",
+        table(
+          onKeyDown --> tableKeyboardHandler,
+          thead(
+            children <-- colHeadersVar.signal.map { headerRow(_) }
+          ),
+          tbody(
+            children <-- showGcdVar.signal.map { rowList =>
+              rowList.map(tup => row(tup))
+            }
           )
+        )
+      ),
+      PatientActions.createPatientForm(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
+    )
 
   def row(cols: Row): HtmlElement = {
     val showConfirm = Var(false)
@@ -234,7 +199,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         renderPatientDetailsPage(unitNumber) 
       },
       cols.map(c => tableCell(c._2)),
-      PatientActions.renderActionButtons(unitNumber) //Helper Function to render the View Details an  Edit Buttons
+      PatientActions.renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
     )
   }
 
@@ -264,7 +229,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       case 40 | 38 => e.preventDefault() // Prevent default scrolling behavior for up/down arrows
       case _  => ()  
 
-    
 
 // Key press state
   val navHelper = new KeyboardNavHelper(moveAndScroll)
@@ -278,8 +242,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   
   // Add event listeners for keyup to stop the interval
   dom.window.addEventListener("keyup", (e: KeyboardEvent) => stopKeyPressHandler(e))
-
-
 
   // Move the selected row and scroll the page
   private def moveAndScroll(step: Int): Unit = {

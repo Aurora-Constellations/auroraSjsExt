@@ -115,18 +115,10 @@ thead th {
 
 .table-scroll-body {
   max-height: 90vh;
-  
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
 }
-
-/* thead th {
-  position: sticky;
-  top: 0;
-  background: var(--bg-header);
-  z-index: 5;
-} */
 
 tbody tr {
   transition: background var(--transition);
@@ -542,42 +534,11 @@ td img {
   align-items: center;
   justify-content: center;
 }
-/*Styling for delete button*/
-.icon-button { /*Trash icon button*/
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  display: flex;
-  align-items: center;
-}
-.delete-icon {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  margin-left: auto;
-  margin-right: 0;
-  display: block;
-}
 
-.details-column {
-  display: flex;
-  justify-content: center;  
-  gap: 0.5rem;                 
-  padding-right: 0.25rem;        
-  align-items: center;
-}
-.sticky-header-container {
-  position: sticky;
-  top: 0;
-  background: var(--bg-header);
-  z-index: 15;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-.header-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
+
+
+
+
+
 
 
