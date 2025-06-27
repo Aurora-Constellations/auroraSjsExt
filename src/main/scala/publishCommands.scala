@@ -11,7 +11,7 @@ import cats.syntax.all.toShow
 import docere.sjsast.toShow
 import cats.syntax.show.toShow
 import com.axiom.MergePCM.MergePCM.*
-import com.axiom.AuroraFile.{handleCreate, handleOpen}
+import com.axiom.WebviewMessageHandler.handleWebviewMessage
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
@@ -22,7 +22,7 @@ import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNarrativesComma
 import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNgosCommandMod.hideNGOs
 import typings.vscode.mod.TextEditor
 import typings.auroraLangium.cliMod.parse
-
+import com.axiom.messaging.*
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -109,33 +109,9 @@ object PublishCommands:
     
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage { (message: Any) =>
-      // Since we're using a general 'Any' type, we can cast to a js.Dynamic safely here
-      val msg = message.asInstanceOf[js.Dynamic]
-      val command = msg.command.asInstanceOf[String]
-      val response = msg.filename.asInstanceOf[String]
-
-      // Handle the message based on command
-      command match {
-        case "createAuroraFile" =>
-          vscode.window.showInformationMessage(s"Creating file: $response")
-          // Call the function to create the file
-          handleCreate(response)
-        
-        case "addedToDB" =>
-          vscode.window.showInformationMessage(s"Added to Database: $response")
-
-        case "openAuroraFile" =>
-          vscode.window.showInformationMessage(s"Opening file: $response")
-          // Call the function to open the file
-          handleOpen(response)
-
-        case "updatedNarratives" =>
-          vscode.window.showInformationMessage(s"$response")
-
-        case other =>
-          vscode.window.showWarningMessage(s"Unknown command: $other")
-      }
+      handleWebviewMessage(message.asInstanceOf[js.Dynamic])
     }
+
 
     // Handle disposal
     panel.onDidDispose((_: Unit) => { // Changed the lambda to accept a Unit argument
@@ -178,11 +154,12 @@ object PublishCommands:
       patientsPanel match {
         case Some(p) =>
           p.reveal(null, preserveFocus = true)
-          p.webview.postMessage(js.Dynamic.literal(
-            command = "updateNarratives",
+          val req = Request(MessagingCommands.UpdateNarratives, UpdateNarratives(
+            source = "vscode-extension",
             unitNumber = unitNumber,
             flag = flag
           ))
+          p.webview.postMessage(req.data.toJsObject(req.command))
           vscode.window.showInformationMessage(s"Message sent to Patient Tracker: $unitNumber")
         case None =>
           vscode.window.showWarningMessage("Patient Panel not found, message will not be sent.")
