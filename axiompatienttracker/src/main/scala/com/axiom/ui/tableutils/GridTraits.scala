@@ -61,4 +61,3 @@ trait GridDataT[G <: GridT[CC,D],CC,D](grid:G,colrow:ColRow,data:D)
   
 
 
-

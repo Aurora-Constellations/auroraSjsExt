@@ -4,26 +4,21 @@ import org.scalajs.dom
 import com.axiom.model.shared.dto.Patient
 import com.axiom.TableColProperties
 import io.laminext.fetch._
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import zio.json._
+import scala.collection.mutable
 import org.scalajs.dom.AbortController
-import com.axiom.ShapelessFieldNameExtractor.fieldNames
 
-import com.raquo.airstream.ownership.OneTimeOwner
-  
 object ModelFetch :
-  import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-  import zio.json._
-
-  import io.laminext.fetch._
-  import scala.concurrent.{Future,Promise}
-  import org.scalajs.dom.AbortController
-  import scala.collection.mutable
 
   val abortController = new AbortController()
 
-  val headers =  
-    val l = mutable.IndexedSeq(ShapelessFieldNameExtractor.fieldNames[Patient]*) //(0) = "hi"
+  val columnHeaders =  
+    val l = mutable.IndexedSeq(ShapelessFieldNameExtractor.fieldNames[Patient]*)
     l(0) = "*column 0*" 
     l.toList
+
   
   def columns(p:Patient) =  
     val c = mutable.IndexedSeq(TableColProperties.derived[Patient].element(p)*)
@@ -67,3 +62,106 @@ object ModelFetch :
           println(s"Error adding narrative flag for unit number $unitNumber: ${ex.getMessage}")
           None
       }
+
+  def createPatient(patient: Patient): Future[Option[Patient]] = {
+    import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
+    import scala.scalajs.js
+    import scala.scalajs.js.Thenable.Implicits._
+    
+
+    val jsonBody = patient.toJson
+    println(" Sending Patient JSON:")
+    println(jsonBody)
+    // Helper to validate date fields
+    def validateField[T](label: String, value: Option[T]): Boolean = 
+      value match 
+        case Some(v) =>
+          println(s"$label: $v")
+          true
+        case None =>
+          println(s"Invalid or missing $label!")
+          false
+
+    // Validate dates before sending
+    val isValid = validateField("Date of Birth", patient.dob) &&
+                  validateField("Admission Date", patient.admitDate)
+
+      if (!isValid) return Future.successful(None)
+
+    // Set headers
+    val httpHeaders = new DomHeaders()
+    httpHeaders.set("Content-Type", "application/json")
+
+    // Prepare request
+    val reqInit = new RequestInit {
+      method = HttpMethod.POST
+      body = jsonBody
+      headers = httpHeaders
+    }
+
+    // Execute POST request and decode JSON
+    dom.experimental.Fetch
+      .fetch("http://localhost:8080/patients", reqInit)
+      .toFuture
+      .map { response =>
+        println(s"Server responded with status: ${response.status}")
+        response
+      }
+      .flatMap(_.text().toFuture)
+      .map(_.fromJson[Patient].toOption)
+      .recover {
+        case ex =>
+          println("Exception while creating patient:")
+          println(s"Message: ${ex.getMessage}")
+          ex.printStackTrace()
+          None
+      }
+  }
+  def updatePatientDetails(unitNumber: String, patient: Patient): Future[Option[Patient]] = {
+      import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
+      import scala.scalajs.js
+      import scala.scalajs.js.Thenable.Implicits._
+
+      val jsonBody = patient.toJson
+
+      val customHeaders = new DomHeaders()
+        customHeaders.set("Content-Type", "application/json")
+
+      val reqInit = new RequestInit {
+          method = HttpMethod.PUT
+          body = jsonBody
+          this.headers = customHeaders
+        }
+
+      val url = s"http://localhost:8080/patients/update/$unitNumber"
+
+      dom.experimental.Fetch.fetch(url, reqInit)
+        .toFuture
+        .flatMap(_.text().toFuture.map(_.fromJson[Patient].toOption))
+        .recover { case ex =>
+          println(s"Update failed: ${ex.getMessage}")
+          None          }
+      }
+      // API call to delete the patient details 
+  // def deletePatient(unitNumber: String): Future[Boolean] = {
+  //     import org.scalajs.dom.experimental.{HttpMethod, RequestInit, Headers => DomHeaders}
+  //     import scala.scalajs.js.Thenable.Implicits._
+
+  //     val httpHeaders = new DomHeaders()
+  //     httpHeaders.set("Content-Type", "application/json")
+
+  //     val reqInit = new RequestInit {
+  //       method = HttpMethod.DELETE
+  //       this.headers = httpHeaders
+  //     }
+
+  //     val url = s"http://localhost:8080/patients/delete/$unitNumber"
+
+  //     org.scalajs.dom.experimental.Fetch.fetch(url, reqInit)
+  //       .toFuture
+  //       .map(_.ok)
+  //       .recover { case ex =>
+  //         println(s"Failed to delete patient: ${ex.getMessage}")
+  //         false
+  //       }
+  //   }

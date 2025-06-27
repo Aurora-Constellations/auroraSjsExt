@@ -84,7 +84,8 @@ body {
 /* ===== Table container & scrolling ===== */
 .table-container {
   width: 100%;
-  /* overflow-x: auto;       horizontal scroll on small screens */
+  overflow-x: auto;       /*horizontal scroll on small screens*/
+  height: 100vh; 
   margin-top: 1rem;
   background: var(--bg-container);
   border-radius: var(--border-radius);
@@ -101,7 +102,7 @@ table {
 
 thead th {
   position: sticky;
-  top: 3.5rem;           /* height of your sticky bar + padding */
+  top: 0;           /* height of your sticky bar + padding */
   background: var(--bg-header);
   color: var(--text-primary);
   padding: var(--padding);
@@ -110,6 +111,13 @@ thead th {
   font-size: 0.9rem;
   border-bottom: 1px solid #444;
   z-index: 5;
+}
+
+.table-scroll-body {
+  max-height: 90vh;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 tbody tr {
@@ -177,6 +185,27 @@ td img {
 .details-column button:hover {
   background: #4f5bff;
 }
+
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.back-button {
+  background-color: #f44336;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 
 /* ===== Patient Details ===== */
 .patient-details-page {
@@ -342,19 +371,21 @@ td img {
     margin-bottom: 0.5rem;
   }
   /* Table styling for smaller screens */
-  .table-container {
+  /* .table-container {
     margin-top: 1rem;
     overflow-x: auto; /* Horizontal scroll for tables */
-  }
+  /* } */ */
 
+  .table-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* overflow: hidden; */
+}
   table {
     min-width: 600px; /* Make table narrower on small screens */
   }
 
-  thead th {
-    padding: 0.75rem;
-    font-size: 0.8rem;
-  }
 
   td {
     padding: 0.5rem;
@@ -391,7 +422,123 @@ td img {
   .details-column button {
     font-size: 0.75rem;
     padding: 0.3rem 0.6rem;
+    margin-right: 8px;
   }
 }
+
+/* ===== Create Patient Modal ===== */
+
+.create-patient-modal-layout{
+    position : fixed;
+    top : 0 ;
+    left : 0;
+    width : 100vw;
+    height : 100vh;
+    background-Color : rgba(0, 0, 0, 0.8);
+    z-index : 9999;
+    display : flex;
+    align-items : center;
+    justify-content : center;
+}
+.create-patient-modal {
+  background-color: #1e1e1e;
+  color: var(--text-primary);
+  padding: 32px;
+  border-radius: var(--border-radius);
+  min-width: 480px;
+  font-size: 16px;
+  box-shadow: 0 0 12px rgba(255,255,255,0.1);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.create-patient-modal h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--accent);
+  text-align: center;
+}
+
+.create-patient-modal form > div {
+  margin-bottom: 12px;
+}
+
+.create-patient-modal label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.create-patient-modal input[type="text"] {
+  background-color: #2d2d2d;
+  color: white;
+  border: 1px solid #444;
+  padding: 8px;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.create-patient-modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.create-patient-modal-buttons button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+}
+
+.create-patient-modal-buttons .submit-btn {
+  background-color: var(--accent);
+  color: white;
+}
+
+.create-patient-modal-buttons .cancel-btn {
+  background-color: #444;
+  color: white;
+}
+
+
+.create-patient-button {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: background var(--transition);
+}
+
+.create-patient-button:hover {
+  background-color: #4f5bff;
+}
+
+.create-patient-modal-overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+
+
+
 
 

@@ -5,8 +5,23 @@ import org.scalajs.dom
 import com.axiom.ModelFetch
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
+import com.axiom.model.shared.dto.Patient
+import java.time.{LocalDate, LocalDateTime}
 
-def renderPatientDetailsPage(unitNumber: String): Unit = {
+//Added case class to tag editable values
+case class PatientFormState (
+    firstName: Var[String],
+    lastName: Var[String],
+    dob: Var[String],
+    sex: Var[String],
+    hcn: Var[String],
+    family: Var[String],
+    famPriv: Var[String],
+    service: Var[String],
+    attending: Var[String],
+    auroraFile: Var[String]
+)
+def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Unit = {
   println(s"Fetching details for unit number: $unitNumber")
   val container = dom.document.getElementById("app")
   if (container != null) {
@@ -51,6 +66,20 @@ def renderPatientDetailsPage(unitNumber: String): Unit = {
         "Aurora File" -> patient.auroraFile.getOrElse("")
       ).filterNot { case (key, value) => value.isEmpty && key != "Aurora File" }
 
+      //The fields which can be edited
+      val formState = PatientFormState(
+      firstName = Var(patient.firstName),
+      lastName = Var(patient.lastName),
+      dob = Var(patient.dob.map(_.toString).getOrElse("")),
+      sex = Var(patient.sex),
+      hcn = Var(patient.hcn.getOrElse("")),
+      family = Var(patient.family.getOrElse("")),
+      famPriv = Var(patient.famPriv.getOrElse("")),
+      service = Var(patient.service.getOrElse("")),
+      attending = Var(patient.attending.getOrElse("")),
+      auroraFile = Var(patient.auroraFile.getOrElse(""))
+      )
+
       val detailsPage = div(
         cls := "patient-details-page",
         h1("Patient Details"),
@@ -70,15 +99,73 @@ def renderPatientDetailsPage(unitNumber: String): Unit = {
             cls := "patient-info-box",
             div(
               cls := "patient-info",
-                renderDetails("details-section", "Personal Information", details, Set("Account Number", "Unit Number", "Last Name", "First Name", "Gender", "Date of Birth", "Health Card Number")),
-                renderDetails("details-section", "Admission Details", details, Set("Admit Date", "Floor", "Room", "Bed", "MRP", "Admitting Physician")),
-                renderDetails("details-section", "Contact Information", details, Set("Address 1", "Address 2", "City", "Province", "Postal Code", "Home Phone Number", "Work Phone Number")),
-                renderDetails("details-section", "Other Details", details, Set("Hospital", "Flag", "Service", "OHIP", "Attending", "Collaborator 1", "Collaborator 2", "Aurora File", "Family", "Family Privacy"))
+                renderDetails("details-section", "Personal Information", details, Set("Account Number", "Unit Number", "Last Name", "First Name", "Gender", "Date of Birth", "Health Card Number"),editable,Some(formState)),
+                renderDetails("details-section", "Admission Details", details, Set("Admit Date", "Floor", "Room", "Bed", "MRP", "Admitting Physician"),editable,Some(formState)),
+                renderDetails("details-section", "Contact Information", details, Set("Address 1", "Address 2", "City", "Province", "Postal Code", "Home Phone Number", "Work Phone Number"),editable,Some(formState)),
+                renderDetails("details-section", "Other Details", details, Set("Hospital", "Flag", "Service", "OHIP", "Attending", "Collaborator 1", "Collaborator 2", "Aurora File", "Family", "Family Privacy"),editable,Some(formState))
             )
           )
         ),
         div(
-          cls := "back-to-list",
+          // adding save changes button only if the editable flag is true
+          if (editable) { 
+            button(
+              "Save Changes",
+              cls := "save-button",
+              onClick --> { _ =>
+                println("Save button clicked")
+
+                //a new Patient object is created from form values
+                val updatedPatient = Patient(
+                  accountNumber = patient.accountNumber,
+                  unitNumber = unitNumber,
+                  firstName = formState.firstName.now(),
+                  lastName = formState.lastName.now(),
+                  sex = formState.sex.now(),
+                  dob = Some(LocalDate.parse(formState.dob.now())),
+                  hcn = Some(formState.hcn.now()),
+                  family = Some(formState.family.now()),
+                  famPriv = Some(formState.famPriv.now()),
+                  service = Some(formState.service.now()),
+                  attending = Some(formState.attending.now()),
+                  auroraFile = Some(formState.auroraFile.now()),
+                  admitDate = patient.admitDate,
+                  floor = patient.floor,
+                  room = patient.room,
+                  bed = patient.bed,
+                  mrp = patient.mrp,
+                  admittingPhys = patient.admittingPhys,
+                  hosp = patient.hosp,
+                  flag = patient.flag,
+                  address1 = patient.address1,
+                  address2 = patient.address2,
+                  city = patient.city,
+                  province = patient.province,
+                  postalCode = patient.postalCode,
+                  homePhoneNumber = patient.homePhoneNumber,
+                  workPhoneNumber = patient.workPhoneNumber,
+                  ohip = patient.ohip,
+                  collab1 = patient.collab1,
+                  collab2 = patient.collab2
+                )
+
+                // Call the backend update API by passing the updated values
+                ModelFetch.updatePatientDetails(unitNumber, updatedPatient).foreach {
+                  case Some(updated) =>
+                    println(s"Patient updated successfully: ${updated.unitNumber}")
+                    val tracker = new PatientTracker()
+                    ModelFetch.fetchPatients.foreach { patients =>
+                      tracker.populate(patients)
+                    }
+                    container.innerHTML = ""
+                    render(container, tracker.renderHtml)
+                  case None =>
+                    println("Failed to update patient.")
+                  }
+              }
+            )
+          }else emptyNode ,
+          
           button(
             "Back to List",
             cls := "back-button",
@@ -128,8 +215,23 @@ def renderPatientDetailsPage(unitNumber: String): Unit = {
   }
 }
 
-private def renderDetails(cssClass:String, heading:String, details: List[(String, String)], fields: Set[String]) = {
+private def renderDetails(cssClass:String, heading:String, details: List[(String, String)], fields: Set[String], editable: Boolean, formState: Option[PatientFormState]) = {
   val unitNumber = details(1)._2
+  
+  def renderEditableField(fieldName: String, fieldValue: String): HtmlElement = fieldName match {
+    case "First Name"         => input(value := formState.get.firstName.now(), onInput.mapToValue --> formState.get.firstName)
+    case "Last Name"          => input(value := formState.get.lastName.now(), onInput.mapToValue --> formState.get.lastName)
+    case "Gender" | "Sex"     => input(value := formState.get.sex.now(), onInput.mapToValue --> formState.get.sex)
+    case "Date of Birth"      => input(value := formState.get.dob.now(), onInput.mapToValue --> formState.get.dob)
+    case "Health Card Number" => input(value := formState.get.hcn.now(), onInput.mapToValue --> formState.get.hcn)
+    case "Family"             => input(value := formState.get.family.now(), onInput.mapToValue --> formState.get.family)
+    case "Family Privacy"     => input(value := formState.get.famPriv.now(), onInput.mapToValue --> formState.get.famPriv)
+    case "Service"            => input(value := formState.get.service.now(), onInput.mapToValue --> formState.get.service)
+    case "Attending"          => input(value := formState.get.attending.now(), onInput.mapToValue --> formState.get.attending)
+    case "Aurora File"        => input(value := formState.get.auroraFile.now(), onInput.mapToValue --> formState.get.auroraFile)
+    case _                    => span(cls := "field-value", fieldValue)
+  }
+
   val section = div(
     cls := cssClass,
     h2(heading),
@@ -170,8 +272,14 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
         } 
         else{
           li(
+            //Rendering inputs conditionally. 
             span(cls := "field-name", s"$fieldName: "),
-            span(cls := "field-value", fieldValue)
+            //if editable inputs are added 
+             if (editable) {
+                renderEditableField(fieldName, fieldValue)
+              } else {
+                span(cls := "field-value", fieldValue)
+              }
           )
         }
       }
