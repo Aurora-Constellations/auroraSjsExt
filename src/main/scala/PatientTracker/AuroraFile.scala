@@ -26,7 +26,12 @@ def handleCreate(filename: String): Unit = {
 
       // Open the file in the editor
       vscode.workspace.openTextDocument(fullPath).`then` { doc =>
-        vscode.window.showTextDocument(doc)
+        vscode.window.showTextDocument(doc, js.Dynamic.literal(
+            "viewColumn" -> vscode.ViewColumn.One,
+            "preview" -> false,
+            "preserveFocus" -> false
+          ).asInstanceOf[vscode.TextDocumentShowOptions]
+        )
       }
     case _ =>
       vscode.window.showErrorMessage("No workspace folder open.")
@@ -46,7 +51,12 @@ def handleOpen(filename: String): Unit = {
 
       if (fs.existsSync(fullPath)) {
         vscode.workspace.openTextDocument(fullPath).`then` { doc =>
-          vscode.window.showTextDocument(doc)
+          vscode.window.showTextDocument(doc, js.Dynamic.literal(
+              "viewColumn" -> vscode.ViewColumn.One,
+              "preview" -> false,
+              "preserveFocus" -> false
+            ).asInstanceOf[vscode.TextDocumentShowOptions]
+          )
         }
       } else {
         vscode.window.showErrorMessage(s"File '$filename' does not exist.")

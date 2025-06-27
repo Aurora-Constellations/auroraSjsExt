@@ -72,28 +72,29 @@ object PublishCommands:
       }
   }
 
-  def showPatients(context: ExtensionContext): js.Function1[Any, Any] =
-    (args) => {
-      // Close all webview views (left-hand side views)
-      vscode.commands.executeCommand("workbench.action.closeSidebar").toFuture.onComplete {
-        case Success(_) => println("Closed all webview views.")
-        case Failure(e) => println(s"Failed to close webview views: ${e.getMessage}")
-      }
-      patientsPanel match {
-        case Some(panel) if !js.isUndefined(panel) =>
-          panel.reveal(vscode.ViewColumn.One)
-        case _ =>
-          createPatientsPanel(context)
-      }
+  def showPatients(context: vscode.ExtensionContext): js.Function1[Any, Any] =
+    (_: Any) => {
+      def revealOrCreate(): Unit =
+        patientsPanel match {
+          case Some(panel) if !js.isUndefined(panel) =>
+            panel.reveal(vscode.ViewColumn.Two)
+          case _ =>
+            // Open webview beside, then move to bottom group
+            createPatientsPanel(context, vscode.ViewColumn.Active)
+
+            // Now move it to bottom group
+            vscode.commands.executeCommand("workbench.action.moveEditorToBelowGroup")
+        }
+
+      revealOrCreate()
     }
 
-  
-  def createPatientsPanel(context: ExtensionContext): Unit = {
+  def createPatientsPanel(context: ExtensionContext, column: vscode.ViewColumn): Unit = {
     val path = js.Dynamic.global.require("path")
     val panel = vscode.window.createWebviewPanel(
       "Patients", // Internal identifier of the webview panel
       "Patient List", // Title of the panel displayed to the user
-      vscode.ViewColumn.One, // Editor column to show the new webview panel in
+      column, // Editor column to show the new webview panel in
       js.Dynamic
         .literal( // Webview options
           enableScripts = true, // Allow JavaScript in the webview

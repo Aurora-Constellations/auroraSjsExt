@@ -80,7 +80,43 @@
 				"command": "AuroraSjsExt.hideNamedGroups",
 				"title": "Hide Named Groups"
 			}
-		]
+		],
+		"menus": {
+			"editor/title": [
+				{
+					"command": "AuroraSjsExt.patients",
+					"when": "resourceExtname == .aurora",
+					"group": "navigation@1"
+				}
+			],
+			"view/title": [
+				{
+					"command": "AuroraSjsExt.processDSL",
+					"when": "view == aurora",
+					"group": "secondary"
+				},
+				{
+					"command": "AuroraSjsExt.toggleDiagramLayout",
+					"when": "view == aurora",
+					"group": "secondary"
+				},
+				{
+					"command": "AuroraSjsExt.changeNarrativeType",
+					"when": "view == aurora",
+					"group": "secondary"
+				},
+				{
+					"command": "AuroraSjsExt.hideNarratives",
+					"when": "view == aurora",
+					"group": "secondary"
+				},
+				{
+					"command": "AuroraSjsExt.hideNamedGroups",
+					"when": "view == aurora",
+					"group": "secondary"
+				}
+			]
+		}
 	},
 	"devDependencies": {
 		"@scala-js/vite-plugin-scalajs": "^1.0.0",
