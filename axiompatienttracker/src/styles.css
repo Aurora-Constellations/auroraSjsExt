@@ -534,6 +534,16 @@ td img {
   align-items: center;
   justify-content: center;
 }
+.input-error {
+  border: 1px solid red;
+}
+
+.error-text {
+  color: red;
+  font-size: 0.85em;
+  margin-top: 4px;
+}
+
 
 
 
