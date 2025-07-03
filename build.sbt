@@ -128,7 +128,10 @@ lazy val axiompatienttracker = project
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .in(file("shared"))
   .settings(
-    libraryDependencies ++= Dependencies.borerJson.value
+    libraryDependencies ++= Dependencies.borerJson.value,
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio-json" % DependencyVersions.zioJson // ✅ ensure zio-json is available here
+    )
   )
   .jvmSettings(
     libraryDependencies += "org.scala-js" %% "scalajs-stubs" % DependencyVersions.scalaJsStubs

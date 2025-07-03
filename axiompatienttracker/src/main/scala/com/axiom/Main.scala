@@ -7,7 +7,7 @@ import org.scalajs.dom
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
-import com.axiom.ui.patienttracker.{initializeMessageListener, sendMessageToVSCode}
+import com.axiom.ui.patienttracker.initializeMessageListener
 
 object Main :
   def consoleOut(msg: String): Unit = {
@@ -21,5 +21,5 @@ object Main :
 
     val element = dom.document.querySelector("#app")
     initializeMessageListener()
-    sendMessageToVSCode("", "")
+    // sendMessageToVSCode("", "")
     renderOnDomContentLoaded(element,AxiomPatientTracker())

@@ -11,7 +11,7 @@ import cats.syntax.all.toShow
 import docere.sjsast.toShow
 import cats.syntax.show.toShow
 import com.axiom.MergePCM.MergePCM.*
-import com.axiom.AuroraFile.{handleCreate, handleOpen}
+import com.axiom.WebviewMessageHandler.handleWebviewMessage
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
@@ -22,7 +22,7 @@ import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNarrativesComma
 import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNgosCommandMod.hideNGOs
 import typings.vscode.mod.TextEditor
 import typings.auroraLangium.cliMod.parse
-
+import com.axiom.messaging.*
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -72,28 +72,29 @@ object PublishCommands:
       }
   }
 
-  def showPatients(context: ExtensionContext): js.Function1[Any, Any] =
-    (args) => {
-      // Close all webview views (left-hand side views)
-      vscode.commands.executeCommand("workbench.action.closeSidebar").toFuture.onComplete {
-        case Success(_) => println("Closed all webview views.")
-        case Failure(e) => println(s"Failed to close webview views: ${e.getMessage}")
-      }
-      patientsPanel match {
-        case Some(panel) if !js.isUndefined(panel) =>
-          panel.reveal(vscode.ViewColumn.One)
-        case _ =>
-          createPatientsPanel(context)
-      }
+  def showPatients(context: vscode.ExtensionContext): js.Function1[Any, Any] =
+    (_: Any) => {
+      def revealOrCreate(): Unit =
+        patientsPanel match {
+          case Some(panel) if !js.isUndefined(panel) =>
+            panel.reveal(vscode.ViewColumn.Two)
+          case _ =>
+            // Open webview beside, then move to bottom group
+            createPatientsPanel(context, vscode.ViewColumn.Active)
+
+            // Now move it to bottom group
+            vscode.commands.executeCommand("workbench.action.moveEditorToBelowGroup")
+        }
+
+      revealOrCreate()
     }
 
-  
-  def createPatientsPanel(context: ExtensionContext): Unit = {
+  def createPatientsPanel(context: ExtensionContext, column: vscode.ViewColumn): Unit = {
     val path = js.Dynamic.global.require("path")
     val panel = vscode.window.createWebviewPanel(
       "Patients", // Internal identifier of the webview panel
       "Patient List", // Title of the panel displayed to the user
-      vscode.ViewColumn.One, // Editor column to show the new webview panel in
+      column, // Editor column to show the new webview panel in
       js.Dynamic
         .literal( // Webview options
           enableScripts = true, // Allow JavaScript in the webview
@@ -109,33 +110,9 @@ object PublishCommands:
     
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage { (message: Any) =>
-      // Since we're using a general 'Any' type, we can cast to a js.Dynamic safely here
-      val msg = message.asInstanceOf[js.Dynamic]
-      val command = msg.command.asInstanceOf[String]
-      val response = msg.filename.asInstanceOf[String]
-
-      // Handle the message based on command
-      command match {
-        case "createAuroraFile" =>
-          vscode.window.showInformationMessage(s"Creating file: $response")
-          // Call the function to create the file
-          handleCreate(response)
-        
-        case "addedToDB" =>
-          vscode.window.showInformationMessage(s"Added to Database: $response")
-
-        case "openAuroraFile" =>
-          vscode.window.showInformationMessage(s"Opening file: $response")
-          // Call the function to open the file
-          handleOpen(response)
-
-        case "updatedNarratives" =>
-          vscode.window.showInformationMessage(s"$response")
-
-        case other =>
-          vscode.window.showWarningMessage(s"Unknown command: $other")
-      }
+      handleWebviewMessage(message.asInstanceOf[js.Dynamic])
     }
+
 
     // Handle disposal
     panel.onDidDispose((_: Unit) => { // Changed the lambda to accept a Unit argument
@@ -178,11 +155,12 @@ object PublishCommands:
       patientsPanel match {
         case Some(p) =>
           p.reveal(null, preserveFocus = true)
-          p.webview.postMessage(js.Dynamic.literal(
-            command = "updateNarratives",
+          val req = Request(MessagingCommands.UpdateNarratives, UpdateNarratives(
+            source = "vscode-extension",
             unitNumber = unitNumber,
             flag = flag
           ))
+          p.webview.postMessage(req.data.toJsObject(req.command))
           vscode.window.showInformationMessage(s"Message sent to Patient Tracker: $unitNumber")
         case None =>
           vscode.window.showWarningMessage("Patient Panel not found, message will not be sent.")
