@@ -211,7 +211,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       data(colRow)
         .map { gcdTuple =>
            if (colRow.col == 0)
-              renderStatusIcon(gcdTuple._3.text) // Helper Function to render the status Icons
+              renderStatusIcon(PatientStatus.fromString(gcdTuple._3.text)) // Helper Function to render the status Icons
            else
             span(gcdTuple._3.text)
         }

@@ -2,33 +2,47 @@ package com.axiom.ui.patienttracker
 
 import com.raquo.laminar.api.L.{*, given}
 
+enum PatientStatus:
+  case Stable, Urgency, Draft, Combined
+
+object PatientStatus:
+  def fromString(code: String): PatientStatus = code match
+    case "0"  => Stable
+    case "1"  => Urgency
+    case "2"  => Draft
+    case "12" => Combined
+    case _    => Stable  // Default fallback (optional)
 //Helper function to render stauts Icons
 object PatientStatusIcons {
-  def renderStatusIcon(status: String): HtmlElement = status match
-    case "0" =>
-      img(src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png", 
-      alt := "Stable", 
-      width := "20px", 
-      height := "20px")
-    case "1" =>
-      img(src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png", 
-      alt := "Urgency", 
-      width := "20px", 
-      height := "20px")
-    case "2" =>
-      img(src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png", 
-      alt := "Draft", 
-      width := "20px", 
-      height := "20px")
-    case "12" =>
+  def renderStatusIcon(status: PatientStatus): HtmlElement = status match
+    case PatientStatus.Stable =>
+      img(
+        src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
+        alt := "Stable",
+        width := "20px",
+        height := "20px"
+      )
+
+    case PatientStatus.Urgency =>
+      img(
+        src := "https://img.icons8.com/fluency-systems-filled/48/FA5252/leave.png",
+        alt := "Urgency",
+        width := "20px",
+        height := "20px"
+      )
+
+    case PatientStatus.Draft =>
+      img(
+        src := "https://img.icons8.com/ios-filled/50/FAB005/create-new.png",
+        alt := "Draft",
+        width := "20px",
+        height := "20px"
+      )
+
+    case PatientStatus.Combined =>
       div(
         cls := "status-column",
-        renderStatusIcon("1"),
-        renderStatusIcon("2")
+        renderStatusIcon(PatientStatus.Urgency),
+        renderStatusIcon(PatientStatus.Draft)
       )
-    case _ =>
-      img(src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png", 
-      alt := "Stable", 
-      width := "20px", 
-      height := "20px")
 }
