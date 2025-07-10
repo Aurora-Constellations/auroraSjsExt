@@ -2,19 +2,19 @@ package com.axiom.ui.patienttracker.handlers
 
 import scala.scalajs.js
 import com.axiom.ModelFetch
-import com.axiom.ui.patienttracker.sendResponseToVSCode
 import com.axiom.messaging.*
 import scala.concurrent.ExecutionContext.Implicits.global
+import _root_.com.axiom.ui.patienttracker.EventChannels
 
-object UpdateNarrativesHandler extends MessageHandler[UpdateNarrativesMsg] {
-  def handle(msg: UpdateNarrativesMsg): Unit = {
-    ModelFetch.addNarrativesFlag(msg.unitNumber, msg.flag).map {
-      case Some(_) =>
-        println(s"Narrative Flag updated successfully for unit number: ${msg.unitNumber}")
-        sendResponseToVSCode(Response(MessagingCommands.UpdatedNarratives, UpdatedNarratives(s"Narratives updated successfully for ${msg.unitNumber}.aurora")))
-      case None =>
-        println(s"Failed to update Narrative Flag for unit number: ${msg.unitNumber}")
-        sendResponseToVSCode(Response(MessagingCommands.UpdatedNarratives, UpdatedNarratives(s"Failed to update Narratives for ${msg.unitNumber}.aurora")))
+object UpdateNarrativesHandler {
+  def init(): Unit = {
+    EventChannels.incoming.subscribe {
+      case Request("updateNarratives", data: UpdateNarratives) =>
+        println(s"[Webview] Update received: $data")
+      case any =>
+        println(s"[Webview] Unhandled request: $any")
+        // update UI...
     }
   }
 }
+

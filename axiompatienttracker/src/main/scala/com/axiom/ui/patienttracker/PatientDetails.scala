@@ -249,7 +249,7 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                 "Create File",
                 onClick --> { _ =>
                   println(s"Creating new Aurora File: ${unitNumber}")
-                  sendRequestToVSCode(Request("createAuroraFile", CreateAuroraFile(s"$unitNumber.aurora")))
+                  EventChannels.outgoing.publish(Request("createAuroraFile", CreateAuroraFile(s"$unitNumber.aurora")))
                   // Add the aurora file to database
                   ModelFetch.addPatientAuroraFile(unitNumber).map {
                     case Some(_) =>
@@ -257,7 +257,7 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                     case None => 
                       println(s"Failed to create Aurora file for unit number: ${unitNumber}")
                   }
-                  sendResponseToVSCode(Response("addedToDB", AddedToDB(s"$unitNumber.aurora")))
+                  EventChannels.outgoing.publish(Request("addedToDB", AddedToDB(s"$unitNumber.aurora")))
                 }
               )
             } else {
@@ -266,7 +266,7 @@ private def renderDetails(cssClass:String, heading:String, details: List[(String
                 "Open File",
                 onClick --> { _ =>
                   println(s"Opening the Aurora File: $fieldValue")
-                  sendRequestToVSCode(Request("openAuroraFile", OpenAuroraFile(s"$unitNumber.aurora")))
+                  EventChannels.outgoing.publish(Request("openAuroraFile", OpenAuroraFile(s"$unitNumber.aurora")))
                 }
               )
             }
