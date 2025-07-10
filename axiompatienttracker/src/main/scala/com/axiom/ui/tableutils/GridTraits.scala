@@ -12,9 +12,12 @@ type CellDataIndexedGrid[D] = mutable.IndexedSeq[mutable.IndexedSeq[D]]  //index
 trait GridT[CC,D]:
 
   //GCD is short for the tuple (Grid,ColRow, Data)
-  type GCD = mutable.IndexedSeq[mutable.IndexedSeq[(GridT[CC,D],ColRow,D)]]
-  type GCDTuple = (GridT[CC,D],ColRow,D)
-  type Row =mutable.IndexedSeq[GCDTuple]
+  case class GridCell[G, D](grid: G, position: ColRow, data: D)
+  // type GCDTuple = (GridT[CC,D],ColRow,D)
+  // type GCDTuple = (GridT[CC,D],ColRow,D)
+  type GCD = mutable.IndexedSeq[mutable.IndexedSeq[GridCell[GridT[CC, D], D]]]
+  type Row = mutable.IndexedSeq[GridCell[GridT[CC, D], D]]
+
 
   //abstract methods
   def cctoData(row:Int,cc:CC):List[D] //abstract method to convert case class to List of data for rendering on table
@@ -22,13 +25,13 @@ trait GridT[CC,D]:
   def populate(ccList:CCRowList[CC]):Unit =
     val grid :CellDataGrid[D] = ccList.zipWithIndex .map((cc,index) => cctoData(index,cc)) //convert case class to list of data
     val indexedgrid : CellDataIndexedGrid[D] = grid.map(_.to(mutable.IndexedSeq)).to(mutable.IndexedSeq) //convert list of list to indexed list of indexed list
-    val newgcd = indexedgrid.zipWithIndex.map{(rowList,d) => rowList.zipWithIndex.map{(data,c) => (this,ColRow(c,d),data)}}
+    val newgcd = indexedgrid.zipWithIndex.map{(rowList,d) => rowList.zipWithIndex.map{(data,c) => GridCell(this, ColRow(c, d), data)}}
     gcdVar.set(newgcd)
     showGcdVar.set(newgcd)
     
 
-  val gcdVar : Var[GCD] = Var(mutable.IndexedSeq.empty[mutable.IndexedSeq[(GridT[CC,D],ColRow,D)]].empty)
-  val showGcdVar: Var[GCD] = Var(mutable.IndexedSeq.empty[mutable.IndexedSeq[(GridT[CC, D], ColRow, D)]].empty)
+  val gcdVar : Var[GCD] = Var(mutable.IndexedSeq.empty[mutable.IndexedSeq[GridCell[GridT[CC, D], D]]])
+  val showGcdVar: Var[GCD] = Var(mutable.IndexedSeq.empty[mutable.IndexedSeq[GridCell[GridT[CC, D], D]]])
 
   // lazy val gcd :GCD = indexedrid.zipWithIndex.map{(rowList,d) => rowList.zipWithIndex.map{(data,c) => (this,ColRow(c,d),data)}}
 
@@ -43,14 +46,14 @@ trait GridT[CC,D]:
   def inBounds(c:ColRow): Boolean = 
     colRange.contains(c.col) && rowRange.contains(c.row)
 
-  def update(c:ColRow, data:GCDTuple):Unit =
-    if(inBounds(c))   gcdVar.now()(c.row)(c.col) = data 
+  def update(c:ColRow, cell: GridCell[GridT[CC, D], D]):Unit =
+    if(inBounds(c))   gcdVar.now()(c.row)(c.col) = cell 
 
-  def data(c:ColRow):Option[GCDTuple] = 
+  def data(c:ColRow):Option[GridCell[GridT[CC, D], D]] = 
     if(inBounds(c))
       Some(gcdVar.now()(c.row)(c.col))   else   None
   
-  def data(x:Int,y:Int):Option[GCDTuple] = 
+  def data(x:Int,y:Int):Option[GridCell[GridT[CC, D], D]] = 
     data(ColRow(x,y))
 
 end GridT

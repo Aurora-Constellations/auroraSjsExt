@@ -124,9 +124,9 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     println(s"Searching for: $query")
     // Filter rows where any cell in the row contains the query
     val filteredPatients = gcdVar.now().filter { row =>
-      row.exists { case (_, _, data) =>
-        val cellData = data.asInstanceOf[CellData]
-        cellData.text.toLowerCase.contains(query)
+      row.exists { cell =>
+        // val cellData = data.asInstanceOf[CellData]
+        cell.data.text.toLowerCase.contains(query)
       }
     }
     showGcdVar.set(filteredPatients.filter(_.nonEmpty))
@@ -184,8 +184,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
   def row(cols: Row): HtmlElement = {
     val showConfirm = Var(false)
-    val rowIdx = cols.head._2.row //Extracted Once for consistennt row ID reference
-    val unitNumber = cols(1)._3.text //Making it globally available
+    val rowIdx = cols.head.position.row //Extracted Once for consistennt row ID reference
+    val unitNumber = cols(1).data.text //Making it globally available
 
     tr(
       idAttr := s"row-$rowIdx",
@@ -209,11 +209,11 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
       data(colRow)
-        .map { gcdTuple =>
+        .map { cell =>
            if (colRow.col == 0)
-              renderStatusIcon(PatientStatus.fromString(gcdTuple._3.text)) // Helper Function to render the status Icons
+              renderStatusIcon(PatientStatus.fromString(cell.data.text)) // Helper Function to render the status Icons
            else
-            span(gcdTuple._3.text)
+            span(cell.data.text)
         }
       .getOrElse("---")
   )
