@@ -184,8 +184,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
   def row(cols: Row): HtmlElement = {
     val showConfirm = Var(false)
-    val rowIdx = cols.head.position.row //Extracted Once for consistennt row ID reference
-    val unitNumber = cols(1).data.text //Making it globally available
+    val rowIdx = cols.head.position.row //Extracted Once for consistennt row ID reference.  Getting row index from the cell's position (was previously _2.row from tuple)
+    val unitNumber = cols(1).data.text //Making it globally available. Getting cell text (unit number) from the cell's data (was previously _3.text from tuple)
 
     tr(
       idAttr := s"row-$rowIdx",

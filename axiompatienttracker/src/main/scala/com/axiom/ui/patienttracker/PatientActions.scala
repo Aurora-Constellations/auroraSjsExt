@@ -10,7 +10,7 @@ import java.time.{LocalDate, LocalDateTime}
 import com.axiom.model.shared.dto.Patient
 import scala.util.{Success, Failure}
 import scala.concurrent.ExecutionContext.Implicits.global
-
+import com.axiom.ui.patienttracker.DataProcessing._
 
 
 object PatientActions:
@@ -18,38 +18,6 @@ object PatientActions:
 
   
   def createPatientForm(state: PatientTracker#FormState, showVar: Var[Boolean], onClose: () => Unit): HtmlElement =
-    val errorVars = Map(
-      "firstName" -> Var(Option.empty[String]),
-      "lastName" -> Var(Option.empty[String]),
-      "unitNumber" -> Var(Option.empty[String]),
-      "accountNumber" -> Var(Option.empty[String]),
-      "sex" -> Var(Option.empty[String]),
-      "dob" -> Var(Option.empty[String]),
-      "admitDate" -> Var(Option.empty[String]),
-      "hosp" -> Var(Option.empty[String])
-    )
-
-    def validateField(fieldName: String, value: String): Boolean =
-      if (value.trim.isEmpty) {
-        errorVars(fieldName).set(Some("This field is required."))
-        false
-      } else {
-        errorVars(fieldName).set(None)
-        true
-      }
-
-    def validateForm(): Boolean =
-      val results = Seq(
-        "firstName" -> state.firstNameVar.now(),
-        "lastName" -> state.lastNameVar.now(),
-        "unitNumber" -> state.unitNumberVar.now(),
-        "accountNumber" -> state.accountNumberVar.now(),
-        "sex" -> state.sexVar.now(),
-        "dob" -> state.dobVar.now(),
-        "admitDate" -> state.admitDateVar.now(),
-        "hosp" -> state.hospVar.now()
-      ).map { case (key, value) => validateField(key, value) }
-      results.forall(_ == true)
 
     div(
       className := "create-patient-modal-overlay",
@@ -64,43 +32,8 @@ object PatientActions:
             h2("Create New Patient"),
             form(
               onSubmit.preventDefault --> { _ =>
-                if validateForm() then
-                  val admitDateRaw = state.admitDateVar.now()
-                  val formattedAdmitDate =
-                    if (admitDateRaw.length == 16) s"$admitDateRaw:00" else admitDateRaw
-
-                  val patient = Patient(
-                    accountNumber = state.accountNumberVar.now(),
-                    unitNumber = state.unitNumberVar.now(),
-                    lastName = state.lastNameVar.now(),
-                    firstName = state.firstNameVar.now(),
-                    sex = state.sexVar.now(),
-                    dob = Some(LocalDate.parse(state.dobVar.now())),
-                    hcn = None,
-                    admitDate = Some(LocalDateTime.parse(formattedAdmitDate)),
-                    floor = Some(state.floorVar.now()),
-                    room = Some(state.roomVar.now()),
-                    bed = Some(state.bedVar.now()),
-                    mrp = None,
-                    admittingPhys = None,
-                    family = None,
-                    famPriv = None,
-                    hosp = Some(state.hospVar.now()),
-                    flag = None,
-                    service = None,
-                    address1 = None,
-                    address2 = None,
-                    city = None,
-                    province = None,
-                    postalCode = None,
-                    homePhoneNumber = None,
-                    workPhoneNumber = None,
-                    ohip = None,
-                    attending = None,
-                    collab1 = None,
-                    collab2 = None,
-                    auroraFile = None
-                  )
+                if validateForm(state) then
+                  val patient = buildPatientFromState(state)
                   ModelFetch.createPatient(patient).onComplete {
                     case Success(_) =>
                       println("Patient created successfully, reloading tracker")
