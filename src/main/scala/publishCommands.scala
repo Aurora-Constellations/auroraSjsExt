@@ -11,7 +11,6 @@ import cats.syntax.all.toShow
 import docere.sjsast.toShow
 import cats.syntax.show.toShow
 import com.axiom.MergePCM.MergePCM.*
-import com.axiom.WebviewMessageHandler.handleWebviewMessage
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
@@ -110,7 +109,8 @@ object PublishCommands:
     
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage { (message: Any) =>
-      handleWebviewMessage(message.asInstanceOf[js.Dynamic])
+      // TODO: Handle messages from the webview
+      // handleWebviewMessage(message.asInstanceOf[js.Dynamic])
     }
 
 
@@ -160,7 +160,8 @@ object PublishCommands:
             unitNumber = unitNumber,
             flag = flag
           ))
-          p.webview.postMessage(req.data.toJsObject(req.command))
+          // TODO: Implement message sending
+          // p.webview.postMessage(req.data.toJsObject(req.command))
           vscode.window.showInformationMessage(s"Message sent to Patient Tracker: $unitNumber")
         case None =>
           vscode.window.showWarningMessage("Patient Panel not found, message will not be sent.")

@@ -7,8 +7,6 @@ import org.scalajs.dom
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
-import com.axiom.ui.patienttracker.MessageListener
-import com.axiom.ui.patienttracker.MessageDispatcher
 
 object Main :
   def consoleOut(msg: String): Unit = {
@@ -21,7 +19,5 @@ object Main :
     // Always have the browser dev console open when developing web UIs.
 
     val element = dom.document.querySelector("#app")
-    MessageListener.start()
-    MessageDispatcher.start()
     // sendMessageToVSCode("", "")
     renderOnDomContentLoaded(element,AxiomPatientTracker())
