@@ -3,20 +3,31 @@ package com.axiom.ui.extensionutil
 import com.axiom.testutils.*
 
 
-class SingletonExtensionTest extends AuroraTesting{
+class SingletonExtensionTest extends LaminarWordSpecTesting{
     "SingletonExtension" should {
-    
-        "register and dispatch messages correctly" in {
-        val handler = new MessageHandler {
-            protected def handleAnyArg(arg: Any): Unit = {
-                info(s"Handling message with arg: $arg")   
-                arg shouldBe "test message"
-            }
-        }
-    
+        "register and handle a message" in {
+            info("Testing SingletonExtension message handling")
 
-        SingletonExtension.extensionMessageRouter.registerHandler(MessageStringArg(), handler)
-        SingletonExtension.webviewMessageRouter.postMessage(MessageStringArg("test message"))
+            // external state that will be modified by StringMessageHandler
+            var stateString = ""
+
+            class StringMessageHandler extends MessageHandler {
+                protected def handleAnyArg(arg: Any): Unit = {
+                    handleStringArg(arg.asInstanceOf[String])
+                }
+                def handleStringArg(strArg: String) = {
+                    info(s"Handling string message: $strArg")
+                    stateString = strArg
+                }
+            }
+        
+                
+            val handler = new StringMessageHandler ()
+        
+
+            SingletonExtension.extensionMessageRouter.registerHandler(MessageStringArg(), handler)
+            SingletonExtension.webviewMessageRouter.postMessage(MessageStringArg("test message"))
+            stateString shouldBe "test message"
 
         }
     }
