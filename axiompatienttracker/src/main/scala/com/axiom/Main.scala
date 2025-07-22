@@ -23,3 +23,7 @@ object Main :
     initializeMessageListener()
     // sendMessageToVSCode("", "")
     renderOnDomContentLoaded(element,AxiomPatientTracker())
+  // @main def testClaude(): Unit =
+  //   val reply = ClaudeClient.askClaude("Explain the difference between var and val in Scala.")
+  //   println(reply)
+

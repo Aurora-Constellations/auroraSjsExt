@@ -8,7 +8,9 @@ import scala.util.{Success, Failure}
 import com.axiom.model.shared.dto.Patient
 import java.time.{LocalDate, LocalDateTime}
 import com.axiom.messaging.*
-import com.axiom.ui.patienttracker.DataProcessing._
+import com.axiom.ui.patienttracker.utils.DataProcessing
+import com.axiom.ui.patienttracker.utils.{extractPatientDetails, buildUpdatedPatient, createPatientFormState}
+
 
 
 //Added case class to tag editable values

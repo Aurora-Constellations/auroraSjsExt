@@ -13,15 +13,16 @@ import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
-import com.axiom.ui.patienttracker.PatientStatusIcons.renderStatusIcon 
+import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon 
 import com.axiom.ui.patienttracker.KeyboardNavHelper
 
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import io.bullet.borer.derivation.key
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.axiom.ui.patienttracker.SearchBar
-
+import com.axiom.ui.patienttracker.utils.SearchBar
+import com.axiom.ui.patienttracker.utils.DataProcessing
+import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
 type PatientList = CCRowList[Patient]
 
 trait RenderHtml :
@@ -44,7 +45,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   searchQueryVar.signal.foreach { _ =>
       searchFilterFunction()
     }
-  
+  lazy val createPatientFormState = utils.DataProcessing.FormState()
   // Flag For create patient form
   val showCreatePatientForm = Var(false)
   def openCreatePatientModal(): Unit = showCreatePatientForm.set(true)
@@ -67,23 +68,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     scrollToSelectedRow(rowIdxOpt)
   }
   
-
-  //Create Patient Form input variables for dynamic patient creation
-  case class FormState(
-  firstNameVar: Var[String] = Var(""),
-  lastNameVar: Var[String] = Var(""),
-  unitNumberVar: Var[String] = Var(""),
-  accountNumberVar: Var[String] = Var(""),
-  sexVar: Var[String] = Var(""),
-  dobVar: Var[String] = Var(""),
-  admitDateVar: Var[String] = Var(""),
-  floorVar: Var[String] = Var(""),
-  roomVar: Var[String] = Var(""),
-  bedVar: Var[String] = Var(""),
-  hospVar: Var[String] = Var(""),
-  auroraFileVar: Var[String] = Var("")
-)
-  lazy val createPatientFormState = FormState()
 
   def getSpecificCellData(columnName: String, p: Patient): CellData = {
     // Get original headers and cell data
@@ -179,7 +163,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           )
         )
       ),
-      PatientActions.createPatientForm(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
+      
+      PatientFormModel.create(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
     )
 
   def row(cols: Row): HtmlElement = {
@@ -199,7 +184,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         renderPatientDetailsPage(unitNumber) 
       },
       cols.map(c => tableCell(c._2)),
-      PatientActions.renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
+      renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
     )
   }
 
@@ -211,7 +196,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       data(colRow)
         .map { cell =>
            if (colRow.col == 0)
-              renderStatusIcon(PatientStatus.fromString(cell.data.text)) // Helper Function to render the status Icons
+              renderStatusIcon(utils.PatientStatus.fromString(cell.data.text)) // Helper Function to render the status Icons
            else
             span(cell.data.text)
         }
@@ -256,4 +241,22 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       }
     }
   }
+
+   //Helper function to render "View Details" and "Edit" actions on the patient tracker
+
+  private def renderActionButtons(unitNumber: String): HtmlElement =
+    td(
+      cls := "details-column",
+      button(
+        "View Details", 
+        marginRight := "8px", 
+        onClick --> { _ => 
+          renderPatientDetailsPage(unitNumber) }),
+      button(
+        "Edit", 
+        onClick --> { _ => 
+          renderPatientDetailsPage(unitNumber, editable = true) 
+          }
+          )
+    )
 

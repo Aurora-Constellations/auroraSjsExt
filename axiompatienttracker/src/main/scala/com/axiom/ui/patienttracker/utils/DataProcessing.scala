@@ -1,10 +1,12 @@
-package com.axiom.ui.patienttracker
+package com.axiom.ui.patienttracker.utils
 
 import java.time.{LocalDate, LocalDateTime}
 import com.axiom.model.shared.dto.Patient
 import com.raquo.laminar.api.L._
+// import com.axiom.ui.patienttracker.PatientDetails
+import com.axiom.ui.patienttracker.PatientFormState
 
-object DataProcessing:
+object DataProcessing{
 
   val errorVars: Map[String, Var[Option[String]]] = Map(
     "firstName"     -> Var(None),
@@ -25,7 +27,23 @@ object DataProcessing:
       errorVars(fieldName).set(None)
       true
 
-  def validateForm(state: PatientTracker#FormState): Boolean =
+  //Create Patient Form input variables for dynamic patient creation
+  case class FormState(
+    firstNameVar: Var[String] = Var(""),
+    lastNameVar: Var[String] = Var(""),
+    unitNumberVar: Var[String] = Var(""),
+    accountNumberVar: Var[String] = Var(""),
+    sexVar: Var[String] = Var(""),
+    dobVar: Var[String] = Var(""),
+    admitDateVar: Var[String] = Var(""),
+    floorVar: Var[String] = Var(""),
+    roomVar: Var[String] = Var(""),
+    bedVar: Var[String] = Var(""),
+    hospVar: Var[String] = Var(""),
+    auroraFileVar: Var[String] = Var("")
+  )
+
+  def validateForm(state: DataProcessing.FormState): Boolean =
     val fields = Seq(
       "firstName"     -> state.firstNameVar.now(),
       "lastName"      -> state.lastNameVar.now(),
@@ -41,22 +59,23 @@ object DataProcessing:
   def getErrorSignal(key: String): Signal[Option[String]] =
     errorVars.getOrElse(key, Var(None)).signal
 
-def createPatientFormState(patient: Patient): PatientFormState =
-  PatientFormState(
-    firstName   = Var(patient.firstName),
-    lastName    = Var(patient.lastName),
-    dob         = Var(patient.dob.map(_.toString).getOrElse("")),
-    sex         = Var(patient.sex),
-    hcn         = Var(patient.hcn.getOrElse("")),
-    family      = Var(patient.family.getOrElse("")),
-    famPriv     = Var(patient.famPriv.getOrElse("")),
-    service     = Var(patient.service.getOrElse("")),
-    attending   = Var(patient.attending.getOrElse("")),
-    auroraFile  = Var(patient.auroraFile.getOrElse(""))
-  )
 
-
-def buildPatientFromState(state: PatientTracker#FormState): Patient =
+}
+  def createPatientFormState(patient: Patient): PatientFormState =
+    PatientFormState(
+      firstName   = Var(patient.firstName),
+      lastName    = Var(patient.lastName),
+      dob         = Var(patient.dob.map(_.toString).getOrElse("")),
+      sex         = Var(patient.sex),
+      hcn         = Var(patient.hcn.getOrElse("")),
+      family      = Var(patient.family.getOrElse("")),
+      famPriv     = Var(patient.famPriv.getOrElse("")),
+      service     = Var(patient.service.getOrElse("")),
+      attending   = Var(patient.attending.getOrElse("")),
+      auroraFile  = Var(patient.auroraFile.getOrElse(""))
+    )
+    
+def buildPatientFromState(state: DataProcessing.FormState): Patient =
     val admitDateRaw = state.admitDateVar.now()
     val formattedAdmitDate =
       if admitDateRaw.length == 16 then s"$admitDateRaw:00" else admitDateRaw

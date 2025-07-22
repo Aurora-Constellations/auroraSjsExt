@@ -10,15 +10,16 @@ import java.time.{LocalDate, LocalDateTime}
 import com.axiom.model.shared.dto.Patient
 import scala.util.{Success, Failure}
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.axiom.ui.patienttracker.DataProcessing._
+import com.axiom.ui.patienttracker.utils.DataProcessing._
+import com.axiom.ui.patienttracker.utils.DataProcessing
+import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
+import utils.buildPatientFromState
 
-
-object PatientActions:
+object PatientFormModel:
 
 
   
-  def createPatientForm(state: PatientTracker#FormState, showVar: Var[Boolean], onClose: () => Unit): HtmlElement =
-
+  def create(state: DataProcessing.FormState, showVar: Var[Boolean], onClose: () => Unit): HtmlElement =
     div(
       className := "create-patient-modal-overlay",
       display <-- showVar.signal.map {
@@ -98,23 +99,4 @@ object PatientActions:
           )
         case false => emptyNode
       }
-    )
-
-    
-    //Helper function to render "View Details" and "Edit" actions on the patient tracker
-
-  def renderActionButtons(unitNumber: String): HtmlElement =
-    td(
-      cls := "details-column",
-      button(
-        "View Details", 
-        marginRight := "8px", 
-        onClick --> { _ => 
-          renderPatientDetailsPage(unitNumber) }),
-      button(
-        "Edit", 
-        onClick --> { _ => 
-          renderPatientDetailsPage(unitNumber, editable = true) 
-          }
-          )
     )
