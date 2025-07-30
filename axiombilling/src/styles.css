@@ -1,0 +1,33 @@
+:root {
+  /* Color palette */
+  --bg-page: #242424;
+  --bg-container: #1f1f1f;
+  --bg-header: #272323;
+  --bg-row-odd: #2a2a2a;
+  --bg-row-even: #232323;
+  --bg-highlight: #32a852;
+  --text-primary: rgba(255, 255, 255, 0.87);
+  --text-secondary: #bbb;
+  --accent: #646cff;
+  --border-radius: 6px;
+  --padding: 0.15rem;
+  --transition: 0.2s ease-in-out;
+
+  /* Typography */
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: light dark;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 1400px;
+  margin: 0 auto;
+  /* padding: 2rem 1rem; */
+}

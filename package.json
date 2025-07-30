@@ -61,6 +61,10 @@
 				"title": "Patient Tracker"
 			},
 			{
+				"command": "AuroraSjsExt.billing",
+				"title": "Billing"
+			},
+			{
 				"command": "AuroraSjsExt.processDSL",
 				"title": "Merge PCMs"
 			},

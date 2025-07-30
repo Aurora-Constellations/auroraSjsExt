@@ -1,6 +1,6 @@
 node_modules
 /.metals/
-/target/
+target
 /.idea/
 out
 /.bloop/
@@ -12,7 +12,6 @@ out
 /.vscode/settings.json
 pack
 /syntaxes
-/axiompatienttracker/target
 /PowerShell 7.5.1
 # hidden cross project folders
 shared/js
