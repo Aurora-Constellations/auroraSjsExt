@@ -109,7 +109,7 @@ lazy val axiompatienttracker = project
   .settings(
     name := "axiompatienttracker",
     scalaJSUseMainModuleInitializer := true,
-    scalacOptions ++= Seq("-Yretain-trees", "-Xmax-inlines", "60","-explain"),
+    scalacOptions ++= Seq("-Yretain-trees", "-Xmax-inlines", "60","-explain","-Wunused:all"),
     scalaJSLinkerConfig ~= {
       _.withModuleKind(ModuleKind.ESModule)
         .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("axiompatienttracker")))
