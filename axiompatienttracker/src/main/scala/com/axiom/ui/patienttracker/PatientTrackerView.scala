@@ -14,7 +14,7 @@ import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
 import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon 
-import com.axiom.ui.patienttracker.KeyboardNavHelper
+import com.axiom.ui.patienttracker.utils.KeyboardNavigation
 
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
@@ -216,7 +216,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
 
 // Key press state
-  val navHelper = new KeyboardNavHelper(moveAndScroll)
+  val navHelper = new KeyboardNavigation(moveAndScroll)
 
   def keyboardHandler(e: KeyboardEvent): 
     Unit = navHelper.keyboardHandler(e)
