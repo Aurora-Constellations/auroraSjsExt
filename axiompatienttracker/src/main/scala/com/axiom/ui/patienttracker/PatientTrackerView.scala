@@ -217,7 +217,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
 // Key press state
   val navHelper = new KeyboardNavigation(moveAndScroll)
-
+  
   def keyboardHandler(e: KeyboardEvent): 
     Unit = navHelper.keyboardHandler(e)
   def startKeyPressHandler(keyCode: Int, action: () => Unit): Unit = 
