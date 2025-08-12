@@ -163,9 +163,16 @@ td img {
 }
 
 /* Status Cell */
+
+
 .status-column {
   display: flex;
-  align-items: center;
+  justify-content: flex-start; /* Push items to the left horizontally */
+  align-items: center;         /* Keep them vertically centered */
+}
+.status-column img {
+  display: inline-block; /* prevent full-width block behavior */
+  margin: 0;             /* remove the auto-centering */
 }
 
 /* Details button cell */

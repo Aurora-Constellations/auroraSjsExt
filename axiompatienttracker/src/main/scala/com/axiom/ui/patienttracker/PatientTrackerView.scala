@@ -196,7 +196,10 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       data(colRow)
         .map { cell =>
            if (colRow.col == 0)
-              renderStatusIcon(utils.PatientStatus.fromString(cell.data.text)) // Helper Function to render the status Icons
+              div(
+                cls := "status-column",
+                renderStatusIcon(utils.PatientStatus.fromString(cell.data.text))
+              ) // Helper Function to render the status Icons
            else
             span(cell.data.text)
         }
@@ -241,6 +244,14 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       }
     }
   }
+   // inside class PatientTracker
+    def refreshAndKeepSearch(newPatients: List[Patient]): Unit = {
+      val q = searchQueryVar.now()      // remember current search text
+      populate(newPatients)             // replace underlying rows (gcdVar)
+      searchQueryVar.set(q)             // restore search text
+      searchFilterFunction()            // re-apply filter with the same query
+    }
+
 
    //Helper function to render "View Details" and "Edit" actions on the patient tracker
 
@@ -258,5 +269,10 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           renderPatientDetailsPage(unitNumber, editable = true) 
           }
           )
+          
     )
+   
+
+
+    
 

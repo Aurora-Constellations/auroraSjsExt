@@ -17,6 +17,7 @@ object PatientStatusIcons {
   def renderStatusIcon(status: PatientStatus): HtmlElement = status match
     case PatientStatus.Stable =>
       img(
+        cls := "status-column",
         src := "https://img.icons8.com/material-rounded/24/40C057/checked-checkbox.png",
         alt := "Stable",
         width := "20px",

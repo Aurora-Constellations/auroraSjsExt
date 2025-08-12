@@ -98,6 +98,7 @@ object PublishCommands:
       js.Dynamic
         .literal( // Webview options
           enableScripts = true, // Allow JavaScript in the webview
+          retainContextWhenHidden = true, // keeping webview alive
           localResourceRoots = js.Array(
             vscode.Uri.file(path.join(context.extensionPath, "media").toString),
             vscode.Uri.file(path.join(context.extensionPath, "out").toString)
@@ -162,6 +163,13 @@ object PublishCommands:
           ))
           p.webview.postMessage(req.data.toJsObject(req.command))
           vscode.window.showInformationMessage(s"Message sent to Patient Tracker: $unitNumber")
+          // Ask the webview to refresh just this patient row
+          p.webview.postMessage(js.Dynamic.literal(
+            "command"    -> "ReloadPatient",
+            "source"     -> "vscode-extension",
+            "unitNumber" -> unitNumber
+          ))
+
         case None =>
           vscode.window.showWarningMessage("Patient Panel not found, message will not be sent.")
       }
