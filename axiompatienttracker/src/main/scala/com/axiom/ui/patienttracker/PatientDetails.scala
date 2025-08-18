@@ -119,6 +119,7 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
 
                 //a new Patient object is created from form values
                 val updatedPatient = Patient(
+                  id = patient.id,
                   accountNumber = patient.accountNumber,
                   unitNumber = unitNumber,
                   firstName = formState.firstName.now(),

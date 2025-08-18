@@ -18,6 +18,7 @@ object Main :
 
 		val patients = List(
 			Patient(
+				id = 1L,
 				accountNumber = "1001",
 				unitNumber = "U01",
 				lastName = "Smith",
@@ -50,6 +51,7 @@ object Main :
 				auroraFile = None
 			),
 			Patient(
+				id = 2L,
 				accountNumber = "1002",
 				unitNumber = "U02",
 				lastName = "Doe",
@@ -86,19 +88,19 @@ object Main :
 		val accounts = List(
 			Account(
 				accountId = 1L,
-				patientId = 1001L,
+				patientId = 1L,
 				startDate = LocalDateTime.of(2025, 7, 1, 10, 0),
 				endDate = None // Active
 			),
 			Account(
 				accountId = 2L,
-				patientId = 1001L,
+				patientId = 1L,
 				startDate = LocalDateTime.of(2024, 1, 1, 9, 0),
 				endDate = Some(LocalDateTime.of(2024, 2, 1, 12, 0))
 			),
 			Account(
 				accountId = 3L,
-				patientId = 1002L,
+				patientId = 2L,
 				startDate = LocalDateTime.of(2025, 7, 5, 14, 30),
 				endDate = None // Active
 			)

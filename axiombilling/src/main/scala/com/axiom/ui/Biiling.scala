@@ -40,12 +40,12 @@ def patientTable(patients: Signal[List[Patient]]): HtmlElement = {
       children <-- patients.combineWith(selectedIdSignal).map {
         case (patList, selectedIdOpt) =>
           patList.map { patient =>
-            val isSelected = selectedIdOpt.contains(patient.accountNumber.toLongOption.getOrElse(-1L))
+            val isSelected = selectedIdOpt.contains(patient.id)
 
             tr(
               cls.toggle("selected") <-- Val(isSelected),
               onClick --> { _ =>
-                selectedPatientIdVar.set(Some(patient.accountNumber.toLong))
+                selectedPatientIdVar.set(Some(patient.id))
               },
               td(patient.accountNumber),
               td(s"${patient.firstName} ${patient.lastName}"),
