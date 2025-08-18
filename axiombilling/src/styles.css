@@ -32,19 +32,19 @@ body {
   /* padding: 2rem 1rem; */
 }
 
-.patient-table {
+.my-table {
   border-collapse: collapse;
   width: 100%;
 }
-.patient-table th, .patient-table td {
+.my-table th, .my-table td {
   border: 1px solid #ccc;
   padding: 8px;
   text-align: left;
 }
-.patient-table tr.selected {
+.my-table tr.selected {
   background-color: #32a852;
 }
-.patient-table tr:hover {
+.my-table tr:hover {
   background-color: #32a852;
   cursor: pointer;
 }

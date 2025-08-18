@@ -172,11 +172,17 @@ object Main :
 
 			hr(),
 
-			h3("Active Account"),
+			h3(
+				child.text <-- accountCountSignal.map(count =>
+					s"Active Account (Total # of accounts: $count)"
+				)
+			),
 			activeAccountDisplay(activeAccountSignal),
 
 			h3("Select Encounter"),
-			encounterSelect(encounterOptionsSignal),
+			encounterTable(encounterOptionsSignal),
+
+			hr(),
 
 			h3("Billing Codes for Encounter"),
 			billingList(billingForEncounterSignal)

@@ -15,6 +15,12 @@ val activeAccountSignal: Signal[Option[Account]] =
     case _ => None
   }
 
+val accountCountSignal: Signal[Int] =
+  selectedPatientIdVar.signal.combineWith(accountsVar.signal).map {
+    case (Some(pid), accounts) => accounts.count(_.patientId == pid)
+    case _ => 0
+  }
+
 val encountersVar = Var[List[Encounter]](Nil)
 val selectedEncounterIdVar = Var[Option[Long]](None)
 
@@ -24,8 +30,13 @@ val billingCodesVar = Var[List[BillingCode]](Nil)
 def patientTable(patients: Signal[List[Patient]]): HtmlElement = {
   val selectedIdSignal = selectedPatientIdVar.signal
 
+  // When patient changes, clear encounter selection
+  selectedPatientIdVar.signal.changes.foreach { _ =>
+    selectedEncounterIdVar.set(None)
+  }(unsafeWindowOwner)
+
   table(
-    cls := "patient-table",
+    cls := "my-table",
     thead(
       tr(
         th("Account #"),
@@ -63,12 +74,18 @@ def patientTable(patients: Signal[List[Patient]]): HtmlElement = {
 
 def activeAccountDisplay(account: Signal[Option[Account]]): HtmlElement =
   div(
-    child.text <-- account.map {
-      case Some(acc) => s"Active Account ID: ${acc.accountId}"
-      case None => "No active account"
+    children <-- account.map {
+      case Some(acc) =>
+        Seq(
+          div(s"Active Account ID: ${acc.accountId}"),
+          div(s"Note: ${acc.notes.getOrElse("-")}")
+        )
+      case None =>
+        Seq(
+          div("No active account")
+        )
     }
   )
-
 
 val encounterOptionsSignal: Signal[List[Encounter]] =
   activeAccountSignal.combineWith(encountersVar.signal).map {
@@ -77,17 +94,6 @@ val encounterOptionsSignal: Signal[List[Encounter]] =
     case _ => Nil
   }
 
-def encounterSelect(encounters: Signal[List[Encounter]]): HtmlElement =
-  select(
-    onChange.mapToValue.map(_.toLong) --> selectedEncounterIdVar.writer.contramap(Some[Long](_)),
-    children <-- encounters.map(_.map { encounter =>
-      option(
-        value := encounter.encounterId.toString,
-        s"Encounter ${encounter.encounterId}"
-      )
-    })
-  )
-
 val billingForEncounterSignal: Signal[List[Billing]] =
   selectedEncounterIdVar.signal.combineWith(billingsVar.signal).map {
     case (Some(eid), billings) =>
@@ -95,9 +101,63 @@ val billingForEncounterSignal: Signal[List[Billing]] =
     case _ => Nil
   }
 
-def billingList(billings: Signal[List[Billing]]): HtmlElement =
-  ul(
-    children <-- billings.map(_.map { billing =>
-      li(s"Billing Code: ${billing.billingCode}, Units: ${billing.unitCount}")
-    })
+def encounterTable(encounters: Signal[List[Encounter]]): HtmlElement = {
+  val selectedIdSignal = selectedEncounterIdVar.signal
+
+  table(
+    cls := "my-table",
+    thead(
+      tr(
+        th("Encounter ID"),
+        th("Start Date"),
+        th("End Date")
+      )
+    ),
+    tbody(
+      children <-- encounters.combineWith(selectedIdSignal).map {
+        case (encList, selectedIdOpt) =>
+          encList.map { enc =>
+            val isSelected = selectedIdOpt.contains(enc.encounterId)
+
+            tr(
+              cls.toggle("selected") <-- Val(isSelected),
+              onClick --> { _ =>
+                selectedEncounterIdVar.set(Some(enc.encounterId))
+              },
+              td(enc.encounterId.toString),
+              td(enc.startDate.toString),
+              td(enc.endDate.map(_.toString).getOrElse("-")),
+            )
+          }
+      }
+    )
   )
+}
+
+def billingList(billings: Signal[List[Billing]]): HtmlElement =
+  table(
+    cls := "my-table",
+    thead(
+      tr(
+        th("Billing ID"),
+        th("Billing Code"),
+        th("Diagnostic Code"),
+        th("Recorded Time"),
+        th("Units"),
+        th("Notes")
+      )
+    ),
+    tbody(
+      children <-- billings.map(_.map { billing =>
+        tr(
+          td(billing.billingId.toString),
+          td(billing.billingCode),
+          td(billing.diagnosticCode),
+          td(billing.recordedTime.map(_.toString).getOrElse("-")),
+          td(billing.unitCount.toString),
+          td(billing.Notes.getOrElse("-"))
+        )
+      })
+    )
+  )
+
