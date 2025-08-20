@@ -35,32 +35,38 @@ lazy val installDependencies = Def.task[Unit] {
   copyDir(auroraLangiumDir / "syntaxes", base / "syntaxes")
 }
 
+def copyJSCSS(mediaDir:File, outputDir: File, cssFile:File, jsFileName: String, cssFileName: String): String = {
+  IO.createDirectory(mediaDir)
+  // Copy JS files
+  val jsFiles = (outputDir ** "*.js").get
+  jsFiles.foreach { file =>
+    val target = mediaDir / jsFileName
+    IO.copyFile(file, target, preserveLastModified = true)
+  }
+  // Copy styles.css
+  if (cssFile.exists()) {
+    val cssTarget = mediaDir / cssFileName
+    IO.copyFile(cssFile, cssTarget, preserveLastModified = true)
+    return s"Copied ${cssFileName} & ${jsFileName} to media/"
+  } else {
+    return s"${cssFileName} not found"
+  }
+}
+
 // --- Custom Task: Copy Scala.js output to media ---
 lazy val copyToMedia = Def.task[Unit] {
   val log = streams.value.log
   val base = baseDirectory.value
-  val outputDir = (axiompatienttracker / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
   val mediaDir = base / "media"
-  val cssFile = base / "axiompatienttracker" / "src" / "styles.css"
+  val outputDir_patienttracker = (axiompatienttracker / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
+  val outputDir_billing = (axiombilling / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
 
-  IO.createDirectory(mediaDir)
+  val cssFile_patienttracker = base / "axiompatienttracker" / "src" / "styles.css"
+  val cssFile_billing = base / "axiombilling" / "src" / "styles.css"
 
-  // Copy JS files
-  val jsFiles = (outputDir ** "*.js").get
-  jsFiles.foreach { file =>
-    val target = mediaDir / file.name
-    IO.copyFile(file, target, preserveLastModified = true)
-    log.info(s"Copied ${file.getName} to media/")
-  }
+  log.info(copyJSCSS(mediaDir, outputDir_patienttracker, cssFile_patienttracker, "main.js", "styles.css"))
+  log.info(copyJSCSS(mediaDir, outputDir_billing, cssFile_billing, "ab_main.js", "ab_styles.css"))
 
-  // Copy styles.css
-  if (cssFile.exists()) {
-    val cssTarget = mediaDir / "styles.css"
-    IO.copyFile(cssFile, cssTarget, preserveLastModified = true)
-    log.info(s"Copied styles.css to media/")
-  } else {
-    log.warn("styles.css not found in axiompatienttracker/src/")
-  }
 }
 
 // --- Custom Task: Launch VS Code Extension Host Preview ---
@@ -90,6 +96,7 @@ lazy val root = project
     open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,
     Compile / fastOptJS := (Compile / fastOptJS)
       .dependsOn(axiompatienttracker / Compile / fastLinkJS)
+      .dependsOn(axiombilling / Compile / fastLinkJS)
       .dependsOn(copyToMedia)
       .dependsOn(installDependencies)
       .value,
@@ -113,6 +120,29 @@ lazy val axiompatienttracker = project
     scalaJSLinkerConfig ~= {
       _.withModuleKind(ModuleKind.ESModule)
         .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("axiompatienttracker")))
+    },
+    externalNpm := baseDirectory.value,
+    resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
+    libraryDependencies ++= Dependencies.scalajsdom.value,
+    libraryDependencies ++= Dependencies.scalajsmacrotaskexecutor.value,
+    libraryDependencies ++= Dependencies.laminar.value,
+    libraryDependencies ++= Dependencies.scalatest.value,
+    libraryDependencies ++= Dependencies.aurorajslibs.value,
+    libraryDependencies ++= Dependencies.shapeless3.value
+  )
+
+// --- Axiom Billing Frontend (Scala.js) ---
+lazy val axiombilling = project
+  .in(file("axiombilling"))
+  .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
+  .dependsOn(shared.js)
+  .settings(
+    name := "axiombilling",
+    scalaJSUseMainModuleInitializer := true,
+    scalacOptions ++= Seq("-Yretain-trees", "-Xmax-inlines", "60","-explain"),
+    scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.ESModule)
+        .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("axiombilling")))
     },
     externalNpm := baseDirectory.value,
     resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",

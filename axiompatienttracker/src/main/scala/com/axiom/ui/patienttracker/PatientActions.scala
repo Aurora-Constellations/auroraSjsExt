@@ -40,6 +40,7 @@ object PatientActions:
                 println(s"Formatted Admit Date: $formattedAdmitDate")
 
                 val patient = Patient(
+                  id = -1L,
                   accountNumber = state.accountNumberVar.now(),
                   unitNumber = state.unitNumberVar.now(),
                   lastName = state.lastNameVar.now(),
