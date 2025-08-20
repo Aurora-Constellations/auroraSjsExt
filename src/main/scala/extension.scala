@@ -11,6 +11,7 @@ import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvi
 import typings.vscode.mod.TextDocument
 import PublishCommands.{refreshDiagram, sendMessageToPatientTracker}
 import com.axiom.Narratives.ManageNarratives.getParseNarratives
+import com.axiom.mcp.McpWebSocket
 
 object AuroraSjsExt {
   val langConfig = LanguageClientConfigSingleton.getInstance()
@@ -50,7 +51,7 @@ object AuroraSjsExt {
     val outputChannel = vscode.window.createOutputChannel("My Extension")  
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
     outputChannel.show(preserveFocus = true)
-
+    McpWebSocket.connect()
     publishCommands(context, langConfig)
   }
 
