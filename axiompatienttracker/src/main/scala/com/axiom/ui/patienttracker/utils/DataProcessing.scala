@@ -81,6 +81,7 @@ def buildPatientFromState(state: DataProcessing.FormState): Patient =
       if admitDateRaw.length == 16 then s"$admitDateRaw:00" else admitDateRaw
 
     Patient(
+      id = -1L,
       accountNumber = state.accountNumberVar.now(),
       unitNumber = state.unitNumberVar.now(),
       lastName = state.lastNameVar.now(),
