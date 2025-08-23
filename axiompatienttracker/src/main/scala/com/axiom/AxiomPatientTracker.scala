@@ -8,6 +8,8 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 @JSExportTopLevel("AxiomPatientTracker")
 object AxiomPatientTracker :
+  lazy val patientTracker:PatientTracker = new PatientTracker()
+
   def consoleOut(msg: String): Unit = {
     dom.console.log(s"%c $msg","background: #222; color: #bada55")
   }
@@ -15,7 +17,6 @@ object AxiomPatientTracker :
   def apply():Element = 
 
     import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
-    val patientTracker = new PatientTracker()
     ModelFetch.fetchPatients.foreach{ p => 
       patientTracker.populate(p)
     }
@@ -25,6 +26,8 @@ object AxiomPatientTracker :
   def applyx():HtmlElement = 
     val patientTracker = new PatientTracker()
     val numColumnsToShow = patientTracker.numColumnsToShow
+
+
 
 
     val headerElementsSignal: Signal[List[HtmlElement]] = Model.colHeadersVar.signal.map { fieldNames =>

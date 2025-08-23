@@ -105,6 +105,7 @@ lazy val root = project
     externalNpm := baseDirectory.value,
     libraryDependencies ++= Dependencies.scalatest.value,
     libraryDependencies ++= Dependencies.cats.value,
+
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
@@ -128,7 +129,15 @@ lazy val axiompatienttracker = project
     libraryDependencies ++= Dependencies.laminar.value,
     libraryDependencies ++= Dependencies.scalatest.value,
     libraryDependencies ++= Dependencies.aurorajslibs.value,
-    libraryDependencies ++= Dependencies.shapeless3.value
+    libraryDependencies ++= Dependencies.shapeless3.value,
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.client3" %%% "core" % "3.9.0",
+      "com.softwaremill.sttp.client3" %%% "circe" % "3.9.0",
+      "io.circe" %%% "circe-core" % "0.14.6",
+      "io.circe" %%% "circe-generic" % "0.14.6",
+      "io.circe" %%% "circe-parser" % "0.14.6"
+)
+
   )
 
 // --- Axiom Billing Frontend (Scala.js) ---

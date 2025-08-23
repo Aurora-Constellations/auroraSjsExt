@@ -1,10 +1,10 @@
-package com.axiom.ui.patienttracker
+package com.axiom.ui.patienttracker.utils
 
 import org.scalajs.dom.KeyboardEvent
 import scala.scalajs.js
 import scala.scalajs.js.timers.SetIntervalHandle
 
-class KeyboardNavHelper(
+class KeyboardNavigation(
   moveAndScroll: Int => Unit
 ) {
   private var keyPressInterval: Option[SetIntervalHandle] = None
