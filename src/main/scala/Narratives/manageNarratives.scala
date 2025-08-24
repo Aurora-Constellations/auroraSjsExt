@@ -58,7 +58,13 @@ object ManageNarratives:
 
     editorOpt.foreach { editor =>
       val selection = editor.selection
-      val selectedText = editor.document.getText(selection)
+
+      // If no region is selected, fallback to current line
+      val targetRange =
+        if (selection.isEmpty) editor.document.lineAt(selection.active.line).range
+        else selection
+
+      val selectedText = editor.document.getText(targetRange)
       val selectedLines = selectedText
         .split("\r?\n")
         .toList // Keep all lines, including empty ones and whitespace
@@ -79,7 +85,7 @@ object ManageNarratives:
             val updatedLines = selectedLines.map(line => updateNarrativeType(line, symbol))
             editor.edit { editBuilder =>
               val replacement = updatedLines.mkString("\n")
-              editBuilder.replace(selection, replacement)
+              editBuilder.replace(targetRange, replacement)
             }.toFuture
           }
         }
