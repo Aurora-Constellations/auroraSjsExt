@@ -24,6 +24,8 @@ import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNgosCommandMod.
 import typings.vscode.mod.TextEditor
 import typings.auroraLangium.cliMod.parse
 import com.axiom.messaging.*
+import com.axiom.mcp.ClaudeClient
+import com.axiom.mcp.McpHandler
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -38,7 +40,8 @@ object PublishCommands:
           ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
           ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
-          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig))
+          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
+          ("AuroraSjsExt.mcp", takeMcpPrompt(context))
       )
 
       commands.foreach { case (name, fun) =>
@@ -48,6 +51,23 @@ object PublishCommands:
                   .asInstanceOf[Dispose]
           )
       }
+  }
+
+  def takeMcpPrompt(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    vscode.window.showInputBox().toFuture.onComplete {
+      case Success(prompt) if prompt.toString().trim.nonEmpty =>
+        ClaudeClient.getMcpFromPrompt(prompt.toString()).map { mcpJson =>
+          val mcpString = js.JSON.stringify(mcpJson)
+          McpHandler.action(mcpString)
+        }.recover {
+          case e: Throwable =>
+            val errMsg = s"Error calling Claude API: ${e.getMessage}"
+            vscode.window.showErrorMessage(errMsg)
+        }
+      case _ =>
+        val msg = "No prompt provided."
+        vscode.window.showWarningMessage(msg)
+    }
   }
 
   def processDSL(context: ExtensionContext): js.Function1[Any, Any] = { _ =>

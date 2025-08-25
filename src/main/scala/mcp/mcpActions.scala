@@ -64,6 +64,6 @@ object McpActions:
 		val execution = if (args.isEmpty) {
 			commands.executeCommand(command)
 		} else {
-			commands.executeCommand(command, args.toArray: _*)
+			commands.executeCommand(command, args.toArray*)
 		}
 	}

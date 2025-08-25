@@ -4,47 +4,27 @@ import org.scalajs.dom
 import scala.scalajs.js
 import com.axiom.mcp.McpActions.{insertNarrative, executeVsCodeCommand}
 
-object McpWebSocket:
+object McpHandler:
+	def action(data: String): Unit = {
+		try {
+			val parsed = js.JSON.parse(data)
+			val action = parsed.selectDynamic("action").toString
 
-	def connect(): Unit =
-		// 🔌 Connect to MCP server
-		val socket = new dom.WebSocket("ws://localhost:3001")
-
-		socket.onopen = { (_: dom.Event) =>
-			println("✅ Connected to MCP Server (Scala.js)")
-		}
-
-		socket.onmessage = { (event: dom.MessageEvent) =>
-			val data = event.data.toString
-			println(s"📩 Received MCP: $data")
-
-			try {
-				val parsed = js.JSON.parse(data)
-				val action = parsed.selectDynamic("action").toString
-
-				action match {
-					case "insert_narrative" =>
-						handleInsertNarrative(parsed)
-					
-					case "execute_vscode_command" =>
-						handleExecuteVsCodeCommand(parsed)
-					
-					case _ =>
-						println(s"⚠️ Unknown action: $action")
-				}
-			} catch {
-				case e: Throwable =>
-					println(s"❌ Failed to parse MCP message: ${e.getMessage}")
+			action match {
+				case "insert_narrative" =>
+					handleInsertNarrative(parsed)
+				
+				case "execute_vscode_command" =>
+					handleExecuteVsCodeCommand(parsed)
+				
+				case _ =>
+					println(s"⚠️ Unknown action: $action")
 			}
+		} catch {
+			case e: Throwable =>
+				println(s"❌ Failed to parse MCP message: ${e.getMessage}")
 		}
-
-		socket.onerror = { (error: dom.Event) =>
-			println(s"❌ WebSocket error: $error")
-		}
-
-		socket.onclose = { (event: dom.CloseEvent) =>
-			println(s"🔌 WebSocket connection closed: ${event.reason}")
-		}
+	}
 
 	private def handleInsertNarrative(parsed: js.Dynamic): Unit = {
 		try {
@@ -72,7 +52,7 @@ object McpWebSocket:
 			}
 
 			executeVsCodeCommand(command, args)
-			println(s"✅ Executed VS Code command: $command")
+			println(s"✅ Executed VS Code command")
 		} catch {
 			case e: Throwable =>
 				println(s"❌ Failed to handle execute_vscode_command: ${e.getMessage}")

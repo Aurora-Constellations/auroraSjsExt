@@ -83,6 +83,10 @@
 			{
 				"command": "AuroraSjsExt.hideNamedGroups",
 				"title": "Hide Named Groups"
+			},
+			{
+				"command": "AuroraSjsExt.mcp",
+				"title": "Aurora MCP"
 			}
 		],
 		"menus": {
