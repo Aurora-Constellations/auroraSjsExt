@@ -1,9 +1,24 @@
 package com.axiom.mcp
 
 import scala.scalajs.js
-import typings.vscode.mod.{window, workspace, WorkspaceEdit, Position, TextEditorEdit, Uri}
+import typings.vscode.mod.{window, workspace, WorkspaceEdit, Position, TextEditorEdit, Uri, commands}
+import scala.concurrent.Future
+import scala.util.{Success, Failure}
 
 object McpActions:
+	
+	// Valid VS Code commands for this extension
+	private val validCommands = Set(
+		"AuroraSjsExt.aurora",
+		"AuroraSjsExt.patients", 
+		"AuroraSjsExt.billing",
+		"AuroraSjsExt.processDSL",
+		"AuroraSjsExt.toggleDiagramLayout",
+		"AuroraSjsExt.changeNarrativeType",
+		"AuroraSjsExt.hideNarratives",
+		"AuroraSjsExt.hideNamedGroups"
+	)
+
 	def insertNarrative(text: String, typ: String, lineNumber: Int): Unit = {
 		val editor = window.activeTextEditor.orNull
 		if (editor == null) {
@@ -32,7 +47,23 @@ object McpActions:
 		workspace
 			.applyEdit(edit)
 			.`then`(
-			(_: Boolean) => window.showInformationMessage(s"Inserted: $finalLine"),
-			(err: Any) => window.showErrorMessage(s"Failed to insert narrative: $err")
+				(_: Boolean) => window.showInformationMessage(s"Inserted: $finalLine"),
+				(err: Any) => window.showErrorMessage(s"Failed to insert narrative: $err")
 			)
+	}
+
+	def executeVsCodeCommand(command: String, args: js.Array[js.Any] = js.Array()): Unit = {
+		// Validate command
+		if (!validCommands.contains(command)) {
+			window.showErrorMessage(s"Invalid or unauthorized command: $command")
+			println(s"❌ Attempted to execute invalid command: $command")
+			return
+		}
+
+		// Execute the command
+		val execution = if (args.isEmpty) {
+			commands.executeCommand(command)
+		} else {
+			commands.executeCommand(command, args.toArray: _*)
+		}
 	}
