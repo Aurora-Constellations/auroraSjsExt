@@ -1,4 +1,4 @@
-package com.axiom.ui.patienttracker
+package com.axiom.ui.patienttracker.utils
 
 import com.raquo.laminar.api.L._
 import org.scalajs.dom

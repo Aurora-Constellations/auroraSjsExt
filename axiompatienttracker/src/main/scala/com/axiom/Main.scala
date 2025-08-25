@@ -3,7 +3,6 @@ package com.axiom
 
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
-// import vendor.highlightjs.hljs
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -23,3 +22,4 @@ object Main :
     initializeMessageListener()
     // sendMessageToVSCode("", "")
     renderOnDomContentLoaded(element,AxiomPatientTracker())
+

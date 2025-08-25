@@ -8,6 +8,9 @@ import scala.util.{Success, Failure}
 import com.axiom.model.shared.dto.Patient
 import java.time.{LocalDate, LocalDateTime}
 import com.axiom.messaging.*
+import com.axiom.ui.patienttracker.utils.DataProcessing
+import com.axiom.ui.patienttracker.utils.{extractPatientDetails, buildUpdatedPatient, createPatientFormState}
+
 
 
 //Added case class to tag editable values
@@ -35,52 +38,10 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
   // Fetch patient details using the unit number
   ModelFetch.fetchPatientDetails(unitNumber).map {
     case Some(patient) =>
-      val details = List(
-        "Account Number" -> patient.accountNumber,
-        "Unit Number" -> patient.unitNumber,
-        "Last Name" -> patient.lastName,
-        "First Name" -> patient.firstName,
-        "Gender" -> patient.sex,
-        "Date of Birth" -> patient.dob.map(_.toString).getOrElse(""),
-        "Health Card Number" -> patient.hcn.getOrElse(""),
-        "Admit Date" -> patient.admitDate.map(_.toString).getOrElse(""),
-        "Floor" -> patient.floor.getOrElse(""),
-        "Room" -> patient.room.getOrElse(""),
-        "Bed" -> patient.bed.getOrElse(""),
-        "MRP" -> patient.mrp.getOrElse(""),
-        "Admitting Physician" -> patient.admittingPhys.getOrElse(""),
-        "Family" -> patient.family.getOrElse(""),
-        "Family Privacy" -> patient.famPriv.getOrElse(""),
-        "Hospital" -> patient.hosp.getOrElse(""),
-        "Flag" -> patient.flag.getOrElse(""),
-        "Service" -> patient.service.getOrElse(""),
-        "Address 1" -> patient.address1.getOrElse(""),
-        "Address 2" -> patient.address2.getOrElse(""),
-        "City" -> patient.city.getOrElse(""),
-        "Province" -> patient.province.getOrElse(""),
-        "Postal Code" -> patient.postalCode.getOrElse(""),
-        "Home Phone Number" -> patient.homePhoneNumber.getOrElse(""),
-        "Work Phone Number" -> patient.workPhoneNumber.getOrElse(""),
-        "OHIP" -> patient.ohip.getOrElse(""),
-        "Attending" -> patient.attending.getOrElse(""),
-        "Collaborator 1" -> patient.collab1.getOrElse(""),
-        "Collaborator 2" -> patient.collab2.getOrElse(""),
-        "Aurora File" -> patient.auroraFile.getOrElse("")
-      ).filterNot { case (key, value) => value.isEmpty && key != "Aurora File" }
+      val details = extractPatientDetails(patient)
 
       //The fields which can be edited
-      val formState = PatientFormState(
-      firstName = Var(patient.firstName),
-      lastName = Var(patient.lastName),
-      dob = Var(patient.dob.map(_.toString).getOrElse("")),
-      sex = Var(patient.sex),
-      hcn = Var(patient.hcn.getOrElse("")),
-      family = Var(patient.family.getOrElse("")),
-      famPriv = Var(patient.famPriv.getOrElse("")),
-      service = Var(patient.service.getOrElse("")),
-      attending = Var(patient.attending.getOrElse("")),
-      auroraFile = Var(patient.auroraFile.getOrElse(""))
-      )
+      val formState = createPatientFormState(patient)
 
       val detailsPage = div(
         cls := "patient-details-page",
@@ -118,39 +79,8 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
                 println("Save button clicked")
 
                 //a new Patient object is created from form values
-                val updatedPatient = Patient(
-                  id = patient.id,
-                  accountNumber = patient.accountNumber,
-                  unitNumber = unitNumber,
-                  firstName = formState.firstName.now(),
-                  lastName = formState.lastName.now(),
-                  sex = formState.sex.now(),
-                  dob = Some(LocalDate.parse(formState.dob.now())),
-                  hcn = Some(formState.hcn.now()),
-                  family = Some(formState.family.now()),
-                  famPriv = Some(formState.famPriv.now()),
-                  service = Some(formState.service.now()),
-                  attending = Some(formState.attending.now()),
-                  auroraFile = Some(formState.auroraFile.now()),
-                  admitDate = patient.admitDate,
-                  floor = patient.floor,
-                  room = patient.room,
-                  bed = patient.bed,
-                  mrp = patient.mrp,
-                  admittingPhys = patient.admittingPhys,
-                  hosp = patient.hosp,
-                  flag = patient.flag,
-                  address1 = patient.address1,
-                  address2 = patient.address2,
-                  city = patient.city,
-                  province = patient.province,
-                  postalCode = patient.postalCode,
-                  homePhoneNumber = patient.homePhoneNumber,
-                  workPhoneNumber = patient.workPhoneNumber,
-                  ohip = patient.ohip,
-                  collab1 = patient.collab1,
-                  collab2 = patient.collab2
-                )
+                val updatedPatient = buildUpdatedPatient(patient, formState)
+
 
                 // Call the backend update API by passing the updated values
                 ModelFetch.updatePatientDetails(unitNumber, updatedPatient).foreach {

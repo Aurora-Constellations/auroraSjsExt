@@ -10,7 +10,7 @@ trait TableColProperties[A]:
   def element(a: A):List[Display]
 
 object TableColProperties:
-  given TableColProperties[Long] =       l => List(Display(l.toString,"green"))
+  given TableColProperties[Long] =         l => List(Display(l.toString, "green"))
   given TableColProperties[Int] =         i => List(Display(i.toString, "red"))
   given TableColProperties[Boolean] =     b => List(Display(b.toString,"blue"))
   given TableColProperties[String] =      s =>  List(Display(identity(s),"#3361ff"))

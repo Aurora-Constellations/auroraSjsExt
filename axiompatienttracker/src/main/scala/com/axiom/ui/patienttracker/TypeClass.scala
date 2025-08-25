@@ -8,7 +8,7 @@ object TypeClass :
     def celldata(a: A):List[CellData]
 
   object CellDataConvertor:
-    given CellDataConvertor[Long] =       l => List(CellData(l.toString,"green"))
+    given CellDataConvertor[Long] =         l => List(CellData(l.toString,"green"))
     given CellDataConvertor[Int] =         i => List(CellData(i.toString,"black"))
     given CellDataConvertor[Boolean] =     b => List(CellData(b.toString,"blue"))
     given CellDataConvertor[String] =      s =>  List(CellData(identity(s),"#3361ff"))

@@ -13,15 +13,16 @@ import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
-import com.axiom.ui.patienttracker.PatientStatusIcons.renderStatusIcon 
-import com.axiom.ui.patienttracker.KeyboardNavHelper
+import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon 
+import com.axiom.ui.patienttracker.utils.KeyboardNavigation
 
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import io.bullet.borer.derivation.key
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.axiom.ui.patienttracker.SearchBar
-
+import com.axiom.ui.patienttracker.utils.SearchBar
+import com.axiom.ui.patienttracker.utils.DataProcessing
+import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
 type PatientList = CCRowList[Patient]
 
 trait RenderHtml :
@@ -44,7 +45,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   searchQueryVar.signal.foreach { _ =>
       searchFilterFunction()
     }
-  
+  lazy val createPatientFormState = utils.DataProcessing.FormState()
   // Flag For create patient form
   val showCreatePatientForm = Var(false)
   def openCreatePatientModal(): Unit = showCreatePatientForm.set(true)
@@ -67,23 +68,6 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     scrollToSelectedRow(rowIdxOpt)
   }
   
-
-  //Create Patient Form input variables for dynamic patient creation
-  case class FormState(
-  firstNameVar: Var[String] = Var(""),
-  lastNameVar: Var[String] = Var(""),
-  unitNumberVar: Var[String] = Var(""),
-  accountNumberVar: Var[String] = Var(""),
-  sexVar: Var[String] = Var(""),
-  dobVar: Var[String] = Var(""),
-  admitDateVar: Var[String] = Var(""),
-  floorVar: Var[String] = Var(""),
-  roomVar: Var[String] = Var(""),
-  bedVar: Var[String] = Var(""),
-  hospVar: Var[String] = Var(""),
-  auroraFileVar: Var[String] = Var("")
-)
-  lazy val createPatientFormState = FormState()
 
   def getSpecificCellData(columnName: String, p: Patient): CellData = {
     // Get original headers and cell data
@@ -124,9 +108,9 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     println(s"Searching for: $query")
     // Filter rows where any cell in the row contains the query
     val filteredPatients = gcdVar.now().filter { row =>
-      row.exists { case (_, _, data) =>
-        val cellData = data.asInstanceOf[CellData]
-        cellData.text.toLowerCase.contains(query)
+      row.exists { cell =>
+        // val cellData = data.asInstanceOf[CellData]
+        cell.data.text.toLowerCase.contains(query)
       }
     }
     showGcdVar.set(filteredPatients.filter(_.nonEmpty))
@@ -179,14 +163,14 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
           )
         )
       ),
-      PatientActions.createPatientForm(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
+      
+      PatientFormModel.create(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
     )
 
   def row(cols: Row): HtmlElement = {
     val showConfirm = Var(false)
-    val rowIdx = cols.head._2.row //Extracted Once for consistennt row ID reference
-    // Making it globally available
-    val unitNumber = cols(2)._3.text // Assuming the unit number is in the third column
+    val rowIdx = cols.head.position.row //Extracted Once for consistennt row ID reference.  Getting row index from the cell's position (was previously _2.row from tuple)
+    val unitNumber = cols(2).data.text //Making it globally available. Getting cell text (unit number) from the cell's data (was previously _3.text from tuple)
 
     tr(
       idAttr := s"row-$rowIdx",
@@ -200,7 +184,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         renderPatientDetailsPage(unitNumber) 
       },
       cols.map(c => tableCell(c._2)),
-      PatientActions.renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
+      renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
     )
   }
 
@@ -210,11 +194,14 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
       data(colRow)
-        .map { gcdTuple =>
+        .map { cell =>
            if (colRow.col == 0)
-              renderStatusIcon(gcdTuple._3.text) // Helper Function to render the status Icons
+              div(
+                cls := "status-column",
+                renderStatusIcon(utils.PatientStatus.fromString(cell.data.text))
+              ) // Helper Function to render the status Icons
            else
-            span(gcdTuple._3.text)
+            span(cell.data.text)
         }
       .getOrElse("---")
   )
@@ -232,8 +219,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
 
 // Key press state
-  val navHelper = new KeyboardNavHelper(moveAndScroll)
-
+  val navHelper = new KeyboardNavigation(moveAndScroll)
+  
   def keyboardHandler(e: KeyboardEvent): 
     Unit = navHelper.keyboardHandler(e)
   def startKeyPressHandler(keyCode: Int, action: () => Unit): Unit = 
@@ -257,4 +244,35 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       }
     }
   }
+   // inside class PatientTracker
+    def refreshAndKeepSearch(newPatients: List[Patient]): Unit = {
+      val q = searchQueryVar.now()      // remember current search text
+      populate(newPatients)             // replace underlying rows (gcdVar)
+      searchQueryVar.set(q)             // restore search text
+      searchFilterFunction()            // re-apply filter with the same query
+    }
+
+
+   //Helper function to render "View Details" and "Edit" actions on the patient tracker
+
+  private def renderActionButtons(unitNumber: String): HtmlElement =
+    td(
+      cls := "details-column",
+      button(
+        "View Details", 
+        marginRight := "8px", 
+        onClick --> { _ => 
+          renderPatientDetailsPage(unitNumber) }),
+      button(
+        "Edit", 
+        onClick --> { _ => 
+          renderPatientDetailsPage(unitNumber, editable = true) 
+          }
+          )
+          
+    )
+   
+
+
+    
 
