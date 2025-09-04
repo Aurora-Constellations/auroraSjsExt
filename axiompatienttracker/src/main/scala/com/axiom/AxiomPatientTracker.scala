@@ -5,49 +5,35 @@ import org.scalajs.dom
 import com.raquo.laminar.api.L.{*, given}
 import com.axiom.ui.patienttracker.PatientTracker
 import scala.scalajs.js.annotation.JSExportTopLevel
+import com.axiom.model.shared.dto.Patient
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
 @JSExportTopLevel("AxiomPatientTracker")
 object AxiomPatientTracker :
   lazy val patientTracker:PatientTracker = new PatientTracker()
+   
+  case class PatientUI(unitNumber:String, accountNumber:String, lastName:String, firstName:String) 
+  
+  //TODO make better names
+  def f(p:Patient):PatientUI = PatientUI(p.unitNumber,p.accountNumber,p.lastName,p.firstName)
 
   def consoleOut(msg: String): Unit = {
     dom.console.log(s"%c $msg","background: #222; color: #bada55")
   }
- 
-  def apply():Element = 
 
-    import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
-    ModelFetch.fetchPatients.foreach{ p => 
+
+  def load() =    
+
+    ModelFetch.fetchPatients.map{lp => lp.map {p => f(p)} }.foreach{ p => 
       patientTracker.populate(p)
     }
+
+    consoleOut("fetched and populated and will be rendered!!")
+
     patientTracker.renderHtml
-    
-
-  def applyx():HtmlElement = 
-    val patientTracker = new PatientTracker()
-    val numColumnsToShow = patientTracker.numColumnsToShow
+ 
+  def apply():Element = load()
 
 
+    //TODO populating table model
 
-
-    val headerElementsSignal: Signal[List[HtmlElement]] = Model.colHeadersVar.signal.map { fieldNames =>
-      fieldNames.take(numColumnsToShow).map { fieldName =>
-        th(fieldName)
-      }
-    }
-
-    val bodyElementsSignal = Model.patientFieldEnums.signal.map { lldatatypes =>
-      lldatatypes.map(l => l.take(numColumnsToShow))
-        .map(x => x.map(d => td(textAlign := "left",  color:= s"${d.color}",div(   s"${d.text} "))))
-        .map(tr(_)) 
-    }
-
-
-    table(
-      thead(
-        children <-- headerElementsSignal
-      ),
-      tbody(
-        children <--   bodyElementsSignal 
-      )
-    )  
