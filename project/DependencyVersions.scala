@@ -14,4 +14,8 @@ object DependencyVersions {
   val shapeless3        = "3.4.3"
   val scalaAsync        = "1.0.1"
   val cats              = "2.13.0"
+  val catsEffect        = "3.5.2"
+  val sttpClient4       = "4.0.0-M6"
+  val circe             = "0.14.14"
+  val config            = "1.4.3"
 }

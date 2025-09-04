@@ -30,7 +30,36 @@ object Dependencies {
 
   val cats = Def.setting {
     Seq(
-       "org.typelevel" %%% "cats-core" % DependencyVersions.cats
+       "org.typelevel" %%% "cats-core" % DependencyVersions.cats,
+       "org.typelevel" %% "cats-effect" % DependencyVersions.catsEffect
+    )
+  }
+
+  val sttpClient4 = Def.setting {
+    Seq(
+      "com.softwaremill.sttp.client4" %%% "core" % DependencyVersions.sttpClient4,
+      "com.softwaremill.sttp.client4" %%% "circe" % DependencyVersions.sttpClient4,
+      "com.softwaremill.sttp.client4" %% "okhttp-backend" % DependencyVersions.sttpClient4
+    )
+  }
+
+  val circe = Def.setting {
+    Seq(
+      "io.circe" %%% "circe-core" % DependencyVersions.circe,
+      "io.circe" %%% "circe-generic" % DependencyVersions.circe,
+      "io.circe" %%% "circe-parser" % DependencyVersions.circe
+    )
+  }
+
+  val betterfiles = Def.setting {
+    Seq(
+      "com.github.pathikrit" %% "better-files" % DependencyVersions.betterfiles
+    )
+  }
+
+  val config = Def.setting {
+    Seq(
+      "com.typesafe" %  "config" % DependencyVersions.config
     )
   }
 

@@ -95,6 +95,8 @@ lazy val root = project
     name := "auroraSjsExt",
     open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,
     Compile / fastOptJS := (Compile / fastOptJS)
+      .dependsOn(audioToText / Compile/ compile)
+      .dependsOn(audioToText / Compile / pack)
       .dependsOn(axiompatienttracker / Compile / fastLinkJS)
       .dependsOn(axiombilling / Compile / fastLinkJS)
       .dependsOn(copyToMedia)
@@ -130,13 +132,8 @@ lazy val axiompatienttracker = project
     libraryDependencies ++= Dependencies.scalatest.value,
     libraryDependencies ++= Dependencies.aurorajslibs.value,
     libraryDependencies ++= Dependencies.shapeless3.value,
-    libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client3" %%% "core" % "3.9.0",
-      "com.softwaremill.sttp.client3" %%% "circe" % "3.9.0",
-      "io.circe" %%% "circe-core" % "0.14.6",
-      "io.circe" %%% "circe-generic" % "0.14.6",
-      "io.circe" %%% "circe-parser" % "0.14.6"
-)
+    libraryDependencies ++= Dependencies.sttpClient4.value,
+    libraryDependencies ++= Dependencies.circe.value
 
   )
 
@@ -174,4 +171,20 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform)
   )
   .jvmSettings(
     libraryDependencies += "org.scala-js" %% "scalajs-stubs" % DependencyVersions.scalaJsStubs
+  )
+
+
+// --- Audio To Text ---
+lazy val audioToText = project
+  .in(file("audiototext"))
+  .enablePlugins(PackPlugin)
+  .settings(
+    name := "audiototext",
+    // mainClass := Some("com.axiom.audio.Main"),
+    packMain := Map("audiototext" -> "com.axiom.audio.Main"), 
+    libraryDependencies ++= Dependencies.betterfiles.value,
+    libraryDependencies ++= Dependencies.sttpClient4.value,
+    libraryDependencies ++= Dependencies.circe.value,
+    libraryDependencies ++= Dependencies.cats.value,
+    libraryDependencies ++= Dependencies.config.value
   )
