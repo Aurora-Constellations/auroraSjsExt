@@ -14,9 +14,9 @@ object UpdateNarrativesHandler extends MessageHandler[UpdateNarrativesMsg] {
       case Some(_) =>
         println(s"Narrative Flag updated successfully for unit number: ${msg.unitNumber}")
         sendResponseToVSCode(Response(MessagingCommands.UpdatedNarratives, UpdatedNarratives(s"Narratives updated successfully for ${msg.unitNumber}.aurora")))
-        ModelFetch.fetchPatients.foreach{ p => 
-              AxiomPatientTracker.patientTracker.refreshAndKeepSearch(p)
-        }
+        // ModelFetch.fetchPatients.foreach{ p => 
+        //       AxiomPatientTracker.patientTracker.refreshAndKeepSearch(p)
+        // }
         // val patientTracker = new PatientTracker()
         //  ModelFetch.fetchPatients.foreach{ p => 
         // patientTracker.populate(p)

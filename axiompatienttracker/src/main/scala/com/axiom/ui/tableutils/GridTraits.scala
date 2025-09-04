@@ -28,6 +28,7 @@ trait GridT[CC,D]:
     gcdVar.set(newgcd)
     showGcdVar.set(newgcd)
     
+// Filter results in laminar 
 
   val gcdVar : Var[GCD] = Var(mutable.IndexedSeq.empty[mutable.IndexedSeq[GridCell[GridT[CC, D], D]]]) //Updated to use the case class GridCell
   val showGcdVar: Var[GCD] = Var(mutable.IndexedSeq.empty[mutable.IndexedSeq[GridCell[GridT[CC, D], D]]]) //Updated to use the case class GridCell

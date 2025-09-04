@@ -15,7 +15,7 @@ import com.raquo.laminar.api.L
 import com.axiom.ModelFetch.columnHeaders
 import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon 
 import com.axiom.ui.patienttracker.utils.KeyboardNavigation
-
+import com.axiom.AxiomPatientTracker.PatientUI
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import io.bullet.borer.derivation.key
@@ -23,25 +23,27 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.SearchBar
 import com.axiom.ui.patienttracker.utils.DataProcessing
 import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
+// import com.axiom.Model.PatientUI
 type PatientList = CCRowList[Patient]
 
 trait RenderHtml :
   def renderHtml:Element
 
-case class CellData(text:String,color:String) 
+// case class CellData(text:String,color:String) 
+case class CellData(text:String,color:String,element:HtmlElement) 
 
 case class PatientGridData(grid: PatientTracker,colrow:ColRow, data:CellData) 
-    extends GridDataT[PatientTracker,Patient,CellData](grid,colrow,data) with RenderHtml :
+    extends GridDataT[PatientTracker,PatientUI,CellData](grid,colrow,data) with RenderHtml :
   def renderHtml = td(data.text,backgroundColor:=data.color)
 
 
-class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
+class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
 
   given owner:Owner = new OneTimeOwner(()=>())
   val selectedCellVar:Var[Option[ColRow]] = Var(None)
   val selectedRowVar:Var[Option[Int]] = Var(None)
   val searchQueryVar: Var[String] = Var("")
-  val numColumnsToShow = 10
+  // val numColumnsToShow = 10
   searchQueryVar.signal.foreach { _ =>
       searchFilterFunction()
     }
@@ -53,9 +55,13 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
 
   val colsToRemove = Set("hcn", "dob") // Use Set for faster lookup
   val colHeadersVar: Var[List[String]] = {
-    val headers = ShapelessFieldNameExtractor.fieldNames[Patient].slice(1, numColumnsToShow)
-    val newHeaders = "STATUS" :: headers.toList
-    Var(newHeaders.filterNot(name => colsToRemove.contains(name)))
+
+    //TODO DRY PRINCIPLE!!
+    val headers = ShapelessFieldNameExtractor.fieldNames[PatientUI]//.slice(1, numColumnsToShow)
+
+    //TODO  status prepended to header list
+    // val newHeaders = "STATUS" :: headers.toList
+    Var(headers.filterNot(name => colsToRemove.contains(name)))
   }
   
 
@@ -69,10 +75,12 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   }
   
 
-  def getSpecificCellData(columnName: String, p: Patient): CellData = {
+  def getSpecificCellData(columnName: String, p: PatientUI): CellData = {
     // Get original headers and cell data
-    val headers = ShapelessFieldNameExtractor.fieldNames[Patient]
-    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*)
+    //TODO headers and celldata derived from Patient DTO
+    val headers = ShapelessFieldNameExtractor.fieldNames[PatientUI]
+    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[PatientUI].celldata(p)*)
+
     val columnIndexOpt = headers.indexOf(columnName) match
       case -1 => None
       case i  => Some(i)
@@ -81,26 +89,28 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     val specificCellData = columnIndexOpt
       .filter(_ < cellData.length) // Ensure the index is within bounds
       .map(cellData(_))
-      .getOrElse(CellData("", "")) // Default CellData if column not found or out of bounds
+      .getOrElse(CellData("", "", div("--"))) // Default CellData if column not found or out of bounds
     specificCellData
   }
 
-  def columns(row: Int, p: Patient) =
+  def columns(row: Int, p: PatientUI) =
     // Get original headers and cell data
-    val headers = ShapelessFieldNameExtractor.fieldNames[Patient]
-    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*).slice(1, numColumnsToShow)
+    val headers = ShapelessFieldNameExtractor.fieldNames[PatientUI]
+    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[PatientUI].celldata(p)*)//.slice(1, numColumnsToShow)
+    cellData.toList
+    // com.axiom.Main.console Out(s"${cellData.head}")
 
     // Get the cell data for the specific column
-    val statusCellData = getSpecificCellData("flag", p)
-    val newCellData = List(statusCellData) ++ cellData.toList
-    val zipped = headers.zip(newCellData)
+    // val statusCellData = getSpecificCellData("flag", p)
+    // val newCellData = List(statusCellData) ++ cellData.toList
+    // val zipped = headers.zip(newCellData)
 
-    // Filter out the column with name "hcn"
-    val filtered = zipped.filterNot { case (name, _) => colsToRemove.contains(name) }
-    val filteredCellData = filtered.map(_._2)
-    filteredCellData
+    // // Filter out the column with name "hcn"
+    // val filtered = zipped.filterNot { case (name, _) => colsToRemove.contains(name) }
+    // val filteredCellData = filtered.map(_._2)
+    // filteredCellData
 
-  override def cctoData(row:Int,cc:Patient):List[CellData] = columns(row,cc)
+  override def cctoData(row:Int,cc:PatientUI):List[CellData] = columns(row,cc)
 
   // Rudimentary search filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
    def searchFilterFunction(): Unit = {
@@ -170,7 +180,10 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
   def row(cols: Row): HtmlElement = {
     val showConfirm = Var(false)
     val rowIdx = cols.head.position.row //Extracted Once for consistennt row ID reference.  Getting row index from the cell's position (was previously _2.row from tuple)
-    val unitNumber = cols(2).data.text //Making it globally available. Getting cell text (unit number) from the cell's data (was previously _3.text from tuple)
+    //TODO UGLY USE OF INDEX
+
+    com.axiom.Main.consoleOut(s"${cols.head}")
+    val unitNumber = cols(0).data.text //Making it globally available. Getting cell text (unit number) from the cell's data (was previously _3.text from tuple)
 
     tr(
       idAttr := s"row-$rowIdx",
@@ -183,8 +196,8 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
         renderPatientDetailsPage(unitNumber) 
       },
-      cols.map(c => tableCell(c._2)),
-      renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
+      cols.map(c => tableCell(c._2))
+      // renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
     )
   }
 
@@ -193,14 +206,17 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
       tabIndex := colRow.row * 9000 + colRow.col, // apparently I need this capture keyboard events
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
+
+      //TODO rendering status icons
       data(colRow)
         .map { cell =>
-           if (colRow.col == 0)
-              div(
-                cls := "status-column",
-                renderStatusIcon(utils.PatientStatus.fromString(cell.data.text))
-              ) // Helper Function to render the status Icons
-           else
+          //TODO UGLY USE OF INDEX
+          //  if (colRow.col == 0)
+          //     div(
+          //       cls := "status-column",
+          //       renderStatusIcon(utils.PatientStatus.fromString(cell.data.text))
+          //     ) // Helper Function to render the status Icons
+          //  else
             span(cell.data.text)
         }
       .getOrElse("---")
@@ -245,7 +261,7 @@ class PatientTracker() extends GridT [Patient,CellData] with RenderHtml:
     }
   }
    // inside class PatientTracker
-    def refreshAndKeepSearch(newPatients: List[Patient]): Unit = {
+    def refreshAndKeepSearch(newPatients: List[PatientUI]): Unit = {
       val q = searchQueryVar.now()      // remember current search text
       populate(newPatients)             // replace underlying rows (gcdVar)
       searchQueryVar.set(q)             // restore search text

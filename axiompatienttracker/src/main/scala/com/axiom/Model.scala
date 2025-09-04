@@ -7,7 +7,12 @@ import com.axiom.TableColProperties
 object Model :
   type PatientFields = List[Display]
 
+  case class PatientUI(unitNumber:String, accountNumber:String) 
+  def f(p:Patient):PatientUI = PatientUI(p.unitNumber,p.accountNumber)
+
+
   val patientListVar = Var(List.empty[Patient])
+  val uiPatientListVar = patientListVar.signal.map{ l => l.map{f} }
   val colHeadersVar = Var(List.empty[String])
   val patientFieldEnums = Var(List[PatientFields]())
 

@@ -25,7 +25,7 @@ object ModelFetch :
     c(0) = c(0).copy(text = s"*${c(0).text}*", color = "green")
     c.toList
 
-  def fetchPatients = 
+  def  fetchPatients = 
     import java.time._ //cross scalajs and jvm compatible
     import com.axiom.model.shared.dto.Patient 
     import com.axiom.ShapelessFieldNameExtractor

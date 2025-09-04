@@ -87,9 +87,9 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
                   case Some(updated) =>
                     println(s"Patient updated successfully: ${updated.unitNumber}")
                     val tracker = new PatientTracker()
-                    ModelFetch.fetchPatients.foreach { patients =>
-                      tracker.populate(patients)
-                    }
+                    // ModelFetch.fetchPatients.foreach { patients =>
+                    //   tracker.populate(patients)
+                    // }
                     container.innerHTML = ""
                     render(container, tracker.renderHtml)
                   case None =>
@@ -106,11 +106,11 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
             onClick --> { _ =>
               println("Back to list clicked")
               val patientTracker = new PatientTracker()
-              ModelFetch.fetchPatients.foreach{ p => 
-                patientTracker.populate(p)
-              }
+              // ModelFetch.fetchPatients.foreach{ p => 
+              //   patientTracker.populate(p)
+              // }
               container.innerHTML = "" // Clear only the container
-              render(container, patientTracker.renderHtml)
+              // render(container, patientTracker.renderHtml)
             }
           )
         )
@@ -133,12 +133,12 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
               width:= "100%",
               onClick --> { _ =>
                 println("Back to list clicked")
-                val patientTracker = new PatientTracker()
-                ModelFetch.fetchPatients.foreach{ p => 
-                  patientTracker.populate(p)
-                }
+                //FIXME val patientTracker = new PatientTracker()
+                // ModelFetch.fetchPatients.foreach{ p => 
+                //   patientTracker.populate(p)
+                // }
                 container.innerHTML = "" // Clear only the container
-                render(container, patientTracker.renderHtml)
+                // render(container, patientTracker.renderHtml)
               }
             )
           )

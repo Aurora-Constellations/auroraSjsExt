@@ -42,10 +42,12 @@ object PatientFormModel:
                       if (container != null) {
                         container.innerHTML = ""
                         val tracker = new PatientTracker()
-                        ModelFetch.fetchPatients.foreach { patients =>
-                          tracker.populate(patients)
-                          render(container, tracker.renderHtml)
-                        }
+
+                        //FIXME
+                        // ModelFetch.fetchPatients.foreach { patients =>
+                        //   tracker.populate(patients)
+                        //   render(container, tracker.renderHtml)
+                        // }
                       }
                       onClose()
                     case Failure(ex) =>
