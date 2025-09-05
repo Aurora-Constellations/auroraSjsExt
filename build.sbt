@@ -69,6 +69,25 @@ lazy val copyToMedia = Def.task[Unit] {
 
 }
 
+lazy val createDirectories = Def.task[Unit] {
+  val base = baseDirectory.value
+  val log = streams.value.log
+  val recordingsDir = base / "recordings"
+  val auroraFilesDir = base / "auroraFiles"
+
+  def createDir(dir: File): Unit = {
+    if (!dir.exists()) {
+      IO.createDirectory(dir)
+      log.info(s"Created directory: ${dir.getAbsolutePath}")
+    } else {
+      log.info(s"Directory already exists: ${dir.getAbsolutePath}")
+    }
+  }
+
+  createDir(recordingsDir)
+  createDir(auroraFilesDir)
+}
+
 // --- Custom Task: Launch VS Code Extension Host Preview ---
 lazy val open = taskKey[Unit]("open vscode")
 def openVSCodeTask: Def.Initialize[Task[Unit]] =
@@ -101,6 +120,7 @@ lazy val root = project
       .dependsOn(axiombilling / Compile / fastLinkJS)
       .dependsOn(copyToMedia)
       .dependsOn(installDependencies)
+      .dependsOn(createDirectories)
       .value,
     Compile / fastOptJS / artifactPath := baseDirectory.value / "out" / "extension.js",
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },

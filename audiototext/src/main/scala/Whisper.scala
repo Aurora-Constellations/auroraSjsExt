@@ -30,7 +30,7 @@ case class WhisperConfig(
 
 object WhisperConfig :
 
-  val inputStream = new FileInputStream(File(".env").toJava)
+  val inputStream = new FileInputStream(File(".env").toJava)// needs absolute path
   val props = new Properties()
   props.load(inputStream)
   val config = ConfigFactory.parseProperties(props)
@@ -125,5 +125,5 @@ object WhisperTranscriber :
   }
   
   def main(args: Array[String]): Unit =   
-    val wavFilePath = "recording-2025-09-04_13-23-45.wav"
+    val wavFilePath = "./recordings/latest.wav"
     WhisperTranscriber.transcribeWavFile(wavFilePath)

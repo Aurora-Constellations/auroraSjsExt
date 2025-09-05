@@ -87,6 +87,18 @@
 			{
 				"command": "AuroraSjsExt.mcp",
 				"title": "Aurora MCP"
+			},
+			{
+				"command": "AuroraSjsExt.startRecording",
+				"title": "Aurora Start Recording"
+			},
+			{
+				"command": "AuroraSjsExt.stopRecording",
+				"title": "Aurora Stop Recording"
+			},
+			{
+				"command": "AuroraSjsExt.transcribeRecording",
+				"title": "Aurora Transcribe Recording"
 			}
 		],
 		"menus": {

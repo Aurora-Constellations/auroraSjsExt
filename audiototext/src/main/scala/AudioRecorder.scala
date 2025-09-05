@@ -40,6 +40,7 @@ object AudioRecorder :
     startRecording(outputFile)
   }
   def startRecording(outputFile: String): Either[String, Unit] = {
+    println("Output file: " + outputFile)
     // Compose the operations using for comprehension
     val result = for {
       line <- setupAudioLine()
@@ -73,38 +74,23 @@ object AudioRecorder :
     val inputStream = new AudioInputStream(line)
     audioInputStream = Some(inputStream)
     isRecording = true
-    
-    println("Recording started. Press Enter to stop recording...")
-    
-    // Start recording using Future
+
+    println(s"Recording started, saving to $outputFile")
+
+    // Start background recording task
     val recordingTask = Future {
       Try {
         AudioSystem.write(inputStream, AudioFileFormat.Type.WAVE, new java.io.File(outputFile))
-        () // Return Unit explicitly
       }.recover {
-        case e: IOException => 
+        case e: IOException =>
           println(s"Error writing audio file: ${e.getMessage}")
           throw e
-      }.get 
-    }
-    
+      }.get
+    }.map(_ => ())
+
     recordingFuture = Some(recordingTask)
-    
-    // Wait for user input to stop recording
-    val scanner = new Scanner(System.in)
-    scanner.nextLine()
-    
-    stopRecording()
-    
-    // Wait for the recording task to complete with a timeout
-    Await.result(recordingTask, 1.seconds)
-    
-    val outputFileInfo = BFile(outputFile)
-    val fileSizeMB = if (outputFileInfo.exists) {
-      (outputFileInfo.size.toDouble / (1024 * 1024)).formatted("%.2f")
-    } else "unknown"
-    println(s"Recording completed and saved to: $outputFile (${fileSizeMB} MB)")
   }
+
     
     
     
@@ -123,6 +109,13 @@ object AudioRecorder :
     }
   
   def stopRecording(): Unit = {
+    if (!isRecording) {
+      println("No active recording to stop.")
+      return
+    }
+
+    println("Stopping recording...")
+
     isRecording = false
     targetDataLine.foreach { line =>
       line.stop()
@@ -131,9 +124,20 @@ object AudioRecorder :
     audioInputStream.foreach(_.close())
     targetDataLine = None
     audioInputStream = None
+
+    // Let background task finish gracefully
+    recordingFuture.foreach { f =>
+      try Await.ready(f, 2.seconds)
+      catch {
+        case _: java.util.concurrent.TimeoutException =>
+          println("Recording task didn’t complete in time, moving on")
+      }
+    }
     recordingFuture = None
+
     println("Recording stopped.")
   }
+
   
   def listAvailableAudioDevices(): Unit = {
     println("Available audio input devices:")
@@ -222,10 +226,10 @@ object AudioRecorder :
         cleanup()
       case _ =>
         startRecording() match
-          case Right(_)  => println("Recording session completed!")
-          case Left(err) => println(s"Recording failed: $err")
-        cleanup()
+          case Right(_) =>
+            println("Press ENTER to stop recording...")
+            scala.io.StdIn.readLine()
+            stopRecording()
+          case Left(err) =>
+            println(s"Recording failed: $err")
   }
-
-// Run the main method
-

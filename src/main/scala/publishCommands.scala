@@ -26,6 +26,7 @@ import typings.auroraLangium.cliMod.parse
 import com.axiom.messaging.*
 import com.axiom.mcp.ClaudeClient
 import com.axiom.mcp.McpHandler
+import com.axiom.audio.AudioToTextCommands
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -41,7 +42,10 @@ object PublishCommands:
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
           ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
           ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
-          ("AuroraSjsExt.mcp", takeMcpPrompt(context))
+          ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
+          ("AuroraSjsExt.startRecording", startRecording(context)),
+          ("AuroraSjsExt.stopRecording", stopRecording(context)),
+          ("AuroraSjsExt.transcribeRecording", transcribeAudio(context))
       )
 
       commands.foreach { case (name, fun) =>
@@ -51,6 +55,21 @@ object PublishCommands:
                   .asInstanceOf[Dispose]
           )
       }
+  }
+
+  def startRecording(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    val outPath = s"${context.extensionPath}/recordings/latest.wav"
+    AudioToTextCommands.runBackendCommand(context, "record", outPath)
+    vscode.window.showInformationMessage("Recording started. Click 'Stop Recording' to end.")
+  }
+
+  def stopRecording(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    AudioToTextCommands.runBackendCommand(context, "stop")
+    vscode.window.showInformationMessage("Recording stopped. Click 'Transcribe Audio' to convert to text.")
+  }
+
+  def transcribeAudio(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    AudioToTextCommands.runBackendCommand(context, "transcribe", s"${context.extensionPath}/recordings/latest.wav")
   }
 
   def takeMcpPrompt(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
