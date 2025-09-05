@@ -44,9 +44,9 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
   val selectedRowVar:Var[Option[Int]] = Var(None)
   val searchQueryVar: Var[String] = Var("")
   // val numColumnsToShow = 10
-  searchQueryVar.signal.foreach { _ =>
-      searchFilterFunction()
-    }
+  // searchQueryVar.signal.foreach { _ =>
+  //     searchFilterFunction()
+  //   }
   lazy val createPatientFormState = utils.DataProcessing.FormState()
   // Flag For create patient form
   val showCreatePatientForm = Var(false)
@@ -113,18 +113,18 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
   override def cctoData(row:Int,cc:PatientUI):List[CellData] = columns(row,cc)
 
   // Rudimentary search filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
-   def searchFilterFunction(): Unit = {
-    val query = searchQueryVar.now().toLowerCase.trim
-    println(s"Searching for: $query")
-    // Filter rows where any cell in the row contains the query
-    val filteredPatients = gcdVar.now().filter { row =>
-      row.exists { cell =>
-        // val cellData = data.asInstanceOf[CellData]
-        cell.data.text.toLowerCase.contains(query)
-      }
-    }
-    showGcdVar.set(filteredPatients.filter(_.nonEmpty))
-  }
+  //  def searchFilterFunction(): Unit = {
+  //   val query = searchQueryVar.now().toLowerCase.trim
+  //   println(s"Searching for: $query")
+  //   // Filter rows where any cell in the row contains the query
+  //   val filteredPatients = gcdVar.now().filter { row =>
+  //     row.exists { cell =>
+  //       // val cellData = data.asInstanceOf[CellData]
+  //       cell.data.text.toLowerCase.contains(query)
+  //     }
+  //   }
+  //   showGcdVar.set(filteredPatients.filter(_.nonEmpty))
+  // }
 
   def scrollToSelectedRow(rowIdxOpt: Option[Int]): Unit = {
     rowIdxOpt match {
@@ -167,10 +167,17 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
             children <-- colHeadersVar.signal.map { headerRow(_) }
           ),
           tbody(
-            children <-- showGcdVar.signal.map { rowList =>
-              rowList.map(tup => row(tup))
-            }
-          )
+            //Added the filter functionality we used under the searchFilterFunction() previously 
+            children <-- gcdVar.signal
+              .combineWithFn(searchQueryVar.signal) { (rows, q0) =>
+                val q = q0.trim.toLowerCase
+                if (q.isEmpty) rows
+                else rows.filter { rowCols =>
+                  rowCols.exists(cell => cell.data.text.toLowerCase.contains(q))
+      }
+    }
+    .map(_.map(row(_)))
+)
         )
       ),
       
@@ -265,7 +272,7 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
       val q = searchQueryVar.now()      // remember current search text
       populate(newPatients)             // replace underlying rows (gcdVar)
       searchQueryVar.set(q)             // restore search text
-      searchFilterFunction()            // re-apply filter with the same query
+      // searchFilterFunction()            // re-apply filter with the same query
     }
 
 
