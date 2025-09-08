@@ -2,13 +2,13 @@ package com.axiom
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import com.axiom.model.shared.dto.Patient
-import com.axiom.TableColProperties
 import io.laminext.fetch._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import zio.json._
 import scala.collection.mutable
 import org.scalajs.dom.AbortController
+import com.axiom.ui.patienttracker.TypeClass.CellDataConvertor
 
 object ModelFetch :
 
@@ -21,8 +21,8 @@ object ModelFetch :
 
   
   def columns(p:Patient) =  
-    val c = mutable.IndexedSeq(TableColProperties.derived[Patient].element(p)*)
-    c(0) = c(0).copy(text = s"*${c(0).text}*", color = "green")
+    val c = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*)
+    c(0) = c(0).copy(text = s"*${c(0).text}*")
     c.toList
 
   def  fetchPatients = 

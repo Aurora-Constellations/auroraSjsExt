@@ -12,9 +12,6 @@ import com.axiom.messaging.*
 import com.axiom.ui.patienttracker.utils.DataProcessing
 import com.axiom.ui.patienttracker.utils.{extractPatientDetails, buildUpdatedPatient, createPatientFormState}
 import com.axiom.AxiomPatientTracker 
-import scala.annotation.nowarn
-
-
 
 //Added case class to tag editable values
 case class PatientFormState (

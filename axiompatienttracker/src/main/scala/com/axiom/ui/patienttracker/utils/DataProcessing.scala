@@ -3,7 +3,6 @@ package com.axiom.ui.patienttracker.utils
 import java.time.{LocalDate, LocalDateTime}
 import com.axiom.model.shared.dto.Patient
 import com.raquo.laminar.api.L._
-// import com.axiom.ui.patienttracker.PatientDetails
 import com.axiom.ui.patienttracker.PatientFormState
 
 object DataProcessing{
@@ -58,61 +57,60 @@ object DataProcessing{
 
   def getErrorSignal(key: String): Signal[Option[String]] =
     errorVars.getOrElse(key, Var(None)).signal
-
-
 }
-  def createPatientFormState(patient: Patient): PatientFormState =
-    PatientFormState(
-      firstName   = Var(patient.firstName),
-      lastName    = Var(patient.lastName),
-      dob         = Var(patient.dob.map(_.toString).getOrElse("")),
-      sex         = Var(patient.sex),
-      hcn         = Var(patient.hcn.getOrElse("")),
-      family      = Var(patient.family.getOrElse("")),
-      famPriv     = Var(patient.famPriv.getOrElse("")),
-      service     = Var(patient.service.getOrElse("")),
-      attending   = Var(patient.attending.getOrElse("")),
-      auroraFile  = Var(patient.auroraFile.getOrElse(""))
-    )
+
+def createPatientFormState(patient: Patient): PatientFormState =
+  PatientFormState(
+    firstName   = Var(patient.firstName),
+    lastName    = Var(patient.lastName),
+    dob         = Var(patient.dob.map(_.toString).getOrElse("")),
+    sex         = Var(patient.sex),
+    hcn         = Var(patient.hcn.getOrElse("")),
+    family      = Var(patient.family.getOrElse("")),
+    famPriv     = Var(patient.famPriv.getOrElse("")),
+    service     = Var(patient.service.getOrElse("")),
+    attending   = Var(patient.attending.getOrElse("")),
+    auroraFile  = Var(patient.auroraFile.getOrElse(""))
+  )
     
 def buildPatientFromState(state: DataProcessing.FormState): Patient =
-    val admitDateRaw = state.admitDateVar.now()
-    val formattedAdmitDate =
-      if admitDateRaw.length == 16 then s"$admitDateRaw:00" else admitDateRaw
+  val admitDateRaw = state.admitDateVar.now()
+  val formattedAdmitDate =
+    if admitDateRaw.length == 16 then s"$admitDateRaw:00" else admitDateRaw
 
-    Patient(
-      id = -1L,
-      accountNumber = state.accountNumberVar.now(),
-      unitNumber = state.unitNumberVar.now(),
-      lastName = state.lastNameVar.now(),
-      firstName = state.firstNameVar.now(),
-      sex = state.sexVar.now(),
-      dob = Some(LocalDate.parse(state.dobVar.now())),
-      hcn = None,
-      admitDate = Some(LocalDateTime.parse(formattedAdmitDate)),
-      floor = Some(state.floorVar.now()),
-      room = Some(state.roomVar.now()),
-      bed = Some(state.bedVar.now()),
-      mrp = None,
-      admittingPhys = None,
-      family = None,
-      famPriv = None,
-      hosp = Some(state.hospVar.now()),
-      flag = None,
-      service = None,
-      address1 = None,
-      address2 = None,
-      city = None,
-      province = None,
-      postalCode = None,
-      homePhoneNumber = None,
-      workPhoneNumber = None,
-      ohip = None,
-      attending = None,
-      collab1 = None,
-      collab2 = None,
-      auroraFile = None
-    )
+  Patient(
+    id = -1L,
+    accountNumber = state.accountNumberVar.now(),
+    unitNumber = state.unitNumberVar.now(),
+    lastName = state.lastNameVar.now(),
+    firstName = state.firstNameVar.now(),
+    sex = state.sexVar.now(),
+    dob = Some(LocalDate.parse(state.dobVar.now())),
+    hcn = None,
+    admitDate = Some(LocalDateTime.parse(formattedAdmitDate)),
+    floor = Some(state.floorVar.now()),
+    room = Some(state.roomVar.now()),
+    bed = Some(state.bedVar.now()),
+    mrp = None,
+    admittingPhys = None,
+    family = None,
+    famPriv = None,
+    hosp = Some(state.hospVar.now()),
+    flag = None,
+    service = None,
+    address1 = None,
+    address2 = None,
+    city = None,
+    province = None,
+    postalCode = None,
+    homePhoneNumber = None,
+    workPhoneNumber = None,
+    ohip = None,
+    attending = None,
+    collab1 = None,
+    collab2 = None,
+    auroraFile = None
+  )
 
 def extractPatientDetails(patient: Patient): List[(String, String)] =
   List(

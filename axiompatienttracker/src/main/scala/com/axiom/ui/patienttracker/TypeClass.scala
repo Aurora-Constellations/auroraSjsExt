@@ -1,54 +1,46 @@
 package com.axiom.ui.patienttracker
+
 import shapeless3.deriving.*
 import java.time.*
-import org.scalajs.dom.{HTMLHtmlElement}
 import com.raquo.laminar.api.L.{*, given}
-import org.w3c.dom.Text
-import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon
 import com.axiom.ui.patienttracker.utils.{PatientStatus, PatientStatusIcons}
 
-
-object TypeClass :
-  
+object TypeClass:
 
   trait RenderCellData[A]:
-
-    def celldata(a:A): HtmlElement
+    def celldata(a: A): HtmlElement
 
   object RenderCellData:
-    given RenderCellData[String] = text =>  div(  text  )
-    given RenderCellData[Int] = numeric =>  div(  s"$numeric"  )
-    given RenderCellData[LocalDateTime] = datetime =>  div(  s"$datetime"  )
-    given RenderCellData[LocalDate] = date =>  div(  s"$date"  )
-    given RenderCellData[Long] = ltext =>  div(  ltext  )
-    given RenderCellData[Boolean] = bnumeric =>  div(  s"$bnumeric"  )
-    given RenderCellData[HtmlElement] = el => el 
+    given RenderCellData[String] = text => div(text)
+    given RenderCellData[Int] = numeric => div(s"$numeric")
+    given RenderCellData[LocalDateTime] = datetime => div(s"$datetime")
+    given RenderCellData[LocalDate] = date => div(s"$date")
+    given RenderCellData[Long] = ltext => div(ltext)
+    given RenderCellData[Boolean] = bnumeric => div(s"$bnumeric")
+    given RenderCellData[HtmlElement] = el => el
 
   // type class and givens
   trait CellDataConvertor[A]:
-    def celldata(a: A):List[CellData]
+    def celldata(a: A): List[CellData]
 
-  def f[A](a:A)(using b:RenderCellData[A])  :HtmlElement =
+  def f[A](a: A)(using b: RenderCellData[A]): HtmlElement =
     b.celldata(a)
 
-
   object CellDataConvertor:
-    given CellDataConvertor[Long] =         l => List(CellData(l.toString,"green", f(l)))
-    given CellDataConvertor[Int] =         i => List(CellData(i.toString,"black",f(i)))
-    given CellDataConvertor[Boolean] =     b => List(CellData(b.toString,"blue",f(b)))
-    given CellDataConvertor[String] =      s =>  List(CellData(identity(s),"#3361ff",f(s)))
-    given CellDataConvertor[LocalDate] =   d => List(CellData(d.toString(),"yellow",f(d)))
-    given CellDataConvertor[LocalDateTime] = d => List(CellData(d.toString(),"cyan",f(d)))
-    given CellDataConvertor[HtmlElement] = el => List(CellData(text = "", color = "", element = el))
+    given CellDataConvertor[Long] = l => List(CellData(l.toString, f(l)))
+    given CellDataConvertor[Int] = i => List(CellData(i.toString, f(i)))
+    given CellDataConvertor[Boolean] = b => List(CellData(b.toString, f(b)))
+    given CellDataConvertor[String] = s => List(CellData(identity(s), f(s)))
+    given CellDataConvertor[LocalDate] = d => List(CellData(d.toString(), f(d)))
+    given CellDataConvertor[LocalDateTime] = d => List(CellData(d.toString(), f(d)))
+    given CellDataConvertor[HtmlElement] = el => List(CellData(text = "", element = el))
     def deriveShowProduct[A](using
-      pInst: K0.ProductInstances[CellDataConvertor, A],
-      labelling: Labelling[A]
+        pInst: K0.ProductInstances[CellDataConvertor, A],
+        labelling: Labelling[A]
     ): CellDataConvertor[A] =
       (a: A) =>
         val properties: List[CellData] =
-          labelling.elemLabels
-            .zipWithIndex
-            .toList                                 // <— ensure List here
+          labelling.elemLabels.zipWithIndex.toList // <— ensure List here
             .flatMap { (label, index) =>
               val base: List[CellData] =
                 pInst.project(a)(index)([t] => (st: CellDataConvertor[t], pt: t) => st.celldata(pt))
@@ -67,10 +59,6 @@ object TypeClass :
             }
         properties
 
-
-            
-
-
     def deriveShowSum[A](using
         inst: K0.CoproductInstances[CellDataConvertor, A]
     ): CellDataConvertor[A] =
@@ -81,9 +69,4 @@ object TypeClass :
 
     given optionCellDataConvertor[T](using ev: CellDataConvertor[T]): CellDataConvertor[Option[T]] =
       case Some(value) => ev.celldata(value)
-      case None        => List(CellData("", "gray",div("None"))) // Or choose a suitable fallback
-      
-  
-  
-
-
+      case None        => List(CellData("", div("None"))) // Or choose a suitable fallback
