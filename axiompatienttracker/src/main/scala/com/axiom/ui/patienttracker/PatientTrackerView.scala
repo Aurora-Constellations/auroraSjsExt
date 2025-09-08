@@ -23,13 +23,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.SearchBar
 import com.axiom.ui.patienttracker.utils.DataProcessing
 import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
-// import com.axiom.Model.PatientUI
+
 type PatientList = CCRowList[Patient]
 
 trait RenderHtml :
   def renderHtml:Element
-
-// case class CellData(text:String,color:String) 
+ 
 case class CellData(text:String,color:String,element:HtmlElement) 
 
 case class PatientGridData(grid: PatientTracker,colrow:ColRow, data:CellData) 
@@ -59,8 +58,7 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
     //TODO DRY PRINCIPLE!!
     val headers = ShapelessFieldNameExtractor.fieldNames[PatientUI]//.slice(1, numColumnsToShow)
 
-    //TODO  status prepended to header list
-    // val newHeaders = "STATUS" :: headers.toList
+    
     Var(headers.filterNot(name => colsToRemove.contains(name)))
   }
   
@@ -147,13 +145,9 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
   }
   
   def renderHtml: L.Element =
-    def headerRow(s:List[String]) = 
-      List(tr(
-          (s :+ "Details").map (s => { // Add Details column header
-            th(s, padding := "8px")
-          })
-        )
-      )
+    def headerRow(s: List[String]) =
+      List(tr(s.map(name => th(name, padding := "8px"))))
+
 
     div(
        cls := "table-container", // Wrapper for both search bar and table
@@ -190,7 +184,7 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
     //TODO UGLY USE OF INDEX
 
     com.axiom.Main.consoleOut(s"${cols.head}")
-    val unitNumber = cols(0).data.text //Making it globally available. Getting cell text (unit number) from the cell's data (was previously _3.text from tuple)
+    val unitNumber = cols(2).data.text //Making it globally available. Getting cell text (unit number) from the cell's data (was previously _3.text from tuple)
 
     tr(
       idAttr := s"row-$rowIdx",
@@ -204,7 +198,7 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
         renderPatientDetailsPage(unitNumber) 
       },
       cols.map(c => tableCell(c._2))
-      // renderActionButtons(unitNumber) //Helper Function to render the View Details and Edit Buttons
+      
     )
   }
 
@@ -216,15 +210,8 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
 
       //TODO rendering status icons
       data(colRow)
-        .map { cell =>
-          //TODO UGLY USE OF INDEX
-          //  if (colRow.col == 0)
-          //     div(
-          //       cls := "status-column",
-          //       renderStatusIcon(utils.PatientStatus.fromString(cell.data.text))
-          //     ) // Helper Function to render the status Icons
-          //  else
-            span(cell.data.text)
+        .map { cell =>(cell.data.element)
+            
         }
       .getOrElse("---")
   )
@@ -278,22 +265,21 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
 
    //Helper function to render "View Details" and "Edit" actions on the patient tracker
 
-  private def renderActionButtons(unitNumber: String): HtmlElement =
-    td(
-      cls := "details-column",
-      button(
-        "View Details", 
-        marginRight := "8px", 
-        onClick --> { _ => 
-          renderPatientDetailsPage(unitNumber) }),
-      button(
-        "Edit", 
-        onClick --> { _ => 
-          renderPatientDetailsPage(unitNumber, editable = true) 
-          }
-          )
-          
+  def renderActionButtons(unitNumber: String): HtmlElement =
+  // return a container (div/span), NOT td, because tableCell already wraps in <td>
+  div(
+    cls := "details-column",
+    button(
+      "View Details",
+      marginRight := "8px",
+      onClick --> { _ => renderPatientDetailsPage(unitNumber) }
+    ),
+    button(
+      "Edit",
+      onClick --> { _ => renderPatientDetailsPage(unitNumber, editable = true) }
     )
+  )
+
    
 
 
