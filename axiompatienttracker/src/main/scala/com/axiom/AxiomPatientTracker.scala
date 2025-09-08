@@ -15,7 +15,7 @@ object AxiomPatientTracker :
    
   case class PatientUI(status:String, accountNumber:String, unitNumber:String, lastName:String, firstName:String, sex: String , admitDate: Option[LocalDateTime], Floor: Option[String], details: HtmlElement) 
   
-  //TODO make better names
+  
   def toPatientUI(p:Patient):PatientUI = PatientUI(p.flag.map(_.toString).getOrElse("0"), p.accountNumber, p.unitNumber, p.lastName,p.firstName, p.sex, p.admitDate, p.floor, patientTracker.renderActionButtons(p.unitNumber))
 
   def consoleOut(msg: String): Unit = {
@@ -36,5 +36,5 @@ object AxiomPatientTracker :
   def apply():Element = load()
 
 
-    //TODO populating table model
+    
 

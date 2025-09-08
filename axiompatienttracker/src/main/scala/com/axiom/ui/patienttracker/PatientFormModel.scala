@@ -14,6 +14,7 @@ import com.axiom.ui.patienttracker.utils.DataProcessing._
 import com.axiom.ui.patienttracker.utils.DataProcessing
 import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
 import utils.buildPatientFromState
+import com.axiom.AxiomPatientTracker
 
 object PatientFormModel:
 
@@ -35,24 +36,20 @@ object PatientFormModel:
               onSubmit.preventDefault --> { _ =>
                 if validateForm(state) then
                   val patient = buildPatientFromState(state)
-                  ModelFetch.createPatient(patient).onComplete {
-                    case Success(_) =>
+              
+                  ModelFetch.createPatient(patient)
+                    .flatMap(_ => ModelFetch.fetchPatients)
+                    .map(_.map(AxiomPatientTracker.toPatientUI))
+                    .foreach { ui =>
                       println("Patient created successfully, reloading tracker")
+                      val tracker = AxiomPatientTracker.patientTracker
+                      tracker.refreshAndKeepSearch(ui)
                       val container = dom.document.getElementById("app")
-                      if (container != null) {
-                        container.innerHTML = ""
-                        val tracker = new PatientTracker()
-
-                        //FIXME
-                        // ModelFetch.fetchPatients.foreach { patients =>
-                        //   tracker.populate(patients)
-                        //   render(container, tracker.renderHtml)
-                        // }
-                      }
+                      container.innerHTML = ""
+                      render(container, tracker.renderHtml)
                       onClose()
-                    case Failure(ex) =>
-                      println(s"Failed to create patient: ${ex.getMessage}")
-                  }
+                    }
+
                 else
                   println("Validation failed.")
               },

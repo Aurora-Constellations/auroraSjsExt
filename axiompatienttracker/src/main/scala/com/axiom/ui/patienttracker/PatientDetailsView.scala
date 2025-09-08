@@ -2,6 +2,7 @@ package com.axiom.ui.patienttracker
 
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
+import scala.concurrent.Future
 import com.axiom.ModelFetch
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
@@ -10,6 +11,8 @@ import java.time.{LocalDate, LocalDateTime}
 import com.axiom.messaging.*
 import com.axiom.ui.patienttracker.utils.DataProcessing
 import com.axiom.ui.patienttracker.utils.{extractPatientDetails, buildUpdatedPatient, createPatientFormState}
+import com.axiom.AxiomPatientTracker 
+import scala.annotation.nowarn
 
 
 
@@ -83,18 +86,20 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
 
 
                 // Call the backend update API by passing the updated values
-                ModelFetch.updatePatientDetails(unitNumber, updatedPatient).foreach {
-                  case Some(updated) =>
-                    println(s"Patient updated successfully: ${updated.unitNumber}")
-                    val tracker = new PatientTracker()
-                    // ModelFetch.fetchPatients.foreach { patients =>
-                    //   tracker.populate(patients)
-                    // }
+                ModelFetch.updatePatientDetails(unitNumber, updatedPatient)
+                  .flatMap {
+                    case Some(_) => ModelFetch.fetchPatients                // get fresh list
+                    case None    => Future.successful(Nil)
+                  }
+                  .foreach { patients =>
+                    val ui = patients.map(AxiomPatientTracker.toPatientUI)  
+                    val tracker = AxiomPatientTracker.patientTracker
+                    tracker.refreshAndKeepSearch(ui)                        // keeps search text
+                    val container = dom.document.getElementById("app")
                     container.innerHTML = ""
                     render(container, tracker.renderHtml)
-                  case None =>
-                    println("Failed to update patient.")
                   }
+
               }
             )
           }else emptyNode ,
@@ -105,12 +110,10 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
             width:= "100%",
             onClick --> { _ =>
               println("Back to list clicked")
-              val patientTracker = new PatientTracker()
-              // ModelFetch.fetchPatients.foreach{ p => 
-              //   patientTracker.populate(p)
-              // }
+              val tracker = AxiomPatientTracker.patientTracker
+              
               container.innerHTML = "" // Clear only the container
-              // render(container, patientTracker.renderHtml)
+              render(container, tracker.renderHtml)
             }
           )
         )
@@ -133,12 +136,9 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
               width:= "100%",
               onClick --> { _ =>
                 println("Back to list clicked")
-                //FIXME val patientTracker = new PatientTracker()
-                // ModelFetch.fetchPatients.foreach{ p => 
-                //   patientTracker.populate(p)
-                // }
+                val tracker = AxiomPatientTracker.patientTracker
                 container.innerHTML = "" // Clear only the container
-                // render(container, patientTracker.renderHtml)
+                render(container, tracker.renderHtml)
               }
             )
           )

@@ -23,6 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.SearchBar
 import com.axiom.ui.patienttracker.utils.DataProcessing
 import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
+import com.axiom.AxiomPatientTracker
 
 type PatientList = CCRowList[Patient]
 
@@ -42,26 +43,33 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
   val selectedCellVar:Var[Option[ColRow]] = Var(None)
   val selectedRowVar:Var[Option[Int]] = Var(None)
   val searchQueryVar: Var[String] = Var("")
-  // val numColumnsToShow = 10
-  // searchQueryVar.signal.foreach { _ =>
-  //     searchFilterFunction()
-  //   }
+  
   lazy val createPatientFormState = utils.DataProcessing.FormState()
   // Flag For create patient form
   val showCreatePatientForm = Var(false)
   def openCreatePatientModal(): Unit = showCreatePatientForm.set(true)
   def closeCreatePatientModal(): Unit = showCreatePatientForm.set(false)
 
-  val colsToRemove = Set("hcn", "dob") // Use Set for faster lookup
-  val colHeadersVar: Var[List[String]] = {
+  // hide these everywhere
+  private val removedCols: Set[String] = Set("hcn", "dob")
 
-    //TODO DRY PRINCIPLE!!
-    val headers = ShapelessFieldNameExtractor.fieldNames[PatientUI]//.slice(1, numColumnsToShow)
+  // one source of headers
+  private lazy val allHeaders: List[String] =
+    ShapelessFieldNameExtractor.fieldNames[AxiomPatientTracker.PatientUI]
 
-    
-    Var(headers.filterNot(name => colsToRemove.contains(name)))
-  }
-  
+  private lazy val visibleHeaders: List[String] =
+    allHeaders.filterNot(removedCols)
+
+  private lazy val visibleIndex: Map[String, Int] =
+    visibleHeaders.zipWithIndex.toMap
+
+  // small helper to read a cell's text by column name
+  private def textAt(colName: String)(cols: Row): String =
+    visibleIndex
+      .get(colName)
+      .flatMap(i => cols.lift(i))
+      .map(_.data.text)
+      .getOrElse("")
 
   selectedCellVar.signal.map {
       case Some(sel) => Some(sel.row)
@@ -73,42 +81,25 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
   }
   
 
-  def getSpecificCellData(columnName: String, p: PatientUI): CellData = {
-    // Get original headers and cell data
-    //TODO headers and celldata derived from Patient DTO
-    val headers = ShapelessFieldNameExtractor.fieldNames[PatientUI]
-    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[PatientUI].celldata(p)*)
+  // cells for a row
+  private def cellsOf(p: PatientUI) =
+    CellDataConvertor.derived[PatientUI].celldata(p).toVector
 
-    val columnIndexOpt = headers.indexOf(columnName) match
-      case -1 => None
-      case i  => Some(i)
+  private def visibleCellsOf(p: PatientUI): List[CellData] =
+    allHeaders.zip(cellsOf(p)).collect { case (h, cell) if !removedCols(h) => cell }
 
-    // Get the cell data for the specific column
-    val specificCellData = columnIndexOpt
-      .filter(_ < cellData.length) // Ensure the index is within bounds
-      .map(cellData(_))
-      .getOrElse(CellData("", "", div("--"))) // Default CellData if column not found or out of bounds
-    specificCellData
+  // helper
+  def getSpecificCellData(columnName: String, p: PatientUI): CellData =
+    val default = CellData("", "", div("--"))
+    visibleIndex.get(columnName).flatMap(i => visibleCellsOf(p).lift(i)).getOrElse(default)
+
+  // FIXED columns
+  def columns(row: Int, p: PatientUI): List[CellData] = {
+    (allHeaders zip cellsOf(p))
+      .collect { case (name, cell) if !removedCols(name) => cell }
   }
 
-  def columns(row: Int, p: PatientUI) =
-    // Get original headers and cell data
-    val headers = ShapelessFieldNameExtractor.fieldNames[PatientUI]
-    val cellData = mutable.IndexedSeq(CellDataConvertor.derived[PatientUI].celldata(p)*)//.slice(1, numColumnsToShow)
-    cellData.toList
-    // com.axiom.Main.console Out(s"${cellData.head}")
-
-    // Get the cell data for the specific column
-    // val statusCellData = getSpecificCellData("flag", p)
-    // val newCellData = List(statusCellData) ++ cellData.toList
-    // val zipped = headers.zip(newCellData)
-
-    // // Filter out the column with name "hcn"
-    // val filtered = zipped.filterNot { case (name, _) => colsToRemove.contains(name) }
-    // val filteredCellData = filtered.map(_._2)
-    // filteredCellData
-
-  override def cctoData(row:Int,cc:PatientUI):List[CellData] = columns(row,cc)
+  override def cctoData(row: Int, cc: PatientUI): List[CellData] = columns(row, cc)
 
   // Rudimentary search filter function, could be made column/data agnostic to be able to use for all columns of the patient data.
   //  def searchFilterFunction(): Unit = {
@@ -158,7 +149,9 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
         table(
           onKeyDown --> tableKeyboardHandler,
           thead(
-            children <-- colHeadersVar.signal.map { headerRow(_) }
+            children <-- Val(visibleHeaders).map { hs =>
+              List(tr(hs.map(h => th(h))))
+            }
           ),
           tbody(
             //Added the filter functionality we used under the searchFilterFunction() previously 
@@ -179,13 +172,8 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
     )
 
   def row(cols: Row): HtmlElement = {
-    val showConfirm = Var(false)
-    val rowIdx = cols.head.position.row //Extracted Once for consistennt row ID reference.  Getting row index from the cell's position (was previously _2.row from tuple)
-    //TODO UGLY USE OF INDEX
-
-    com.axiom.Main.consoleOut(s"${cols.head}")
-    val unitNumber = cols(2).data.text //Making it globally available. Getting cell text (unit number) from the cell's data (was previously _3.text from tuple)
-
+    val rowIdx     = cols.headOption.map(_.position.row).getOrElse(-1)
+    val unitNumber = textAt("unitNumber")(cols)   
     tr(
       idAttr := s"row-$rowIdx",
       backgroundColor <-- selectedRowVar.signal.map {
@@ -193,11 +181,11 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
         case _ => "black"
       },
       onDblClick --> { _ => 
-        // Assuming the second column contains the unit number
+        // Assuming the third column contains the unit number
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
         renderPatientDetailsPage(unitNumber) 
       },
-      cols.map(c => tableCell(c._2))
+      cols.map(c => tableCell(c.position))
       
     )
   }
@@ -208,7 +196,7 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
       onKeyDown --> keyboardHandler,
       onMouseUp.mapTo(colRow).map(Some(_)) --> selectedCellVar.writer,
 
-      //TODO rendering status icons
+      
       data(colRow)
         .map { cell =>(cell.data.element)
             
@@ -266,7 +254,6 @@ class PatientTracker() extends GridT [PatientUI,CellData] with RenderHtml:
    //Helper function to render "View Details" and "Edit" actions on the patient tracker
 
   def renderActionButtons(unitNumber: String): HtmlElement =
-  // return a container (div/span), NOT td, because tableCell already wraps in <td>
   div(
     cls := "details-column",
     button(
