@@ -10,6 +10,11 @@
 	"categories": [
 		"Other"
 	],
+	"private": true,
+	"workspaces": [
+		"axiombilling",
+		"axiompatienttracker"
+	],
 	"main": "./out/extension",
 	"contributes": {
 		"languages": [
@@ -144,6 +149,7 @@
 	},
 	"devDependencies": {
 		"@scala-js/vite-plugin-scalajs": "^1.0.0",
+		"lerna": "^8.2.3",
 		"typescript": "^5.6.3"
 	},
 	"dependencies": {
