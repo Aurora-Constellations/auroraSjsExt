@@ -2,6 +2,7 @@ package com.axiom.audio
 
 import scala.scalajs.js
 import typings.vscode.mod.ExtensionContext
+import scala.concurrent.{Future, Promise}
 
 object AudioToTextCommands:
 
@@ -37,7 +38,37 @@ object AudioToTextCommands:
                 println(s"Backend process exited with code: $code")
             )
 
-    def runBackendCommand(context: ExtensionContext, args: String*): Unit =
+    def runBackendCommand(context: ExtensionContext, args: String*): Future[Unit] = {
         ensureBackendRunning(context)
+
+        val p = Promise[Unit]()
         val cmdStr = args.mkString(" ") + "\n"
+
+        // Attach a one-time stdout listener
+        var onData: js.Function1[js.Any, Unit] = null
+        onData = (data: js.Any) => {
+            val line = data.toString.trim
+            if (line.contains("Recording started")) {
+                p.trySuccess(())
+                backendProc.stdout.off("data", onData) // remove listener after success
+            }
+            if (line.contains("Recording stopped")) {
+                p.trySuccess(())
+                backendProc.stdout.off("data", onData) // remove listener after success
+            }
+            if (line.contains("Transcription completed")) {
+                p.trySuccess(())
+                backendProc.stdout.off("data", onData) // remove listener after success
+            }
+            if (line.startsWith("Transcription failed:")) {
+                p.tryFailure(new Exception(line))
+                backendProc.stdout.off("data", onData)
+            }
+        }
+
+        backendProc.stdout.on("data", onData)
         backendProc.stdin.write(cmdStr)
+
+        p.future
+    }
+

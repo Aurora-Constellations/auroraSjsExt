@@ -99,6 +99,10 @@
 			{
 				"command": "AuroraSjsExt.transcribeRecording",
 				"title": "Aurora Transcribe Recording"
+			},
+			{
+				"command": "AuroraSjsExt.transcribeAndRunMcp",
+				"title": "Aurora Transcribe and Run MCP"
 			}
 		],
 		"menus": {

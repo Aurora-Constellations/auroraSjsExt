@@ -27,6 +27,8 @@ import com.axiom.messaging.*
 import com.axiom.mcp.ClaudeClient
 import com.axiom.mcp.McpHandler
 import com.axiom.audio.AudioToTextCommands
+import scala.concurrent.Future
+import scala.scalajs.js.annotation.JSImport
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
@@ -45,7 +47,8 @@ object PublishCommands:
           ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
           ("AuroraSjsExt.startRecording", startRecording(context)),
           ("AuroraSjsExt.stopRecording", stopRecording(context)),
-          ("AuroraSjsExt.transcribeRecording", transcribeAudio(context))
+          ("AuroraSjsExt.transcribeRecording", transcribeAudio(context)),
+          ("AuroraSjsExt.transcribeAndRunMcp", transcribeAndRunMCP(context))
       )
 
       commands.foreach { case (name, fun) =>
@@ -57,19 +60,45 @@ object PublishCommands:
       }
   }
 
-  def startRecording(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+  def startRecording(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
     val outPath = s"${context.extensionPath}/recordings/latest.wav"
-    AudioToTextCommands.runBackendCommand(context, "record", outPath)
-    vscode.window.showInformationMessage("Recording started. Click 'Stop Recording' to end.")
+    AudioToTextCommands.runBackendCommand(context, "record", outPath).flatMap{_ => 
+      vscode.window.showInformationMessage("Recording started. Click 'Stop Recording' to end.")
+        .toFuture.map(_ => ())
+    }
   }
 
-  def stopRecording(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
-    AudioToTextCommands.runBackendCommand(context, "stop")
-    vscode.window.showInformationMessage("Recording stopped. Click 'Transcribe Audio' to convert to text.")
+  def stopRecording(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
+    AudioToTextCommands.runBackendCommand(context, "stop").flatMap { _ =>
+      vscode.window.showInformationMessage("Recording stopped. Click 'Transcribe Audio' to convert to text.")
+        .toFuture.map(_ => ())
+    }
   }
 
-  def transcribeAudio(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+  def transcribeAudio(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
     AudioToTextCommands.runBackendCommand(context, "transcribe", s"${context.extensionPath}/recordings/latest.wav")
+  }
+
+  def transcribeAndRunMCP(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    val transcriptionFuture: Future[String] =
+      transcribeAudio(context)(()).flatMap { _ =>
+        fsPromises
+          .readFile(s"${context.extensionPath}/recordings/latest_transcription.txt", "utf8")
+          .toFuture
+      }
+
+    transcriptionFuture
+      .flatMap(transcription => ClaudeClient.getMcpFromPrompt(transcription))
+      .map { mcpJson =>
+        val mcpString = js.JSON.stringify(mcpJson)
+        McpHandler.action(mcpString)
+      }
+      .recover {
+        case e: Throwable =>
+          val errMsg = s"Error in transcription or Claude API: ${e.getMessage}"
+          vscode.window.showErrorMessage(errMsg)
+      }
+    ()
   }
 
   def takeMcpPrompt(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
@@ -292,4 +321,12 @@ object PublishCommands:
     } else { 
       println("No active text editor found.")
     }  
+    
+  }
+
+  // Node.js filesystem module
+  @js.native
+  @JSImport("fs", "promises")
+  object fsPromises extends js.Object {
+    def readFile(path: String, encoding: String = "utf8"): js.Promise[String] = js.native
   }
