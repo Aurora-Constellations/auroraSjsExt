@@ -1,6 +1,6 @@
 package com.axiom.ui.patienttracker
 
-// this file handles all the patient tracker actions like create,viewing, navigations of the page, edit, delete etc 
+// this file handles all the patient tracker actions like create,viewing, navigations of the page, edit, delete etc
 
 import scala.scalajs.js
 import com.axiom.ModelFetch
@@ -11,15 +11,11 @@ import com.axiom.model.shared.dto.Patient
 import scala.util.{Success, Failure}
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.DataProcessing._
-import com.axiom.ui.patienttracker.utils.DataProcessing
-import com.axiom.ui.patienttracker.utils.DataProcessing.FormState
-import utils.buildPatientFromState
+import com.axiom.ui.patienttracker.utils.buildPatientFromState
+import com.axiom.AxiomPatientTracker
 
 object PatientFormModel:
-
-
-  
-  def create(state: DataProcessing.FormState, showVar: Var[Boolean], onClose: () => Unit): HtmlElement =
+  def create(state: FormState, showVar: Var[Boolean], onClose: () => Unit): HtmlElement =
     div(
       className := "create-patient-modal-overlay",
       display <-- showVar.signal.map {
@@ -35,24 +31,21 @@ object PatientFormModel:
               onSubmit.preventDefault --> { _ =>
                 if validateForm(state) then
                   val patient = buildPatientFromState(state)
-                  ModelFetch.createPatient(patient).onComplete {
-                    case Success(_) =>
+
+                  ModelFetch
+                    .createPatient(patient)
+                    .flatMap(_ => ModelFetch.fetchPatients)
+                    .map(_.map(AxiomPatientTracker.toPatientUI))
+                    .foreach { ui =>
                       println("Patient created successfully, reloading tracker")
+                      val tracker = AxiomPatientTracker.patientTracker
+                      tracker.refreshAndKeepSearch(ui)
                       val container = dom.document.getElementById("app")
-                      if (container != null) {
-                        container.innerHTML = ""
-                        val tracker = new PatientTracker()
-                        ModelFetch.fetchPatients.foreach { patients =>
-                          tracker.populate(patients)
-                          render(container, tracker.renderHtml)
-                        }
-                      }
+                      container.innerHTML = ""
+                      render(container, tracker.renderHtml)
                       onClose()
-                    case Failure(ex) =>
-                      println(s"Failed to create patient: ${ex.getMessage}")
-                  }
-                else
-                  println("Validation failed.")
+                    }
+                else println("Validation failed.")
               },
               Seq(
                 "First Name*" -> ("firstName", state.firstNameVar),
@@ -67,23 +60,24 @@ object PatientFormModel:
                 "Room" -> ("", state.roomVar),
                 "Bed" -> ("", state.bedVar)
               ).map { case (labelText, (key, varRef)) =>
+                // TODO: Use HTML attributes for required field, Not hard coding
                 val errorSignal = errorVars.get(key).map(_.signal).getOrElse(Val(None))
                 val (fieldLabel, isRequired) =
-                if labelText.endsWith("*") then (labelText.dropRight(1).trim, true)
-                else (labelText, false)
-                            div(
-                              marginBottom := "12px",
-                              label(
-                  span(fieldLabel),
-                  if isRequired then span("*", color := "red", fontWeight.bold) else emptyNode,
-                  display.block,
-                  marginBottom := "4px"
-                ),
-                input(
-                  typ := "text",
-                  className := "input", // keep it simple
-                  onInput.mapToValue --> varRef
-                ),
+                  if labelText.endsWith("*") then (labelText.dropRight(1).trim, true)
+                  else (labelText, false)
+                div(
+                  marginBottom := "12px",
+                  label(
+                    span(fieldLabel),
+                    if isRequired then span("*", color := "red", fontWeight.bold) else emptyNode,
+                    display.block,
+                    marginBottom := "4px"
+                  ),
+                  input(
+                    typ := "text",
+                    className := "input", // keep it simple
+                    onInput.mapToValue --> varRef
+                  ),
                   child.maybe <-- errorSignal.map {
                     case Some(msg) => Some(span(msg, cls := "error-text"))
                     case None      => None

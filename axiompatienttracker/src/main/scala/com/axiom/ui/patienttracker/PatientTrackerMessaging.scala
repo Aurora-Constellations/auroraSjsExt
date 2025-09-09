@@ -3,9 +3,7 @@ package com.axiom.ui.patienttracker
 import org.scalajs.dom
 import scala.scalajs.js
 import scala.scalajs.js.annotation._
-import com.axiom.ModelFetch
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Try
 import com.axiom.vscode.ScalaJSGlobal
 import com.axiom.messaging.*
 

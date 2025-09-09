@@ -3,9 +3,6 @@ package com.axiom
 
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
-
-import scala.scalajs.js
-import scala.scalajs.js.annotation.JSImport
 import com.axiom.ui.patienttracker.initializeMessageListener
 
 object Main :

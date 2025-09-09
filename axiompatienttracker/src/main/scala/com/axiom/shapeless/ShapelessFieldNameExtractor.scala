@@ -1,7 +1,5 @@
 package com.axiom
 
-
-
 object ShapelessFieldNameExtractor :
   import shapeless3.deriving.*
   import scala.compiletime.{erasedValue, summonInline,constValue}
@@ -14,14 +12,3 @@ object ShapelessFieldNameExtractor :
     inline erasedValue[T] match
       case _: (head *: tail) => constValue[head].toString :: summonAllLabels[tail]
       case _: EmptyTuple => Nil
-
-
-
-
-  
-
-
-
-
-
-

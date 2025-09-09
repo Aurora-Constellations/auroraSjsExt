@@ -1,6 +1,5 @@
 package com.axiom.ui.patienttracker.handlers
 
-import scala.scalajs.js
 import com.axiom.ModelFetch
 import com.axiom.ui.patienttracker.sendResponseToVSCode
 import com.axiom.messaging.*
@@ -14,13 +13,11 @@ object UpdateNarrativesHandler extends MessageHandler[UpdateNarrativesMsg] {
       case Some(_) =>
         println(s"Narrative Flag updated successfully for unit number: ${msg.unitNumber}")
         sendResponseToVSCode(Response(MessagingCommands.UpdatedNarratives, UpdatedNarratives(s"Narratives updated successfully for ${msg.unitNumber}.aurora")))
-        ModelFetch.fetchPatients.foreach{ p => 
-              AxiomPatientTracker.patientTracker.refreshAndKeepSearch(p)
+        ModelFetch.fetchPatients.foreach{ patients => 
+            val ui = patients.map(AxiomPatientTracker.toPatientUI)  
+            val tracker = AxiomPatientTracker.patientTracker
+            tracker.refreshAndKeepSearch(ui)
         }
-        // val patientTracker = new PatientTracker()
-        //  ModelFetch.fetchPatients.foreach{ p => 
-        // patientTracker.populate(p)
-    // }
         
       case None =>
         println(s"Failed to update Narrative Flag for unit number: ${msg.unitNumber}")

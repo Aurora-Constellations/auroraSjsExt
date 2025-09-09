@@ -169,6 +169,7 @@ td img {
   display: flex;
   justify-content: flex-start; /* Push items to the left horizontally */
   align-items: center;         /* Keep them vertically centered */
+  gap: 4px;
 }
 .status-column img {
   display: inline-block; /* prevent full-width block behavior */
