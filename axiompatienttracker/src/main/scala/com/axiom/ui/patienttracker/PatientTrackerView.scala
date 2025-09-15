@@ -112,6 +112,29 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
       case None => // Do nothing
     }
   }
+  //Build filtered view (no type annotation; let it infer mutable IndexedSeq)
+  private val filteredRowsSig =
+    gcdVar.signal
+      .combineWithFn(searchQueryVar.signal) { (rows, q0) =>
+        val q = q0.trim.toLowerCase
+        if (q.isEmpty) rows
+        else rows.filter { rowCols =>
+          rowCols.exists(cell => cell.data.text.toLowerCase.contains(q))
+        }
+      }
+
+  // Keep showGcdVar in sync 
+  filteredRowsSig.foreach(showGcdVar.set)
+
+  // Repair selection if the current selected row becomes invisible after filtering
+  filteredRowsSig.foreach { rows =>
+    val visibleIds = rows.map(_.head.position.row)
+    selectedRowVar.now() match
+      case Some(selId) if !visibleIds.contains(selId) =>
+        if (visibleIds.nonEmpty) selectedRowVar.set(Some(visibleIds.head))
+        else selectedRowVar.set(None)
+      case _ => ()
+  }
 
   def renderHtml: Element =
     def headerRow(s: List[String]) =
@@ -130,18 +153,12 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
             }
           ),
           tbody(
-            // Added the filter functionality we used under the searchFilterFunction() previously
-            children <-- gcdVar.signal
-              .combineWithFn(searchQueryVar.signal) { (rows, q0) =>
-                val q = q0.trim.toLowerCase
-                if (q.isEmpty) rows
-                else
-                  rows.filter { rowCols =>
-                    rowCols.exists(cell => cell.data.text.toLowerCase.contains(q))
-                  }
-              }
-              .map(_.map(row(_)))
-          )
+
+          children <-- filteredRowsSig.map { rows =>
+            rows.toList.map(row(_))
+          }
+        )
+
         )
       ),
       PatientFormModel.create(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
@@ -199,19 +216,32 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
   // Add event listeners for keyup to stop the interval
   dom.window.addEventListener("keyup", (e: KeyboardEvent) => stopKeyPressHandler(e))
 
-  // Move the selected row and scroll the page
+  // Move selection within the *filtered* (visible) rows
   private def moveAndScroll(step: Int): Unit = {
-    val currentRowOpt = selectedRowVar.now()
-    val totalRows = gcdVar.now().size
+    val visibleRows = showGcdVar.now()                 
+    if (visibleRows.isEmpty) {
+      selectedRowVar.set(None)
+      return
+    }
+    val visibleIds: IndexedSeq[Int] =
+      visibleRows.iterator.map(_.head.position.row).toIndexedSeq             
 
-    currentRowOpt.foreach { currentRow =>
-      val newRow = (currentRow + step).max(0).min(totalRows - 1) // Ensure bounds
-      if (newRow != currentRow) {
-        selectedRowVar.set(Some(newRow))
-        scrollToSelectedRow(Some(newRow))
-      }
+    val curIdOpt = selectedRowVar.now()
+    val curVisibleIdx: Int = curIdOpt match
+      case Some(curId) =>
+        val idx = visibleIds.indexOf(curId)
+        if (idx >= 0) idx else 0
+      case None => 0
+
+    val newIdx = (curVisibleIdx + step).max(0).min(visibleIds.size - 1)
+    val newId  = visibleIds(newIdx)
+
+    if (curIdOpt.forall(_ != newId)) {
+      selectedRowVar.set(Some(newId))          // keep storing the underlying id
+      scrollToSelectedRow(Some(newId))         
     }
   }
+
   // inside class PatientTracker
   def refreshAndKeepSearch(newPatients: List[PatientUI]): Unit = {
     val q = searchQueryVar.now() // remember current search text
