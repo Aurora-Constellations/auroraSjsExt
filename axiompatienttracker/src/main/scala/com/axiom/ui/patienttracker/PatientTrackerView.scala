@@ -12,7 +12,7 @@ import com.axiom.ModelFetch
 import com.axiom.ModelFetch.columnHeaders
 import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon
 import com.axiom.ui.patienttracker.utils.KeyboardNavigation
-import com.axiom.AxiomPatientTracker.PatientUI
+import com.axiom.AxiomPatientTracker.PatientRow
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,11 +27,11 @@ trait RenderHtml:
 case class CellData(text: String, element: HtmlElement)
 
 case class PatientGridData(grid: PatientTracker, colrow: ColRow, data: CellData)
-    extends GridDataT[PatientTracker, PatientUI, CellData](grid, colrow, data)
+    extends GridDataT[PatientTracker, PatientRow, CellData](grid, colrow, data)
     with RenderHtml:
   def renderHtml = td(data.text)
 
-class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
+class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
 
   given owner: Owner = new OneTimeOwner(() => ())
   val selectedCellVar: Var[Option[ColRow]] = Var(None)
@@ -49,7 +49,7 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
 
   // one source of headers
   private lazy val allHeaders: List[String] =
-    ShapelessFieldNameExtractor.fieldNames[PatientUI]
+    ShapelessFieldNameExtractor.fieldNames[PatientRow]
 
   private lazy val visibleHeaders: List[String] =
     allHeaders.filterNot(removedCols)
@@ -77,19 +77,19 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
   }
 
   // cells for a row
-  private def cellsOf(p: PatientUI) =
-    CellDataConvertor.derived[PatientUI].celldata(p).toVector
+  private def cellsOf(p: PatientRow) =
+    CellDataConvertor.derived[PatientRow].celldata(p).toVector
 
-  private def visibleCellsOf(p: PatientUI): List[CellData] =
+  private def visibleCellsOf(p: PatientRow): List[CellData] =
     allHeaders.zip(cellsOf(p)).collect { case (h, cell) if !removedCols(h) => cell }
 
   // FIXED columns
-  def columns(row: Int, p: PatientUI): List[CellData] = {
+  def columns(row: Int, p: PatientRow): List[CellData] = {
     (allHeaders zip cellsOf(p))
       .collect { case (name, cell) if !removedCols(name) => cell }
   }
 
-  override def cctoData(row: Int, cc: PatientUI): List[CellData] = columns(row, cc)
+  override def cctoData(row: Int, cc: PatientRow): List[CellData] = columns(row, cc)
 
   def scrollToSelectedRow(rowIdxOpt: Option[Int]): Unit = {
     rowIdxOpt match {
@@ -201,7 +201,6 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
     e.keyCode match
       case 40 | 38 => e.preventDefault() // Prevent default scrolling behavior for up/down arrows
       case _       => ()
-      // TODO Keyboard number mapping to the events
       // TODO ?SHOULD this be default behaviour on most tables?  if so put it in tableutils with a way to override
 
 // Key press state
@@ -243,7 +242,7 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
   }
 
   // inside class PatientTracker
-  def refreshAndKeepSearch(newPatients: List[PatientUI]): Unit = {
+  def refreshAndKeepSearch(newPatients: List[PatientRow]): Unit = {
     val q = searchQueryVar.now() // remember current search text
     populate(newPatients) // replace underlying rows (gcdVar)
     searchQueryVar.set(q) // restore search text

@@ -14,7 +14,7 @@ object UpdateNarrativesHandler extends MessageHandler[UpdateNarrativesMsg] {
         println(s"Narrative Flag updated successfully for unit number: ${msg.unitNumber}")
         sendResponseToVSCode(Response(MessagingCommands.UpdatedNarratives, UpdatedNarratives(s"Narratives updated successfully for ${msg.unitNumber}.aurora")))
         ModelFetch.fetchPatients.foreach{ patients => 
-            val ui = patients.map(AxiomPatientTracker.toPatientUI)  
+            val ui = patients.map(AxiomPatientTracker.patientRow)  
             val tracker = AxiomPatientTracker.patientTracker
             tracker.refreshAndKeepSearch(ui)
         }

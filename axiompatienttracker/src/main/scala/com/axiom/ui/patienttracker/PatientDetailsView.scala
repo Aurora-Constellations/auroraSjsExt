@@ -89,7 +89,7 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
                     case None    => Future.successful(Nil)
                   }
                   .foreach { patients =>
-                    val ui = patients.map(AxiomPatientTracker.toPatientUI)  
+                    val ui = patients.map(AxiomPatientTracker.patientRow)  
                     val tracker = AxiomPatientTracker.patientTracker
                     tracker.refreshAndKeepSearch(ui)                        // keeps search text
                     val container = dom.document.getElementById("app")

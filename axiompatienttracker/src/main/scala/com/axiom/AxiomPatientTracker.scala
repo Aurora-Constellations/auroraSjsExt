@@ -12,8 +12,8 @@ import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 object AxiomPatientTracker:
   lazy val patientTracker: PatientTracker = new PatientTracker()
 
-  // TODO is this name too vague
-  case class PatientUI(
+ 
+  case class PatientRow(
       status: String,
       accountNumber: String,
       unitNumber: String,
@@ -25,8 +25,7 @@ object AxiomPatientTracker:
       details: HtmlElement
   )
 
-  // TODO functional naming convention is to omit the "to",
-  def toPatientUI(p: Patient): PatientUI = PatientUI(
+  def patientRow(p: Patient): PatientRow = PatientRow(
     p.flag.map(_.toString).getOrElse("0"),
     p.accountNumber,
     p.unitNumber,
@@ -43,7 +42,7 @@ object AxiomPatientTracker:
   }
 
   def load() =
-    ModelFetch.fetchPatients.map { lp => lp.map { p => toPatientUI(p) } }.foreach { p =>
+    ModelFetch.fetchPatients.map { lp => lp.map { p => patientRow(p) } }.foreach { p =>
       patientTracker.populate(p)
     }
     consoleOut("fetched and populated and will be rendered!!")
