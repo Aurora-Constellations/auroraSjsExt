@@ -1,4 +1,4 @@
-package com.axiom.PatientTracker
+package com.axiom.patienttracker
 
 import typings.vscode.mod as vscode
 import vscode.{ExtensionContext}
