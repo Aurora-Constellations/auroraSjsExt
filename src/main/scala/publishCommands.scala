@@ -29,10 +29,22 @@ import com.axiom.mcp.McpHandler
 import com.axiom.audio.AudioToTextCommands
 import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSImport
+import scala.compiletime.uninitialized
+import scala.scalajs.js.timers.{SetIntervalHandle, setInterval, clearInterval}
 
 object PublishCommands:
   private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
   private var billingPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
+  private var recordingItem: vscode.StatusBarItem = uninitialized
+  private var isRecording: Boolean = false
+  private var startTime: Double = 0.0
+  private var timerHandle: SetIntervalHandle | Null = null
+
+  def initRecordingStatusBar(context: vscode.ExtensionContext): Unit = {
+    recordingItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
+    context.subscriptions.push(recordingItem.asInstanceOf[Dispose])
+    updateRecordingStatusBar()
+  }
 
   def publishCommands(context: ExtensionContext, langConfig: LanguageClientConfigSingleton): Unit = {
       val commands = List(
@@ -63,6 +75,10 @@ object PublishCommands:
   def startRecording(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
     val outPath = s"${context.extensionPath}/recordings/latest.wav"
     AudioToTextCommands.runBackendCommand(context, "record", outPath).flatMap{_ => 
+      isRecording = true
+      startTime = js.Date.now()
+      startTimer()
+      updateRecordingStatusBar()
       vscode.window.showInformationMessage("Recording started. Click 'Stop Recording' to end.")
         .toFuture.map(_ => ())
     }
@@ -70,16 +86,54 @@ object PublishCommands:
 
   def stopRecording(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
     AudioToTextCommands.runBackendCommand(context, "stop").flatMap { _ =>
+      isRecording = false
+      stopTimer()
+      updateRecordingStatusBar()
       vscode.window.showInformationMessage("Recording stopped. Click 'Transcribe Audio' to convert to text.")
-        .toFuture.map(_ => ())
+        .toFuture
+        .flatMap { _ =>
+          transcribeAndRunMCP(context)(())
+        }
     }
+  }
+
+  private def startTimer(): Unit = {
+    stopTimer() // Ensure any existing timer is cleared
+    timerHandle = setInterval(1000) {
+      if (isRecording) {
+        val elapsedSeconds = ((js.Date.now() - startTime) / 1000).toInt
+        val minutes = elapsedSeconds / 60
+        val seconds = elapsedSeconds % 60
+        recordingItem.text = f"$$(stop-circle) Stop Recording (${minutes}%02d:${seconds}%02d)"
+      }
+    }
+  }
+
+  private def stopTimer(): Unit = {
+    if (timerHandle != null) {
+      clearInterval(timerHandle)
+      timerHandle = null
+    }
+  }
+
+  def updateRecordingStatusBar(): Unit = {
+    if (isRecording) {
+      recordingItem.text = "$(stop-circle) Stop Recording"
+      recordingItem.command = "AuroraSjsExt.stopRecording"
+      recordingItem.color = "#FF5555" //red color to indicate recording
+    } else {
+      recordingItem.text = "$(play) Start Recording"
+      recordingItem.command = "AuroraSjsExt.startRecording"
+      recordingItem.color = "#55FF55" //green color to indicate not recording
+    }
+    recordingItem.show()
   }
 
   def transcribeAudio(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
     AudioToTextCommands.runBackendCommand(context, "transcribe", s"${context.extensionPath}/recordings/latest.wav")
   }
 
-  def transcribeAndRunMCP(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+  def transcribeAndRunMCP(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
     val transcriptionFuture: Future[String] =
       transcribeAudio(context)(()).flatMap { _ =>
         fsPromises
@@ -93,12 +147,13 @@ object PublishCommands:
         val mcpString = js.JSON.stringify(mcpJson)
         McpHandler.action(mcpString)
       }
+      .map(_ => ())
       .recover {
         case e: Throwable =>
           val errMsg = s"Error in transcription or Claude API: ${e.getMessage}"
           vscode.window.showErrorMessage(errMsg)
+        ()
       }
-    ()
   }
 
   def takeMcpPrompt(context: ExtensionContext): js.Function1[Any, Any] = { _ =>

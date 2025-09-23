@@ -5,7 +5,7 @@ import scala.scalajs.js
 import concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.annotation._
 import vscode.{ExtensionContext}
-import PublishCommands.publishCommands
+import PublishCommands.{publishCommands, initRecordingStatusBar}
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
@@ -51,6 +51,7 @@ object AuroraSjsExt {
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
     outputChannel.show(preserveFocus = true)
     publishCommands(context, langConfig)
+    initRecordingStatusBar(context)
   }
 
   def deactivate(): Unit = {
