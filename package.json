@@ -10,6 +10,11 @@
 	"categories": [
 		"Other"
 	],
+	"private": true,
+	"workspaces": [
+		"axiombilling",
+		"axiompatienttracker"
+	],
 	"main": "./out/extension",
 	"contributes": {
 		"languages": [
@@ -83,6 +88,26 @@
 			{
 				"command": "AuroraSjsExt.hideNamedGroups",
 				"title": "Hide Named Groups"
+			},
+			{
+				"command": "AuroraSjsExt.mcp",
+				"title": "Aurora MCP"
+			},
+			{
+				"command": "AuroraSjsExt.startRecording",
+				"title": "Aurora Start Recording"
+			},
+			{
+				"command": "AuroraSjsExt.stopRecording",
+				"title": "Aurora Stop Recording"
+			},
+			{
+				"command": "AuroraSjsExt.transcribeRecording",
+				"title": "Aurora Transcribe Recording"
+			},
+			{
+				"command": "AuroraSjsExt.transcribeAndRunMcp",
+				"title": "Aurora Transcribe and Run MCP"
 			}
 		],
 		"menus": {
@@ -124,6 +149,7 @@
 	},
 	"devDependencies": {
 		"@scala-js/vite-plugin-scalajs": "^1.0.0",
+		"lerna": "^8.2.3",
 		"typescript": "^5.6.3"
 	},
 	"dependencies": {

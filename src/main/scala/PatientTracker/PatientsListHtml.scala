@@ -1,4 +1,4 @@
-package com.axiom.patientTracker
+package com.axiom.patienttracker
 
 import typings.vscode.mod as vscode
 import scala.util.Random

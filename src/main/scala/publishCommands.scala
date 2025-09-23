@@ -4,15 +4,14 @@ import scala.scalajs.js
 import typings.vscode.anon.Dispose
 import scala.util.*
 import concurrent.ExecutionContext.Implicits.global
-import com.axiom.patientTracker.PatientsListHtml.getPatientsListHtml
-import com.axiom.billing.BillingHtml.getBillingHtml
+import com.axiom.patienttracker.showPatients
+import com.axiom.billing.showBilling
 import docere.sjsast.*
 import cats.implicits.toShow
 import cats.syntax.all.toShow
 import docere.sjsast.toShow
 import cats.syntax.show.toShow
 import com.axiom.MergePCM.MergePCM.*
-import com.axiom.WebviewMessageHandler.handleWebviewMessage
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
@@ -23,11 +22,25 @@ import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNarrativesComma
 import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNgosCommandMod.hideNGOs
 import typings.vscode.mod.TextEditor
 import typings.auroraLangium.cliMod.parse
-import com.axiom.messaging.*
+import com.axiom.mcp.ClaudeClient
+import com.axiom.mcp.McpHandler
+import com.axiom.audio.AudioToTextCommands
+import scala.concurrent.Future
+import scala.scalajs.js.annotation.JSImport
+import scala.compiletime.uninitialized
+import scala.scalajs.js.timers.{SetIntervalHandle, setInterval, clearInterval}
 
 object PublishCommands:
-  private var patientsPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
-  private var billingPanel: Option[vscode.WebviewPanel] = None // Store reference to the webview panel
+  private var recordingItem: vscode.StatusBarItem = uninitialized
+  private var isRecording: Boolean = false
+  private var startTime: Double = 0.0
+  private var timerHandle: SetIntervalHandle | Null = null
+
+  def initRecordingStatusBar(context: vscode.ExtensionContext): Unit = {
+    recordingItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
+    context.subscriptions.push(recordingItem.asInstanceOf[Dispose])
+    updateRecordingStatusBar()
+  }
 
   def publishCommands(context: ExtensionContext, langConfig: LanguageClientConfigSingleton): Unit = {
       val commands = List(
@@ -38,7 +51,12 @@ object PublishCommands:
           ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
           ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
-          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig))
+          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
+          ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
+          ("AuroraSjsExt.startRecording", startRecording(context)),
+          ("AuroraSjsExt.stopRecording", stopRecording(context)),
+          ("AuroraSjsExt.transcribeRecording", transcribeAudio(context)),
+          ("AuroraSjsExt.transcribeAndRunMcp", transcribeAndRunMCP(context))
       )
 
       commands.foreach { case (name, fun) =>
@@ -48,6 +66,107 @@ object PublishCommands:
                   .asInstanceOf[Dispose]
           )
       }
+  }
+
+  def startRecording(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
+    val outPath = s"${context.extensionPath}/recordings/latest.wav"
+    AudioToTextCommands.runBackendCommand(context, "record", outPath).flatMap{_ => 
+      isRecording = true
+      startTime = js.Date.now()
+      startTimer()
+      updateRecordingStatusBar()
+      vscode.window.showInformationMessage("Recording started. Click 'Stop Recording' to end.")
+        .toFuture.map(_ => ())
+    }
+  }
+
+  def stopRecording(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
+    AudioToTextCommands.runBackendCommand(context, "stop").flatMap { _ =>
+      isRecording = false
+      stopTimer()
+      updateRecordingStatusBar()
+      vscode.window.showInformationMessage("Recording stopped. Click 'Transcribe Audio' to convert to text.")
+        .toFuture
+        .flatMap { _ =>
+          transcribeAndRunMCP(context)(())
+        }
+    }
+  }
+
+  private def startTimer(): Unit = {
+    stopTimer() // Ensure any existing timer is cleared
+    timerHandle = setInterval(1000) {
+      if (isRecording) {
+        val elapsedSeconds = ((js.Date.now() - startTime) / 1000).toInt
+        val minutes = elapsedSeconds / 60
+        val seconds = elapsedSeconds % 60
+        recordingItem.text = f"$$(stop-circle) Stop Recording (${minutes}%02d:${seconds}%02d)"
+      }
+    }
+  }
+
+  private def stopTimer(): Unit = {
+    if (timerHandle != null) {
+      clearInterval(timerHandle)
+      timerHandle = null
+    }
+  }
+
+  def updateRecordingStatusBar(): Unit = {
+    if (isRecording) {
+      recordingItem.text = "$(stop-circle) Stop Recording"
+      recordingItem.command = "AuroraSjsExt.stopRecording"
+      recordingItem.color = "#FF5555" //red color to indicate recording
+    } else {
+      recordingItem.text = "$(play) Start Recording"
+      recordingItem.command = "AuroraSjsExt.startRecording"
+      recordingItem.color = "#55FF55" //green color to indicate not recording
+    }
+    recordingItem.show()
+  }
+
+  def transcribeAudio(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
+    AudioToTextCommands.runBackendCommand(context, "transcribe", s"${context.extensionPath}/recordings/latest.wav")
+  }
+
+  def transcribeAndRunMCP(context: ExtensionContext): js.Function1[Any, Future[Unit]] = { _ =>
+    val transcriptionFuture: Future[String] =
+      transcribeAudio(context)(()).flatMap { _ =>
+        fsPromises
+          .readFile(s"${context.extensionPath}/recordings/latest_transcription.txt", "utf8")
+          .toFuture
+      }
+
+    transcriptionFuture
+      .flatMap(transcription => ClaudeClient.getMcpFromPrompt(transcription))
+      .map { mcpJson =>
+        val mcpString = js.JSON.stringify(mcpJson)
+        McpHandler.action(mcpString)
+      }
+      .map(_ => ())
+      .recover {
+        case e: Throwable =>
+          val errMsg = s"Error in transcription or Claude API: ${e.getMessage}"
+          vscode.window.showErrorMessage(errMsg)
+        ()
+      }
+  }
+
+  def takeMcpPrompt(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+    vscode.window.showInputBox().toFuture.onComplete {
+      case Success(prompt) if prompt.toString().trim.nonEmpty =>
+        ClaudeClient.getMcpFromPrompt(prompt.toString()).map { mcpJson =>
+          val mcpString = js.JSON.stringify(mcpJson)
+          McpHandler.action(mcpString)
+        }.recover {
+          case e: Throwable =>
+            val errMsg = s"Error calling Claude API: ${e.getMessage}"
+            vscode.window.showErrorMessage(errMsg)
+        }
+      case _ =>
+        val msg = "No prompt provided."
+        vscode.window.showWarningMessage(msg)
+    }
   }
 
   def processDSL(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
@@ -75,110 +194,6 @@ object PublishCommands:
       }
   }
 
-  def showPatients(context: vscode.ExtensionContext): js.Function1[Any, Any] =
-    (_: Any) => {
-      def revealOrCreate(): Unit =
-        patientsPanel match {
-          case Some(panel) if !js.isUndefined(panel) =>
-            panel.reveal(vscode.ViewColumn.Two)
-          case _ =>
-            // Open webview beside, then move to bottom group
-            createPatientsPanel(context, vscode.ViewColumn.Active)
-
-            // Now move it to bottom group
-            vscode.commands.executeCommand("workbench.action.moveEditorToBelowGroup")
-        }
-
-      revealOrCreate()
-    }
-
-  def createPatientsPanel(context: ExtensionContext, column: vscode.ViewColumn): Unit = {
-    val path = js.Dynamic.global.require("path")
-    val panel = vscode.window.createWebviewPanel(
-      "Patients", // Internal identifier of the webview panel
-      "Patient List", // Title of the panel displayed to the user
-      column, // Editor column to show the new webview panel in
-      js.Dynamic
-        .literal( // Webview options
-          enableScripts = true, // Allow JavaScript in the webview
-          retainContextWhenHidden = true, // keeping webview alive
-          localResourceRoots = js.Array(
-            vscode.Uri.file(path.join(context.extensionPath, "media").toString),
-            vscode.Uri.file(path.join(context.extensionPath, "out").toString)
-          )
-        )
-        .asInstanceOf[vscode.WebviewPanelOptions & vscode.WebviewOptions]
-    )
-    // Set the HTML content for the panel
-    panel.webview.html = getPatientsListHtml(panel.webview, context)
-    
-    // Handle messages from the webview
-    panel.webview.onDidReceiveMessage { (message: Any) =>
-      handleWebviewMessage(message.asInstanceOf[js.Dynamic])
-    }
-
-
-    // Handle disposal
-    panel.onDidDispose((_: Unit) => { // Changed the lambda to accept a Unit argument
-      println("Patient panel disposed.")
-      patientsPanel = None // Reset the panel reference
-    })
-
-    // Store the panel reference and handle disposal
-    patientsPanel = Some(panel)
-  }
-
-  def showBilling(context: vscode.ExtensionContext): js.Function1[Any, Any] =
-    (_: Any) => {
-      def revealOrCreate(): Unit =
-        billingPanel match {
-          case Some(panel) if !js.isUndefined(panel) =>
-            panel.reveal(vscode.ViewColumn.Two)
-          case _ =>
-            // Open webview beside, then move to bottom group
-            createBillingPanel(context, vscode.ViewColumn.Active)
-
-            // Now move it to bottom group
-            vscode.commands.executeCommand("workbench.action.moveEditorToBelowGroup")
-        }
-
-      revealOrCreate()
-    }
-
-  def createBillingPanel(context: ExtensionContext, column: vscode.ViewColumn): Unit = {
-    val path = js.Dynamic.global.require("path")
-    val panel = vscode.window.createWebviewPanel(
-      "Billing", // Internal identifier of the webview panel
-      "Billing Information", // Title of the panel displayed to the user
-      column, // Editor column to show the new webview panel in
-      js.Dynamic
-        .literal( // Webview options
-          enableScripts = true, // Allow JavaScript in the webview
-          localResourceRoots = js.Array(
-            vscode.Uri.file(path.join(context.extensionPath, "media").toString),
-            vscode.Uri.file(path.join(context.extensionPath, "out").toString)
-          )
-        )
-        .asInstanceOf[vscode.WebviewPanelOptions & vscode.WebviewOptions]
-    )
-    // Set the HTML content for the panel
-    panel.webview.html = getBillingHtml(panel.webview, context)
-
-    // Handle messages from the webview
-    panel.webview.onDidReceiveMessage { (message: Any) =>
-      handleWebviewMessage(message.asInstanceOf[js.Dynamic])
-    }
-
-    // Handle disposal
-    panel.onDidDispose((_: Unit) => { // Changed the lambda to accept a Unit argument
-      println("Billing panel disposed.")
-      billingPanel = None // Reset the panel reference
-    })
-
-    // Store the panel reference and handle disposal
-    billingPanel = Some(panel)
-  }
-
   def toggleLayout(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
     (args) => {
       toggleDiagramLayout(langConfig)
@@ -191,43 +206,6 @@ object PublishCommands:
               case Success(_) => println("Diagram has been refreshed.")
               case Failure(e) => println(s"Failed to refresh diagram: ${e}")
         }
-  }
-
-  def sendMessageToPatientTracker(narrativeTypes: List[Int]): Unit = {
-    // Get current active editor's file name and send it to the patient tracker
-    val flag = (narrativeTypes.contains(1), narrativeTypes.contains(2)) match {
-      case (true, true)   => "12"
-      case (true, false)  => "1"
-      case (false, true)  => "2"
-      case (false, false) => "0"
-    }
-    val editor = vscode.window.activeTextEditor
-    editor.foreach { ed =>
-      val document = ed.document
-      val path = js.Dynamic.global.require("path")
-      val fileName = path.basename(document.fileName).asInstanceOf[String] // Extract the file name
-      val unitNumber = fileName.split("\\.").head
-      patientsPanel match {
-        case Some(p) =>
-          p.reveal(null, preserveFocus = true)
-          val req = Request(MessagingCommands.UpdateNarratives, UpdateNarratives(
-            source = "vscode-extension",
-            unitNumber = unitNumber,
-            flag = flag
-          ))
-          p.webview.postMessage(req.data.toJsObject(req.command))
-          vscode.window.showInformationMessage(s"Message sent to Patient Tracker: $unitNumber")
-          // Ask the webview to refresh just this patient row
-          p.webview.postMessage(js.Dynamic.literal(
-            "command"    -> "ReloadPatient",
-            "source"     -> "vscode-extension",
-            "unitNumber" -> unitNumber
-          ))
-
-        case None =>
-          vscode.window.showWarningMessage("Patient Panel not found, message will not be sent.")
-      }
-    }
   }
 
   def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
@@ -253,4 +231,12 @@ object PublishCommands:
     } else { 
       println("No active text editor found.")
     }  
+    
+  }
+
+  // Node.js filesystem module
+  @js.native
+  @JSImport("fs", "promises")
+  object fsPromises extends js.Object {
+    def readFile(path: String, encoding: String = "utf8"): js.Promise[String] = js.native
   }
