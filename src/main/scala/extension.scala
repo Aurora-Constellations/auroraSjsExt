@@ -9,7 +9,8 @@ import PublishCommands.{publishCommands, initRecordingStatusBar}
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
-import PublishCommands.{refreshDiagram, sendMessageToPatientTracker}
+import PublishCommands.{refreshDiagram}
+import com.axiom.PatientTracker.sendMessageToPatientTracker
 import com.axiom.Narratives.ManageNarratives.getParseNarratives
 
 object AuroraSjsExt {
