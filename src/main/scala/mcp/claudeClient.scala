@@ -75,7 +75,7 @@ object ClaudeClient {
 					"payload": {
 						"type": "[one of: normal, urgent, draft, urgent completed, draft completed]",
 						"text": "[clear medical instruction or narrative]",
-						"line_number": [integer, e.g. 0]
+						"line_number": [integer, default to -1 if not provided by user]
 					}
 				}
 

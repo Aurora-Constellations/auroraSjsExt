@@ -85,7 +85,7 @@ object PublishCommands:
       isRecording = false
       stopTimer()
       updateRecordingStatusBar()
-      vscode.window.showInformationMessage("Recording stopped. Click 'Transcribe Audio' to convert to text.")
+      vscode.window.showInformationMessage("Recording stopped. Transcribing...")
         .toFuture
         .flatMap { _ =>
           transcribeAndRunMCP(context)(())
@@ -140,6 +140,7 @@ object PublishCommands:
     transcriptionFuture
       .flatMap(transcription => ClaudeClient.getMcpFromPrompt(transcription))
       .map { mcpJson =>
+        vscode.window.showInformationMessage(s"Performing the task....")
         val mcpString = js.JSON.stringify(mcpJson)
         McpHandler.action(mcpString)
       }

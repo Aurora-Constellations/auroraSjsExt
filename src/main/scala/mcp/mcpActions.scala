@@ -38,11 +38,22 @@ object McpActions:
 		val sanitizedText = text.trim.replaceAll(";*$", "") + ";" // ensure 1 semicolon
 		val finalLine = s"$prefix $sanitizedText"
 
+		val doc = editor.document
 		val edit = new WorkspaceEdit()
-		val position = new Position(lineNumber, 0)
-		val uri = editor.document.uri
 
-		edit.insert(uri, position, finalLine + "\n")
+		// Decide insertion line
+		val targetLine: Int =
+			if (lineNumber == -1) editor.selection.active.line.toInt //The zero-based line value.
+			else math.max(0, lineNumber - 1) // shift to 0-based, protect against negatives
+
+		// Get end of target line
+		val lineText = doc.lineAt(targetLine).text
+		val endPos = new Position(targetLine, lineText.length)
+
+		// Append with a space before if needed
+		val insertText = (if (lineText.trim.nonEmpty) " " else "") + finalLine
+
+		edit.insert(doc.uri, endPos, insertText)
 
 		workspace
 			.applyEdit(edit)
