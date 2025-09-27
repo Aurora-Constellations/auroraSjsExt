@@ -90,7 +90,7 @@ object ClaudeClient {
 				- AuroraSjsExt.aurora (Hello Aurora)
 				- AuroraSjsExt.patients (Patient Tracker)  
 				- AuroraSjsExt.billing (Billing)
-				- AuroraSjsExt.processDSL (Merge PCMs)
+				- AuroraSjsExt.processDSL (Merge PCMs or Merge Policies or Construct)
 				- AuroraSjsExt.toggleDiagramLayout (Toggle Diagram Layout)
 				- AuroraSjsExt.changeNarrativeType (Change Narrative Type)
 				- AuroraSjsExt.hideNarratives (Hide Narratives)
