@@ -66,6 +66,7 @@ object ClaudeClient {
 				Your job is to convert a user's request into a valid MCP (Model Context Protocol) command.
 
 				IMPORTANT: Only respond in raw JSON (no markdown, no comments, no explanations).
+				For narrative insertions, do not paraphrase the user's text.
 
 				You can handle two types of actions:
 
