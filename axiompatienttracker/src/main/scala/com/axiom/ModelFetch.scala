@@ -8,7 +8,12 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import zio.json._
 import scala.collection.mutable
 import org.scalajs.dom.AbortController
-import com.axiom.ui.patienttracker.TypeClass.CellDataConvertor
+import com.axiom.ui.patienttracker.tableutils.TableDerivation
+import com.axiom.ui.patienttracker.tableutils.TableDerivation.given
+// import com.axiom.ui.patienttracker.TypeClass.CellDataConvertor
+import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
+import scala.scalajs.js
+import scala.scalajs.js.Thenable.Implicits._
 
 object ModelFetch :
 
@@ -21,7 +26,7 @@ object ModelFetch :
 
   
   def columns(p:Patient) =  
-    val c = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*)
+    val c = mutable.IndexedSeq(TableDerivation.derived[Patient].celldataList(p)*)
     c(0) = c(0).copy(text = s"*${c(0).text}*")
     c.toList
 
@@ -64,11 +69,6 @@ object ModelFetch :
       }
 
   def createPatient(patient: Patient): Future[Option[Patient]] = {
-    import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
-    import scala.scalajs.js
-    import scala.scalajs.js.Thenable.Implicits._
-    
-
     val jsonBody = patient.toJson
     println(" Sending Patient JSON:")
     println(jsonBody)

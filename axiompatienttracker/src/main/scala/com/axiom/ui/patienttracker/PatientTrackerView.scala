@@ -10,7 +10,7 @@ import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.axiom.ModelFetch.columnHeaders
-import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon
+import com.axiom.ui.patienttracker.utils.{Status, StatusIcons}
 import com.axiom.ui.patienttracker.utils.KeyboardNavigation
 import com.axiom.AxiomPatientTracker.PatientRow
 import com.raquo.airstream.ownership.OneTimeOwner
@@ -18,6 +18,9 @@ import org.scalajs.dom.KeyboardEvent
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.SearchBar
 import com.axiom.ui.patienttracker.utils.DataProcessing.*
+import com.axiom.ui.patienttracker.tableutils.TableDerivation
+import com.axiom.ui.patienttracker.tableutils.TableDerivation.given
+
 
 type PatientList = CCRowList[Patient]
 
@@ -78,7 +81,7 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
 
   // cells for a row
   private def cellsOf(p: PatientRow) =
-    CellDataConvertor.derived[PatientRow].celldata(p).toVector
+    TableDerivation.derived[PatientRow].celldataList(p).toVector
 
   private def visibleCellsOf(p: PatientRow): List[CellData] =
     allHeaders.zip(cellsOf(p)).collect { case (h, cell) if !removedCols(h) => cell }
@@ -201,7 +204,7 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
     e.keyCode match
       case 40 | 38 => e.preventDefault() // Prevent default scrolling behavior for up/down arrows
       case _       => ()
-      // TODO ?SHOULD this be default behaviour on most tables?  if so put it in tableutils with a way to override
+      
 
 // Key press state
   val navHelper = new KeyboardNavigation(moveAndScroll)

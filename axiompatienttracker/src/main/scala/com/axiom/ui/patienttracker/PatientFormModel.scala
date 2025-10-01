@@ -64,7 +64,6 @@ object PatientFormModel:
                 "Room"            -> ("", state.roomVar),
                 "Bed"             -> ("", state.bedVar)
               ).map { case (labelText, (key, varRef)) =>
-                // TODO: Use HTML attributes for required field, Not hard coding---> Fixed
                 val errorSignal = errorVars.get(key).map(_.signal).getOrElse(Val(None))
                 val (fieldLabel, isRequired) =
                   if labelText.endsWith("*") then (labelText.dropRight(1).trim, true)

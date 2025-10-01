@@ -7,14 +7,17 @@ import com.axiom.ui.patienttracker.PatientTracker
 import scala.scalajs.js.annotation.JSExportTopLevel
 import com.axiom.model.shared.dto.Patient
 import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
+import com.axiom.ui.patienttracker.utils.Status
+import com.axiom.ui.patienttracker.utils.StatusIcons
 
 @JSExportTopLevel("AxiomPatientTracker")
 object AxiomPatientTracker:
   lazy val patientTracker: PatientTracker = new PatientTracker()
 
- 
+  //TODO why does it take time and cognitive load to find this?
+  //ALSO PERHAPS THE ABSTRACTION COULD USE A TYPE ALIAS THAT TRIGGERS FUTURE DESIGNERS TO create the case class Row Representation
   case class PatientRow(
-      status: String,
+      status: HtmlElement,
       accountNumber: String,
       unitNumber: String,
       lastName: String,
@@ -25,17 +28,20 @@ object AxiomPatientTracker:
       details: HtmlElement
   )
 
-  def patientRow(p: Patient): PatientRow = PatientRow(
-    p.flag.map(_.toString).getOrElse("0"),
-    p.accountNumber,
-    p.unitNumber,
-    p.lastName,
-    p.firstName,
-    p.sex,
-    p.admitDate,
-    p.floor,
-    patientTracker.renderActionButtons(p.unitNumber)
-  )
+  def patientRow(p: Patient): PatientRow =
+    val status: Status =
+    Status.fromCode(p.flag.fold("0")(_.toString))   // None -> "0"
+    PatientRow(
+      status = StatusIcons.render(status),
+      accountNumber = p.accountNumber,
+      unitNumber = p.unitNumber,
+      lastName = p.lastName,
+      firstName = p.firstName,
+      sex = p.sex,
+      admitDate = p.admitDate,
+      Floor = p.floor,
+      details = patientTracker.renderActionButtons(p.unitNumber)
+    )
 
   def consoleOut(msg: String): Unit = {
     dom.console.log(s"%c $msg", "background: #222; color: #bada55")
