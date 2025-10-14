@@ -107,7 +107,7 @@ object WhisperTranscriber :
     val textResult = transcribeAudioFile(wavFilePath)
     textResult match {
       case Right(transcription) =>
-        println("Transcription completed successfully!")
+        // println("Transcription completed successfully!")
         println("=" * 50)
         println(transcription)
         println("=" * 50)

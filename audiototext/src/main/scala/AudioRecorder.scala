@@ -75,7 +75,7 @@ object AudioRecorder :
     audioInputStream = Some(inputStream)
     isRecording = true
 
-    println(s"Recording started, saving to $outputFile")
+    println(s"Saving recording to $outputFile")
 
     // Start background recording task
     val recordingTask = Future {
@@ -135,7 +135,7 @@ object AudioRecorder :
     }
     recordingFuture = None
 
-    println("Recording stopped.")
+    // println("Recording stopped.")
   }
 
   
