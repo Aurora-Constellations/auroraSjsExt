@@ -12,7 +12,7 @@ import scala.util.{Success, Failure}
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.DataProcessing._
 import com.axiom.ui.patienttracker.utils.buildPatientFromState
-import com.axiom.AxiomPatientTracker
+import com.axiom.UIRenderer
 private val requiredKeys = Set(
   "firstName", "lastName", "unitNumber", "accountNumber",
   "sex", "dob", "admitDate", "hosp"
@@ -39,10 +39,10 @@ object PatientFormModel:
                   ModelFetch
                     .createPatient(patient)
                     .flatMap(_ => ModelFetch.fetchPatients)
-                    .map(_.map(AxiomPatientTracker.patientRow))
+                    .map(_.map(UIRenderer.patientRow))
                     .foreach { ui =>
                       println("Patient created successfully, reloading tracker")
-                      val tracker = AxiomPatientTracker.patientTracker
+                      val tracker = UIRenderer.patientTracker
                       tracker.refreshAndKeepSearch(ui)
                       val container = dom.document.getElementById("app")
                       container.innerHTML = ""

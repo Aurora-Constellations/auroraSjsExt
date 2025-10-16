@@ -1,33 +1,33 @@
 package com.axiom.ui.patienttracker
 
 import scala.scalajs.js
-import com.axiom.ui.tableutils.*
-import com.axiom.ui.tableutils.GridT
+import com.axiom.shared.table._ 
+import com.axiom.shared.table.GridT
 import com.axiom.model.shared.dto.Patient
-import com.axiom.ShapelessFieldNameExtractor
-import com.axiom.ui.patienttracker.TypeClass.*
+import com.axiom.shared.table.ShapelessFieldNameExtractor
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.axiom.ModelFetch.columnHeaders
 import com.axiom.ui.patienttracker.utils.{Status, StatusIcons}
 import com.axiom.ui.patienttracker.utils.KeyboardNavigation
-import com.axiom.AxiomPatientTracker.PatientRow
+import com.axiom.UIRenderer.PatientRow
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.SearchBar
 import com.axiom.ui.patienttracker.utils.DataProcessing.*
-import com.axiom.ui.patienttracker.tableutils.TableDerivation
-import com.axiom.ui.patienttracker.tableutils.TableDerivation.given
+import com.axiom.shared.table.TableDerivation
+import com.axiom.shared.table.TableDerivation.given
+import com.axiom.shared.table.{CCRowList, ColRow, GridDataT, GridT}
+import com.axiom.shared.table.TableDerivation
+
 
 
 type PatientList = CCRowList[Patient]
 
 trait RenderHtml:
   def renderHtml: Element
-
-case class CellData(text: String, element: HtmlElement)
 
 case class PatientGridData(grid: PatientTracker, colrow: ColRow, data: CellData)
     extends GridDataT[PatientTracker, PatientRow, CellData](grid, colrow, data)

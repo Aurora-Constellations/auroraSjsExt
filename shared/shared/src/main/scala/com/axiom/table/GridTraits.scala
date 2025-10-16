@@ -1,5 +1,6 @@
-package com.axiom.ui.tableutils
+package com.axiom.shared.table
 
+import com.axiom.shared.table.TableDerivation.derived
 import com.raquo.laminar.api.L.{*, given}
 import scala.collection.mutable.IndexedSeq
 
@@ -32,7 +33,7 @@ trait GridT[CC, D]:
     } // Updated to use the case class GridCell
     gcdVar.set(newgcd)
     showGcdVar.set(newgcd)
-
+ 
 // Filter results in laminar
 
   val gcdVar: Var[GCD] = Var(

@@ -10,12 +10,11 @@ import org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 import com.axiom.ui.patienttracker.utils.Status
 import com.axiom.ui.patienttracker.utils.StatusIcons
 
-@JSExportTopLevel("AxiomPatientTracker")
-object AxiomPatientTracker:
+@JSExportTopLevel("UIRenderer")
+object UIRenderer:
   lazy val patientTracker: PatientTracker = new PatientTracker()
 
-  //TODO why does it take time and cognitive load to find this?
-  //ALSO PERHAPS THE ABSTRACTION COULD USE A TYPE ALIAS THAT TRIGGERS FUTURE DESIGNERS TO create the case class Row Representation
+ 
   case class PatientRow(
       status: HtmlElement,
       accountNumber: String,

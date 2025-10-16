@@ -7,6 +7,9 @@ import com.axiom.ui.*
 import java.time.LocalDate
 import java.time.LocalDateTime
 import com.axiom.model.shared.dto._
+import com.axiom.ui.ContextMenu
+// import com.axiom.ui.AxiomBilling
+import com.axiom.ui.{ BillingView, BillingState }
 
 object Main :
 	def consoleOut(msg: String): Unit = {
@@ -159,37 +162,13 @@ object Main :
 
 
 		// Populate initial vars
-		patientsVar.set(patients)
-		accountsVar.set(accounts)
-		encountersVar.set(encounters)
-		billingsVar.set(billings)
-
-		val app = div(
-			h2("Patient Billing Dashboard"),
-
-			h3("Patients"),
-			patientTable(patientsVar.signal),
-
-			hr(),
-
-			h3(
-				child.text <-- accountCountSignal.map(count =>
-					s"Active Account (Total # of accounts: $count)"
-				)
-			),
-			activeAccountDisplay(activeAccountSignal),
-
-			h3("Select Encounter"),
-			encounterTable(encounterOptionsSignal),
-
-			hr(),
-
-			h3("Billing Codes for Encounter"),
-			billingList(billingForEncounterSignal)
-		)
+		BillingState.patientsVar.set(patients)
+		BillingState.accountsVar.set(accounts)
+		BillingState.encountersVar.set(encounters)
+		BillingState.billingsVar.set(billings)
 
 		dom.document.querySelector("#app") match
 			case null => consoleOut("No element with id 'app' found.")
-			case el: dom.html.Element => render(el, app)
+			case el: dom.html.Element => render(el, BillingView.view)
 	}
 

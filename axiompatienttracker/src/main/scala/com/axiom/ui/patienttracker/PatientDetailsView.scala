@@ -11,7 +11,7 @@ import java.time.{LocalDate, LocalDateTime}
 import com.axiom.messaging.*
 import com.axiom.ui.patienttracker.utils.DataProcessing
 import com.axiom.ui.patienttracker.utils.{extractPatientDetails, buildUpdatedPatient, createPatientFormState}
-import com.axiom.AxiomPatientTracker 
+import com.axiom.UIRenderer 
 
 //Added case class to tag editable values
 case class PatientFormState (
@@ -89,8 +89,8 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
                     case None    => Future.successful(Nil)
                   }
                   .foreach { patients =>
-                    val ui = patients.map(AxiomPatientTracker.patientRow)  
-                    val tracker = AxiomPatientTracker.patientTracker
+                    val ui = patients.map(UIRenderer.patientRow)  
+                    val tracker = UIRenderer.patientTracker
                     tracker.refreshAndKeepSearch(ui)                        // keeps search text
                     val container = dom.document.getElementById("app")
                     container.innerHTML = ""
@@ -107,7 +107,7 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
             width:= "100%",
             onClick --> { _ =>
               println("Back to list clicked")
-              val tracker = AxiomPatientTracker.patientTracker
+              val tracker = UIRenderer.patientTracker
               
               container.innerHTML = "" // Clear only the container
               render(container, tracker.renderHtml)
@@ -133,7 +133,7 @@ def renderPatientDetailsPage(unitNumber: String, editable: Boolean = false): Uni
               width:= "100%",
               onClick --> { _ =>
                 println("Back to list clicked")
-                val tracker = AxiomPatientTracker.patientTracker
+                val tracker = UIRenderer.patientTracker
                 container.innerHTML = "" // Clear only the container
                 render(container, tracker.renderHtml)
               }

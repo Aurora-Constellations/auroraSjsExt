@@ -8,12 +8,14 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import zio.json._
 import scala.collection.mutable
 import org.scalajs.dom.AbortController
-import com.axiom.ui.patienttracker.tableutils.TableDerivation
-import com.axiom.ui.patienttracker.tableutils.TableDerivation.given
+import com.axiom.shared.table.TableDerivation
+import com.axiom.shared.table.TableDerivation.given
 // import com.axiom.ui.patienttracker.TypeClass.CellDataConvertor
 import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
 import scala.scalajs.js
 import scala.scalajs.js.Thenable.Implicits._
+import com.axiom.shared.table.TableDerivation
+import com.axiom.shared.table.ShapelessFieldNameExtractor
 
 object ModelFetch :
 
@@ -33,7 +35,7 @@ object ModelFetch :
   def  fetchPatients = 
     import java.time._ //cross scalajs and jvm compatible
     import com.axiom.model.shared.dto.Patient 
-    import com.axiom.ShapelessFieldNameExtractor
+    import com.axiom.shared.table.ShapelessFieldNameExtractor
     
     Fetch.get("http://localhost:8080/patients").future.text(abortController)
       .map(s => s.data.fromJson[List[Patient]])
