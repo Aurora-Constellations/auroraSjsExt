@@ -1,4 +1,4 @@
-package com.axiom.ui.tableutils
+package com.axiom.shared.table
 
 case class ColRow(col:Int,row:Int) :
   def addX(col:Int):ColRow =

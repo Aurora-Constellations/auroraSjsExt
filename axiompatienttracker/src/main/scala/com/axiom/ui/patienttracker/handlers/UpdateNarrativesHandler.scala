@@ -4,7 +4,7 @@ import com.axiom.ModelFetch
 import com.axiom.ui.patienttracker.sendResponseToVSCode
 import com.axiom.messaging.*
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.axiom.AxiomPatientTracker
+import com.axiom.UIRenderer
 import com.axiom.ui.patienttracker.PatientTracker
 
 object UpdateNarrativesHandler extends MessageHandler[UpdateNarrativesMsg] {
@@ -14,8 +14,8 @@ object UpdateNarrativesHandler extends MessageHandler[UpdateNarrativesMsg] {
         println(s"Narrative Flag updated successfully for unit number: ${msg.unitNumber}")
         sendResponseToVSCode(Response(MessagingCommands.UpdatedNarratives, UpdatedNarratives(s"Narratives updated successfully for ${msg.unitNumber}.aurora")))
         ModelFetch.fetchPatients.foreach{ patients => 
-            val ui = patients.map(AxiomPatientTracker.toPatientUI)  
-            val tracker = AxiomPatientTracker.patientTracker
+            val ui = patients.map(UIRenderer.patientRow)  
+            val tracker = UIRenderer.patientTracker
             tracker.refreshAndKeepSearch(ui)
         }
         
