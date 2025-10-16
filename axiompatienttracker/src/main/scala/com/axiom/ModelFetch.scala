@@ -8,14 +8,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import zio.json._
 import scala.collection.mutable
 import org.scalajs.dom.AbortController
-import com.axiom.shared.table.TableDerivation
-import com.axiom.shared.table.TableDerivation.given
-// import com.axiom.ui.patienttracker.TypeClass.CellDataConvertor
-import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
-import scala.scalajs.js
-import scala.scalajs.js.Thenable.Implicits._
-import com.axiom.shared.table.TableDerivation
-import com.axiom.shared.table.ShapelessFieldNameExtractor
+import com.axiom.ui.patienttracker.TypeClass.CellDataConvertor
 
 object ModelFetch :
 
@@ -28,14 +21,14 @@ object ModelFetch :
 
   
   def columns(p:Patient) =  
-    val c = mutable.IndexedSeq(TableDerivation.derived[Patient].celldataList(p)*)
+    val c = mutable.IndexedSeq(CellDataConvertor.derived[Patient].celldata(p)*)
     c(0) = c(0).copy(text = s"*${c(0).text}*")
     c.toList
 
   def  fetchPatients = 
     import java.time._ //cross scalajs and jvm compatible
     import com.axiom.model.shared.dto.Patient 
-    import com.axiom.shared.table.ShapelessFieldNameExtractor
+    import com.axiom.ShapelessFieldNameExtractor
     
     Fetch.get("http://localhost:8080/patients").future.text(abortController)
       .map(s => s.data.fromJson[List[Patient]])
@@ -71,6 +64,11 @@ object ModelFetch :
       }
 
   def createPatient(patient: Patient): Future[Option[Patient]] = {
+    import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
+    import scala.scalajs.js
+    import scala.scalajs.js.Thenable.Implicits._
+    
+
     val jsonBody = patient.toJson
     println(" Sending Patient JSON:")
     println(jsonBody)

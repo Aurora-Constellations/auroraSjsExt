@@ -1,5 +1,6 @@
 package com.axiom
 
+
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import com.axiom.ui.patienttracker.initializeMessageListener
@@ -17,5 +18,5 @@ object Main :
     val element = dom.document.querySelector("#app")
     initializeMessageListener()
     // sendMessageToVSCode("", "")
-    renderOnDomContentLoaded(element,UIRenderer())
+    renderOnDomContentLoaded(element,AxiomPatientTracker())
 

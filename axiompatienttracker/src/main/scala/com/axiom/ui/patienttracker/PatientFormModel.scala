@@ -12,14 +12,10 @@ import scala.util.{Success, Failure}
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.DataProcessing._
 import com.axiom.ui.patienttracker.utils.buildPatientFromState
-import com.axiom.UIRenderer
-private val requiredKeys = Set(
-  "firstName", "lastName", "unitNumber", "accountNumber",
-  "sex", "dob", "admitDate", "hosp"
-)
+import com.axiom.AxiomPatientTracker
+
 object PatientFormModel:
   def create(state: FormState, showVar: Var[Boolean], onClose: () => Unit): HtmlElement =
-    
     div(
       className := "create-patient-modal-overlay",
       display <-- showVar.signal.map {
@@ -39,10 +35,10 @@ object PatientFormModel:
                   ModelFetch
                     .createPatient(patient)
                     .flatMap(_ => ModelFetch.fetchPatients)
-                    .map(_.map(UIRenderer.patientRow))
+                    .map(_.map(AxiomPatientTracker.toPatientUI))
                     .foreach { ui =>
                       println("Patient created successfully, reloading tracker")
-                      val tracker = UIRenderer.patientTracker
+                      val tracker = AxiomPatientTracker.patientTracker
                       tracker.refreshAndKeepSearch(ui)
                       val container = dom.document.getElementById("app")
                       container.innerHTML = ""
@@ -52,18 +48,19 @@ object PatientFormModel:
                 else println("Validation failed.")
               },
               Seq(
-                "First Name"      -> ("firstName", state.firstNameVar),
-                "Last Name"       -> ("lastName",  state.lastNameVar),
-                "Unit Number"     -> ("unitNumber", state.unitNumberVar),
-                "Account Number"  -> ("accountNumber", state.accountNumberVar),
-                "Gender"          -> ("sex", state.sexVar),
-                "DOB (yyyy-MM-dd)"-> ("dob", state.dobVar),
-                "Admit Date (yyyy-MM-ddTHH:mm:ss)" -> ("admitDate", state.admitDateVar),
-                "Hospital"        -> ("hosp", state.hospVar),
-                "Floor"           -> ("", state.floorVar),
-                "Room"            -> ("", state.roomVar),
-                "Bed"             -> ("", state.bedVar)
+                "First Name*" -> ("firstName", state.firstNameVar),
+                "Last Name*" -> ("lastName", state.lastNameVar),
+                "Unit Number*" -> ("unitNumber", state.unitNumberVar),
+                "Account Number*" -> ("accountNumber", state.accountNumberVar),
+                "Gender*" -> ("sex", state.sexVar),
+                "DOB (yyyy-MM-dd)*" -> ("dob", state.dobVar),
+                "Admit Date (yyyy-MM-ddTHH:mm:ss)*" -> ("admitDate", state.admitDateVar),
+                "Hospital*" -> ("hosp", state.hospVar),
+                "Floor" -> ("", state.floorVar),
+                "Room" -> ("", state.roomVar),
+                "Bed" -> ("", state.bedVar)
               ).map { case (labelText, (key, varRef)) =>
+                // TODO: Use HTML attributes for required field, Not hard coding
                 val errorSignal = errorVars.get(key).map(_.signal).getOrElse(Val(None))
                 val (fieldLabel, isRequired) =
                   if labelText.endsWith("*") then (labelText.dropRight(1).trim, true)
@@ -78,10 +75,8 @@ object PatientFormModel:
                   ),
                   input(
                     typ := "text",
-                    className := "input", 
-                    onInput.mapToValue --> varRef,
-                    required := isRequired,        // ← HTML attribute, not hard-coded
-                    aria.required := isRequired
+                    className := "input", // keep it simple
+                    onInput.mapToValue --> varRef
                   ),
                   child.maybe <-- errorSignal.map {
                     case Some(msg) => Some(span(msg, cls := "error-text"))

@@ -1,40 +1,37 @@
 package com.axiom.ui.patienttracker
 
 import scala.scalajs.js
-import com.axiom.shared.table._ 
-import com.axiom.shared.table.GridT
+import com.axiom.ui.tableutils.*
+import com.axiom.ui.tableutils.GridT
 import com.axiom.model.shared.dto.Patient
-import com.axiom.shared.table.ShapelessFieldNameExtractor
+import com.axiom.ShapelessFieldNameExtractor
+import com.axiom.ui.patienttracker.TypeClass.*
 import com.raquo.laminar.api.L.{*, given}
 import org.scalajs.dom
 import com.axiom.ModelFetch
 import com.axiom.ModelFetch.columnHeaders
-import com.axiom.ui.patienttracker.utils.{Status, StatusIcons}
+import com.axiom.ui.patienttracker.utils.PatientStatusIcons.renderStatusIcon
 import com.axiom.ui.patienttracker.utils.KeyboardNavigation
-import com.axiom.UIRenderer.PatientRow
+import com.axiom.AxiomPatientTracker.PatientUI
 import com.raquo.airstream.ownership.OneTimeOwner
 import org.scalajs.dom.KeyboardEvent
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.SearchBar
 import com.axiom.ui.patienttracker.utils.DataProcessing.*
-import com.axiom.shared.table.TableDerivation
-import com.axiom.shared.table.TableDerivation.given
-import com.axiom.shared.table.{CCRowList, ColRow, GridDataT, GridT}
-import com.axiom.shared.table.TableDerivation
-
-
 
 type PatientList = CCRowList[Patient]
 
 trait RenderHtml:
   def renderHtml: Element
 
+case class CellData(text: String, element: HtmlElement)
+
 case class PatientGridData(grid: PatientTracker, colrow: ColRow, data: CellData)
-    extends GridDataT[PatientTracker, PatientRow, CellData](grid, colrow, data)
+    extends GridDataT[PatientTracker, PatientUI, CellData](grid, colrow, data)
     with RenderHtml:
   def renderHtml = td(data.text)
 
-class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
+class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
 
   given owner: Owner = new OneTimeOwner(() => ())
   val selectedCellVar: Var[Option[ColRow]] = Var(None)
@@ -52,7 +49,7 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
 
   // one source of headers
   private lazy val allHeaders: List[String] =
-    ShapelessFieldNameExtractor.fieldNames[PatientRow]
+    ShapelessFieldNameExtractor.fieldNames[PatientUI]
 
   private lazy val visibleHeaders: List[String] =
     allHeaders.filterNot(removedCols)
@@ -80,19 +77,19 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
   }
 
   // cells for a row
-  private def cellsOf(p: PatientRow) =
-    TableDerivation.derived[PatientRow].celldataList(p).toVector
+  private def cellsOf(p: PatientUI) =
+    CellDataConvertor.derived[PatientUI].celldata(p).toVector
 
-  private def visibleCellsOf(p: PatientRow): List[CellData] =
+  private def visibleCellsOf(p: PatientUI): List[CellData] =
     allHeaders.zip(cellsOf(p)).collect { case (h, cell) if !removedCols(h) => cell }
 
   // FIXED columns
-  def columns(row: Int, p: PatientRow): List[CellData] = {
+  def columns(row: Int, p: PatientUI): List[CellData] = {
     (allHeaders zip cellsOf(p))
       .collect { case (name, cell) if !removedCols(name) => cell }
   }
 
-  override def cctoData(row: Int, cc: PatientRow): List[CellData] = columns(row, cc)
+  override def cctoData(row: Int, cc: PatientUI): List[CellData] = columns(row, cc)
 
   def scrollToSelectedRow(rowIdxOpt: Option[Int]): Unit = {
     rowIdxOpt match {
@@ -115,29 +112,6 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
       case None => // Do nothing
     }
   }
-  //Build filtered view (no type annotation; let it infer mutable IndexedSeq)
-  private val filteredRowsSig =
-    gcdVar.signal
-      .combineWithFn(searchQueryVar.signal) { (rows, q0) =>
-        val q = q0.trim.toLowerCase
-        if (q.isEmpty) rows
-        else rows.filter { rowCols =>
-          rowCols.exists(cell => cell.data.text.toLowerCase.contains(q))
-        }
-      }
-
-  // Keep showGcdVar in sync 
-  filteredRowsSig.foreach(showGcdVar.set)
-
-  // Repair selection if the current selected row becomes invisible after filtering
-  filteredRowsSig.foreach { rows =>
-    val visibleIds = rows.map(_.head.position.row)
-    selectedRowVar.now() match
-      case Some(selId) if !visibleIds.contains(selId) =>
-        if (visibleIds.nonEmpty) selectedRowVar.set(Some(visibleIds.head))
-        else selectedRowVar.set(None)
-      case _ => ()
-  }
 
   def renderHtml: Element =
     def headerRow(s: List[String]) =
@@ -156,12 +130,18 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
             }
           ),
           tbody(
-
-          children <-- filteredRowsSig.map { rows =>
-            rows.toList.map(row(_))
-          }
-        )
-
+            // Added the filter functionality we used under the searchFilterFunction() previously
+            children <-- gcdVar.signal
+              .combineWithFn(searchQueryVar.signal) { (rows, q0) =>
+                val q = q0.trim.toLowerCase
+                if (q.isEmpty) rows
+                else
+                  rows.filter { rowCols =>
+                    rowCols.exists(cell => cell.data.text.toLowerCase.contains(q))
+                  }
+              }
+              .map(_.map(row(_)))
+          )
         )
       ),
       PatientFormModel.create(createPatientFormState, showCreatePatientForm, () => closeCreatePatientModal())
@@ -204,7 +184,8 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
     e.keyCode match
       case 40 | 38 => e.preventDefault() // Prevent default scrolling behavior for up/down arrows
       case _       => ()
-      
+      // TODO Keyboard number mapping to the events
+      // TODO ?SHOULD this be default behaviour on most tables?  if so put it in tableutils with a way to override
 
 // Key press state
   val navHelper = new KeyboardNavigation(moveAndScroll)
@@ -218,34 +199,21 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
   // Add event listeners for keyup to stop the interval
   dom.window.addEventListener("keyup", (e: KeyboardEvent) => stopKeyPressHandler(e))
 
-  // Move selection within the *filtered* (visible) rows
+  // Move the selected row and scroll the page
   private def moveAndScroll(step: Int): Unit = {
-    val visibleRows = showGcdVar.now()                 
-    if (visibleRows.isEmpty) {
-      selectedRowVar.set(None)
-      return
-    }
-    val visibleIds: IndexedSeq[Int] =
-      visibleRows.iterator.map(_.head.position.row).toIndexedSeq             
+    val currentRowOpt = selectedRowVar.now()
+    val totalRows = gcdVar.now().size
 
-    val curIdOpt = selectedRowVar.now()
-    val curVisibleIdx: Int = curIdOpt match
-      case Some(curId) =>
-        val idx = visibleIds.indexOf(curId)
-        if (idx >= 0) idx else 0
-      case None => 0
-
-    val newIdx = (curVisibleIdx + step).max(0).min(visibleIds.size - 1)
-    val newId  = visibleIds(newIdx)
-
-    if (curIdOpt.forall(_ != newId)) {
-      selectedRowVar.set(Some(newId))          // keep storing the underlying id
-      scrollToSelectedRow(Some(newId))         
+    currentRowOpt.foreach { currentRow =>
+      val newRow = (currentRow + step).max(0).min(totalRows - 1) // Ensure bounds
+      if (newRow != currentRow) {
+        selectedRowVar.set(Some(newRow))
+        scrollToSelectedRow(Some(newRow))
+      }
     }
   }
-
   // inside class PatientTracker
-  def refreshAndKeepSearch(newPatients: List[PatientRow]): Unit = {
+  def refreshAndKeepSearch(newPatients: List[PatientUI]): Unit = {
     val q = searchQueryVar.now() // remember current search text
     populate(newPatients) // replace underlying rows (gcdVar)
     searchQueryVar.set(q) // restore search text
