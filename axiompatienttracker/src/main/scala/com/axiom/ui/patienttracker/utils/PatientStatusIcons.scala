@@ -25,7 +25,7 @@ object Status {
 
  
   def fromCode(code: String): Status = code match {
-    case "*" | "1"  => OnlyUrgent
+    case "1"  => OnlyUrgent
     case "2"  => OnlyDraft
     case "12" => Combined
     case "0"  => Stable
