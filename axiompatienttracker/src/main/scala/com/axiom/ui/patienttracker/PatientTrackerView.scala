@@ -20,8 +20,6 @@ import com.axiom.ui.patienttracker.utils.DataProcessing.*
 import com.axiom.shared.table.TableDerivation
 import com.axiom.shared.table.TableDerivation.given
 import com.axiom.shared.table.{CCRowList, ColRow, GridDataT, GridT}
-import com.axiom.shared.table.TableDerivation
-
 
 
 type PatientList = CCRowList[Patient]
@@ -91,7 +89,7 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
     (allHeaders zip cellsOf(p))
       .collect { case (name, cell) if !removedCols(name) => cell }
   }
-
+      
   override def cctoData(row: Int, cc: PatientRow): List[CellData] = columns(row, cc)
 
   def scrollToSelectedRow(rowIdxOpt: Option[Int]): Unit = {
