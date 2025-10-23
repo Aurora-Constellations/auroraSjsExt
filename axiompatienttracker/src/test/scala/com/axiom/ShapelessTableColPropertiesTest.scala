@@ -1,7 +1,7 @@
 package com.axiom
 import testutils.*
 
-import shapeless3.deriving.*
+import com.axiom.shared.table.*
 
 class ShapelessTableColPropertiesTest extends AuroraTesting:
   "this" should {
@@ -11,9 +11,8 @@ class ShapelessTableColPropertiesTest extends AuroraTesting:
       val list = List(p,p,p)
 
       val result = list.map { p =>
-        TableColProperties.derived[Person].element(p)
-      }
-       
+        TableDerivation.derived[Person].leftSide
+      }       
 
       info(s"result: $result")
 

@@ -1,6 +1,6 @@
 package com.axiom
 import testutils.*
-import shapeless3.deriving.*
+import com.axiom.shared.table.*
 import org.scalactic.Bool
 
 
