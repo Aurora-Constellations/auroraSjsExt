@@ -188,16 +188,14 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .in(file("shared"))
   .settings(
     libraryDependencies ++= Dependencies.borerJson.value,
+    libraryDependencies ++= Dependencies.shapeless3.value,
+    libraryDependencies ++= Dependencies.laminar.value,
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio-json" % DependencyVersions.zioJson, // ✅ ensure zio-json is available here
-      "org.typelevel" %%% "shapeless3-deriving" % "3.3.0"
     )
   )
   .jvmSettings(
     libraryDependencies += "org.scala-js" %% "scalajs-stubs" % DependencyVersions.scalaJsStubs
-  )
-  .jsSettings(
-    libraryDependencies ++= Dependencies.laminar.value 
   )
 
 

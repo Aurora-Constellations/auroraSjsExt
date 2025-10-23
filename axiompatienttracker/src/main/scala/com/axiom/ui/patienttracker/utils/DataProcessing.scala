@@ -53,7 +53,7 @@ object DataProcessing{
       "admitDate"     -> state.admitDateVar.now(),
       "hosp"          -> state.hospVar.now()
     )
-    fields.map((validateField _).tupled).forall(_ == true)
+    fields.map(validateField.tupled).forall(_ == true)
 
   def getErrorSignal(key: String): Signal[Option[String]] =
     errorVars.getOrElse(key, Var(None)).signal

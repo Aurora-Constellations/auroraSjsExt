@@ -18,5 +18,5 @@ object Main :
     val element = dom.document.querySelector("#app")
     initializeMessageListener()
     // sendMessageToVSCode("", "")
-    renderOnDomContentLoaded(element,AxiomPatientTracker())
+    renderOnDomContentLoaded(element,UIRenderer())
 

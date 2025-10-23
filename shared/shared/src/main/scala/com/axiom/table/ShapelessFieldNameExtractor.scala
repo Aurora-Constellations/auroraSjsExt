@@ -1,4 +1,4 @@
-package com.axiom
+package com.axiom.shared.table
 
 object ShapelessFieldNameExtractor :
   import shapeless3.deriving.*
