@@ -18,6 +18,10 @@ import org.scalajs.dom.KeyboardEvent
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.axiom.ui.patienttracker.utils.SearchBar
 import com.axiom.ui.patienttracker.utils.DataProcessing.*
+import com.axiom.shared.table.TableDerivation
+import com.axiom.shared.table.TableDerivation.given
+import com.axiom.shared.table.{CCRowList, ColRow, GridDataT, GridT}
+
 
 type PatientList = CCRowList[Patient]
 
@@ -88,8 +92,8 @@ class PatientTracker() extends GridT[PatientUI, CellData] with RenderHtml:
     (allHeaders zip cellsOf(p))
       .collect { case (name, cell) if !removedCols(name) => cell }
   }
-
-  override def cctoData(row: Int, cc: PatientUI): List[CellData] = columns(row, cc)
+      
+  override def cctoData(row: Int, cc: PatientRow): List[CellData] = columns(row, cc)
 
   def scrollToSelectedRow(rowIdxOpt: Option[Int]): Unit = {
     rowIdxOpt match {

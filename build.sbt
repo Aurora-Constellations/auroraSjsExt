@@ -53,6 +53,7 @@ def copyJSCSS(mediaDir:File, outputDir: File, cssFile:File, jsFileName: String, 
   }
 }
 
+
 // --- Custom Task: Copy Scala.js output to media ---
 lazy val copyToMedia = Def.task[Unit] {
   val log = streams.value.log
@@ -64,9 +65,11 @@ lazy val copyToMedia = Def.task[Unit] {
   val cssFile_patienttracker = base / "axiompatienttracker" / "src" / "styles.css"
   val cssFile_billing = base / "axiombilling" / "src" / "styles.css"
 
+  
+
   log.info(copyJSCSS(mediaDir, outputDir_patienttracker, cssFile_patienttracker, "main.js", "styles.css"))
   log.info(copyJSCSS(mediaDir, outputDir_billing, cssFile_billing, "ab_main.js", "ab_styles.css"))
-
+  
 }
 
 lazy val createDirectories = Def.task[Unit] {
@@ -186,11 +189,15 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .settings(
     libraryDependencies ++= Dependencies.borerJson.value,
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % DependencyVersions.zioJson // ✅ ensure zio-json is available here
+      "dev.zio" %%% "zio-json" % DependencyVersions.zioJson, // ✅ ensure zio-json is available here
+      "org.typelevel" %%% "shapeless3-deriving" % "3.3.0"
     )
   )
   .jvmSettings(
     libraryDependencies += "org.scala-js" %% "scalajs-stubs" % DependencyVersions.scalaJsStubs
+  )
+  .jsSettings(
+    libraryDependencies ++= Dependencies.laminar.value 
   )
 
 
