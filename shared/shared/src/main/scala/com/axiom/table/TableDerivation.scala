@@ -5,6 +5,9 @@ import com.axiom.shared.table.TypeClass.CellDataConvertor
 import com.axiom.shared.table.TypeClass
 import com.raquo.laminar.api.L.HtmlElement
 import com.axiom.shared.table.CellData
+import com.raquo.laminar.api.L.{span => htmlSpan}
+
+import scala.concurrent.duration.span
 
 object TableDerivation:
 
@@ -15,9 +18,12 @@ object TableDerivation:
   ): CellDataConvertor[A] =
     (a: A) =>
       labelling.elemLabels.zipWithIndex.toList.flatMap { (_, index) =>
+        val lst = 
         pInst.project(a)(index)(
           [t] => (st: CellDataConvertor[t], pt: t) => st.celldataList(pt)
-        )
+          )
+        if (lst.nonEmpty) lst else List(CellData("", htmlSpan()))
+
       }
 
   // Sum derivation (enums / sealed traits)
