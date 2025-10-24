@@ -14,7 +14,7 @@ final class ReactiveTable[T <: Product](using conv: CellDataConvertor[T],lab: La
   override def cctoData(idx: Int, cc: T): List[CellData] =
     conv.celldataList(cc).toList
 
-  // Render the table with optional row click callback. 
+  
   def render(onRowClick: Option[Int => Unit] = None): Element =
     div(
       cls := "table-container",

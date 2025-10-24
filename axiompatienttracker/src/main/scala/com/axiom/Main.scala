@@ -18,5 +18,7 @@ object Main :
     val element = dom.document.querySelector("#app")
     initializeMessageListener()
     // sendMessageToVSCode("", "")
+    ModelFetch.testEncounterEndpoint(2, 3)
+
     renderOnDomContentLoaded(element,UIRenderer())
 

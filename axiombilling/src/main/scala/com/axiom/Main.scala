@@ -1,62 +1,88 @@
 package com.axiom
 
-
-import com.raquo.laminar.api.L.{*, given}
+import com.raquo.laminar.api.L._
+import com.axiom.model.shared.dto.{Patient, Account, Encounter, Billing}
+import com.axiom.ui._
+import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom
-import com.axiom.ui.*
-import java.time.LocalDate
-import java.time.LocalDateTime
-import com.axiom.model.shared.dto._
-import com.axiom.ui.BillingUIRenderer
 
-object Main :
-	def consoleOut(msg: String): Unit = {
-		dom.console.log(s"%c $msg","background: #222; color: #bada55")
-	}
+object Main:
 
-	@main def entrypoint(): Unit = {
-		consoleOut("Starting app...")
+  @main def entrypoint(): Unit =
+    val patientsVar   = Var(List.empty[Patient])
+    val accountsVar   = Var(List.empty[Account])
+    val encountersVar = Var(List.empty[Encounter])
+    val billingsVar   = Var(List.empty[Billing])
 
-	
-		val selectedPatientIdSignal = PatientsTable.selectedPatientIdVar.signal
+    // Filter billings by selected encounter 
+    val billingsForEncounterSignal: Signal[List[Billing]] =
+      EncountersTable.selectedEncounterIdVar.signal
+        .combineWith(billingsVar.signal)
+        .map {
+          case (Some(eid), all) => all.filter(_.encounterId == eid)
+          case _                => Nil
+        }
 
-		val accountsSignal = selectedPatientIdSignal.map {
-		case Some(pid) => accounts.filter(_.patientId == pid)
-		case None      => Nil
-		}
+    val app =
+      div(
+        
+        onMountCallback { ctx =>
+          given Owner = ctx.owner
 
-		val encountersSignal = accountsSignal.map {
-		case as if as.nonEmpty =>
-			val activeAcc = as.find(_.endDate.isEmpty).map(_.accountId)
-			activeAcc.map(accId => encounters.filter(_.accountId == accId)).getOrElse(Nil)
-		case _ => Nil
-		}
+          // 1) load patients 
+          EventStream.fromFuture(ModelFetch.fetchPatients)
+            .foreach(patientsVar.set)
 
-		val selectedEncounterVar = Var[Option[Long]](None)
-		val selectedEncounterSignal = selectedEncounterVar.signal
+          // 2) load all billings  ( filter client-side by encounterId)
+          EventStream.fromFuture(ModelFetch.fetchAllBillings)
+            .foreach(billingsVar.set)
 
-		val billingsSignal = selectedEncounterSignal.map {
-		case Some(eid) => billings.filter(_.encounterId == eid)
-		case None      => Nil
-		}
+          // 3) when patient selected -> fetch accounts
+          PatientsTable.selectedPatientIdVar.signal
+            .changes
+            .collect { case Some(pid) => pid }
+            .flatMapSwitch(pid =>
+              EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
+            )
+            .foreach { as =>
+              accountsVar.set(as)
+              encountersVar.set(Nil)
+              AccountsTable.selectedAccountIdVar.set(None)
+              EncountersTable.selectedEncounterIdVar.set(None)
+            }
 
-		val app = div(
-			h2("Patient Billing Dashboard"),
-			h3("Patients"),
-			PatientsTable(patients),
-			hr(),
-			h3("Accounts"),
-			AccountsTable.bind(accountsSignal),
-			hr(),
-			h3("Encounters"),
-			EncountersTable.bind(encountersSignal, selectedEncounterVar), // same pattern
-			hr(),
-			h3("Billing Codes"),
-			BillingCodesTable.bind(billingsSignal)
-		)
+          // 4) when account selected -> fetch encounters
+          AccountsTable.selectedAccountIdVar.signal
+            .changes
+            .collect { case Some(accId) => accId }
+            .flatMapSwitch(accId =>
+              EventStream.fromFuture(ModelFetch.fetchEncountersByAccountId(accId))
+            )
+            .foreach { es =>
+              encountersVar.set(es)
+              EncountersTable.selectedEncounterIdVar.set(None)
+            }
+        },
 
-		dom.document.querySelector("#app") match
-			case null => consoleOut("No element with id 'app' found.")
-			case el: dom.html.Element => render(el, app)
-	}
+        h2("Patient Billing Dashboard"),
 
+        h3("Patients"),
+        PatientsTable.bind(patientsVar.signal),
+
+        hr(),
+
+        h3("Accounts"),
+        AccountsTable.bind(accountsVar.signal),
+
+        hr(),
+
+        h3("Encounters"),
+        EncountersTable.bind(encountersVar.signal),
+
+        hr(),
+
+        h3("Billing Codes"),
+        BillingCodesTable.bind(billingsForEncounterSignal)
+      )
+
+    render(dom.document.querySelector("#app"), app)
