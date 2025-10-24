@@ -17,107 +17,42 @@ object Main :
 	@main def entrypoint(): Unit = {
 		consoleOut("Starting app...")
 
-		val accounts = List(
-			Account(
-				accountId = 1L,
-				patientId = 1L,
-				startDate = LocalDateTime.of(2025, 7, 1, 10, 0),
-				endDate = None // Active
-			),
-			Account(
-				accountId = 2L,
-				patientId = 1L,
-				startDate = LocalDateTime.of(2024, 1, 1, 9, 0),
-				endDate = Some(LocalDateTime.of(2024, 2, 1, 12, 0))
-			),
-			Account(
-				accountId = 3L,
-				patientId = 2L,
-				startDate = LocalDateTime.of(2025, 7, 5, 14, 30),
-				endDate = None // Active
-			)
-		)
+	
+		val selectedPatientIdSignal = PatientsTable.selectedPatientIdVar.signal
 
-		val encounters = List(
-			Encounter(
-				encounterId = 101L,
-				accountId = 1L,
-				doctorId = 10001L,
-				startDate = LocalDateTime.of(2025, 7, 2, 9, 0)
-			),
-			Encounter(
-				encounterId = 102L,
-				accountId = 1L,
-				doctorId = 10002L,
-				startDate = LocalDateTime.of(2025, 7, 3, 14, 0)
-			),
-			Encounter(
-				encounterId = 201L,
-				accountId = 3L,
-				doctorId = 10003L,
-				startDate = LocalDateTime.of(2025, 7, 6, 11, 0)
-			)
-		)
+		val accountsSignal = selectedPatientIdSignal.map {
+		case Some(pid) => accounts.filter(_.patientId == pid)
+		case None      => Nil
+		}
 
-		val billings = List(
-			Billing(
-				billingId = 1L,
-				encounterId = 101L,
-				billingCode = "PROC1001",
-				diagnosticCode = "DX001",
-				recordedTime = Some(LocalDateTime.of(2025, 7, 2, 9, 30)),
-				unitCount = 1,
-				Notes = Some("Routine checkup")
-			),
-			Billing(
-				billingId = 2L,
-				encounterId = 102L,
-				billingCode = "PROC1002",
-				diagnosticCode = "DX002",
-				recordedTime = Some(LocalDateTime.of(2025, 7, 3, 15, 0)),
-				unitCount = 2,
-				Notes = Some("Chest X-ray")
-			),
-			Billing(
-				billingId = 3L,
-				encounterId = 201L,
-				billingCode = "PROC1003",
-				diagnosticCode = "DX003",
-				recordedTime = Some(LocalDateTime.of(2025, 7, 6, 11, 15)),
-				unitCount = 3,
-				Notes = Some("MRI Brain")
-			)
-		)
+		val encountersSignal = accountsSignal.map {
+		case as if as.nonEmpty =>
+			val activeAcc = as.find(_.endDate.isEmpty).map(_.accountId)
+			activeAcc.map(accId => encounters.filter(_.accountId == accId)).getOrElse(Nil)
+		case _ => Nil
+		}
 
+		val selectedEncounterVar = Var[Option[Long]](None)
+		val selectedEncounterSignal = selectedEncounterVar.signal
 
-		// Populate initial vars
-		// patientsVar.set(patients)
-		// accountsVar.set(accounts)
-		// encountersVar.set(encounters)
-		// billingsVar.set(billings)
+		val billingsSignal = selectedEncounterSignal.map {
+		case Some(eid) => billings.filter(_.encounterId == eid)
+		case None      => Nil
+		}
 
 		val app = div(
 			h2("Patient Billing Dashboard"),
-
 			h3("Patients"),
-			BillingUIRenderer(patients)
-
-			// hr(),
-
-			// h3(
-			// 	child.text <-- accountCountSignal.map(count =>
-			// 		s"Active Account (Total # of accounts: $count)"
-			// 	)
-			// ),
-			// activeAccountDisplay(activeAccountSignal),
-
-			// h3("Select Encounter"),
-			// encounterTable(encounterOptionsSignal),
-
-			// hr(),
-
-			// h3("Billing Codes for Encounter"),
-			// billingList(billingForEncounterSignal)
+			PatientsTable(patients),
+			hr(),
+			h3("Accounts"),
+			AccountsTable.bind(accountsSignal),
+			hr(),
+			h3("Encounters"),
+			EncountersTable.bind(encountersSignal, selectedEncounterVar), // same pattern
+			hr(),
+			h3("Billing Codes"),
+			BillingCodesTable.bind(billingsSignal)
 		)
 
 		dom.document.querySelector("#app") match

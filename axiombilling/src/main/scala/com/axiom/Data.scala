@@ -3,6 +3,9 @@ package com.axiom
 import com.axiom.model.shared.dto.Patient
 import java.time.LocalDate
 import java.time.LocalDateTime
+import com.axiom.model.shared.dto.Account
+import com.axiom.model.shared.dto.Encounter
+import com.axiom.model.shared.dto.Billing
 
 val patients = List(
 			Patient(
@@ -70,5 +73,77 @@ val patients = List(
 				collab1 = Some("Dr. Y"),
 				collab2 = Some("Dr. Z"),
 				auroraFile = None
+			)
+		)
+
+val accounts = List(
+			Account(
+				accountId = 1L,
+				patientId = 1L,
+				startDate = LocalDateTime.of(2025, 7, 1, 10, 0),
+				endDate = None // Active
+			),
+			Account(
+				accountId = 2L,
+				patientId = 1L,
+				startDate = LocalDateTime.of(2024, 1, 1, 9, 0),
+				endDate = Some(LocalDateTime.of(2024, 2, 1, 12, 0))
+			),
+			Account(
+				accountId = 3L,
+				patientId = 2L,
+				startDate = LocalDateTime.of(2025, 7, 5, 14, 30),
+				endDate = None // Active
+			)
+		)
+
+val encounters = List(
+			Encounter(
+				encounterId = 101L,
+				accountId = 1L,
+				doctorId = 10001L,
+				startDate = LocalDateTime.of(2025, 7, 2, 9, 0)
+			),
+			Encounter(
+				encounterId = 102L,
+				accountId = 1L,
+				doctorId = 10002L,
+				startDate = LocalDateTime.of(2025, 7, 3, 14, 0)
+			),
+			Encounter(
+				encounterId = 201L,
+				accountId = 3L,
+				doctorId = 10003L,
+				startDate = LocalDateTime.of(2025, 7, 6, 11, 0)
+			)
+		)
+
+val billings = List(
+			Billing(
+				billingId = 1L,
+				encounterId = 101L,
+				billingCode = "PROC1001",
+				diagnosticCode = "DX001",
+				recordedTime = Some(LocalDateTime.of(2025, 7, 2, 9, 30)),
+				unitCount = 1,
+				Notes = Some("Routine checkup")
+			),
+			Billing(
+				billingId = 2L,
+				encounterId = 102L,
+				billingCode = "PROC1002",
+				diagnosticCode = "DX002",
+				recordedTime = Some(LocalDateTime.of(2025, 7, 3, 15, 0)),
+				unitCount = 2,
+				Notes = Some("Chest X-ray")
+			),
+			Billing(
+				billingId = 3L,
+				encounterId = 201L,
+				billingCode = "PROC1003",
+				diagnosticCode = "DX003",
+				recordedTime = Some(LocalDateTime.of(2025, 7, 6, 11, 15)),
+				unitCount = 3,
+				Notes = Some("MRI Brain")
 			)
 		)
