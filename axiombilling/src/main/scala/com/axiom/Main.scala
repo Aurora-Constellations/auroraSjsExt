@@ -1,127 +1,171 @@
 package com.axiom
 
-
-import com.raquo.laminar.api.L.{*, given}
+import com.raquo.laminar.api.L._
+import com.axiom.model.shared.dto.{Patient, Account, Encounter, Billing}
+import com.axiom.ui._
+import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom
-import com.axiom.ui.*
-import java.time.LocalDate
+import com.raquo.airstream.flatten.FlattenStrategy.allowFlatMap
 import java.time.LocalDateTime
-import com.axiom.model.shared.dto._
-import com.axiom.ui.BillingUIRenderer
+import java.time.format.DateTimeFormatter
 
-object Main :
-	def consoleOut(msg: String): Unit = {
-		dom.console.log(s"%c $msg","background: #222; color: #bada55")
-	}
+object Main:
 
-	@main def entrypoint(): Unit = {
-		consoleOut("Starting app...")
+  @main def entrypoint(): Unit =
+    val patientsVar   = Var(List.empty[Patient])
+    val accountsVar   = Var(List.empty[Account])
+    val encountersVar = Var(List.empty[Encounter])
+    val billingsVar   = Var(List.empty[Billing])
 
-		val accounts = List(
-			Account(
-				accountId = 1L,
-				patientId = 1L,
-				startDate = LocalDateTime.of(2025, 7, 1, 10, 0),
-				endDate = None // Active
-			),
-			Account(
-				accountId = 2L,
-				patientId = 1L,
-				startDate = LocalDateTime.of(2024, 1, 1, 9, 0),
-				endDate = Some(LocalDateTime.of(2024, 2, 1, 12, 0))
-			),
-			Account(
-				accountId = 3L,
-				patientId = 2L,
-				startDate = LocalDateTime.of(2025, 7, 5, 14, 30),
-				endDate = None // Active
-			)
-		)
+    // Filter billings by selected encounter 
+    val billingsForEncounterSignal: Signal[List[Billing]] =
+      EncountersTable.selectedEncounterIdVar.signal
+        .combineWith(billingsVar.signal)
+        .map {
+          case (Some(eid), all) => all.filter(_.encounterId == eid)
+          case _                => Nil
+        }
 
-		val encounters = List(
-			Encounter(
-				encounterId = 101L,
-				accountId = 1L,
-				doctorId = 10001L,
-				startDate = LocalDateTime.of(2025, 7, 2, 9, 0)
-			),
-			Encounter(
-				encounterId = 102L,
-				accountId = 1L,
-				doctorId = 10002L,
-				startDate = LocalDateTime.of(2025, 7, 3, 14, 0)
-			),
-			Encounter(
-				encounterId = 201L,
-				accountId = 3L,
-				doctorId = 10003L,
-				startDate = LocalDateTime.of(2025, 7, 6, 11, 0)
-			)
-		)
+    // helper to parse datetime string
+    def parseLdt(s: String): Option[LocalDateTime] =
+      try Some(LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")))
+      catch case _: Throwable => None
 
-		val billings = List(
-			Billing(
-				billingId = 1L,
-				encounterId = 101L,
-				billingCode = "PROC1001",
-				diagnosticCode = "DX001",
-				recordedTime = Some(LocalDateTime.of(2025, 7, 2, 9, 30)),
-				unitCount = 1,
-				Notes = Some("Routine checkup")
-			),
-			Billing(
-				billingId = 2L,
-				encounterId = 102L,
-				billingCode = "PROC1002",
-				diagnosticCode = "DX002",
-				recordedTime = Some(LocalDateTime.of(2025, 7, 3, 15, 0)),
-				unitCount = 2,
-				Notes = Some("Chest X-ray")
-			),
-			Billing(
-				billingId = 3L,
-				encounterId = 201L,
-				billingCode = "PROC1003",
-				diagnosticCode = "DX003",
-				recordedTime = Some(LocalDateTime.of(2025, 7, 6, 11, 15)),
-				unitCount = 3,
-				Notes = Some("MRI Brain")
-			)
-		)
+    val app =
+      div(
+        
+        onMountCallback { ctx =>
+          given Owner = ctx.owner
 
+          // 1) load patients 
+          EventStream.fromFuture(ModelFetch.fetchPatients)
+            .foreach(patientsVar.set)
 
-		// Populate initial vars
-		// patientsVar.set(patients)
-		// accountsVar.set(accounts)
-		// encountersVar.set(encounters)
-		// billingsVar.set(billings)
+          // 2) when patient selected -> fetch accounts
+          PatientsTable.selectedPatientIdVar.signal
+            .changes
+            .collect { case Some(pid) => pid }
+            .flatMapSwitch(pid =>
+              EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
+            )
+            .foreach { as =>
+              accountsVar.set(as)
+              encountersVar.set(Nil)
+              billingsVar.set(Nil)
+              AccountsTable.selectedAccountIdVar.set(None)
+              EncountersTable.selectedEncounterIdVar.set(None)
+            }
 
-		val app = div(
-			h2("Patient Billing Dashboard"),
+          // 3) when account selected -> fetch encounters
+          AccountsTable.selectedAccountIdVar.signal
+            .changes
+            .collect { case Some(accId) => accId }
+            .flatMapSwitch(accId =>
+              EventStream.fromFuture(ModelFetch.fetchEncountersByAccountId(accId))
+            )
+            .foreach { es =>
+              encountersVar.set(es)
+              EncountersTable.selectedEncounterIdVar.set(None)
+              billingsVar.set(Nil)
+            }
 
-			h3("Patients"),
-			BillingUIRenderer(patients)
+          //4) When encounter selected → fetch all billings 
+          EncountersTable.selectedEncounterIdVar.signal
+            .changes
+            .collect { case Some(_) => () }
+            .take(1) // fetch all billings 
+            .flatMap(_ =>
+              EventStream.fromFuture(ModelFetch.fetchAllBillings)
+            )
+            .foreach(billingsVar.set)
+        },
 
-			// hr(),
+        h2("Patient Billing Dashboard"),
 
-			// h3(
-			// 	child.text <-- accountCountSignal.map(count =>
-			// 		s"Active Account (Total # of accounts: $count)"
-			// 	)
-			// ),
-			// activeAccountDisplay(activeAccountSignal),
+        h3("Patients"),
+        PatientsTable.bindWithContextMenu(
+          patientsSignal = patientsVar.signal,
+          accountsVar    = accountsVar
+        )(
+          onViewAllAccounts = pid => {
+            given Owner = unsafeWindowOwner
+            AccountsTable.showAll()
+            EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
+              .foreach { as =>
+                accountsVar.set(as)
+                AccountsTable.selectedAccountIdVar.set(None)
+                EncountersTable.selectedEncounterIdVar.set(None)
+                ContextMenu.hide()
+              }
+          },
+          onCreateAccount = pid => {
+            given Owner = unsafeWindowOwner
+            val start = LocalDateTime.now() 
+            EventStream.fromFuture(ModelFetch.createAccount(pid, start))
+              .flatMapSwitch { _ =>
+                EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
+              }
+              .foreach { as =>
+                accountsVar.set(as)
+                AccountsTable.selectedAccountIdVar.set(None)
+                EncountersTable.selectedEncounterIdVar.set(None)
+                ContextMenu.hide()
+              }
+        },
+          onViewActiveAccount = accId => {
+            AccountsTable.showActive()
+            AccountsTable.selectedAccountIdVar.set(Some(accId))
+            ContextMenu.hide()
+          }
+        ),
 
-			// h3("Select Encounter"),
-			// encounterTable(encounterOptionsSignal),
+        hr(),
 
-			// hr(),
+        h3("Accounts"),
+        AccountsTable.bindWithContextMenu(accountsVar.signal)(
+          onCreateEncounter = accId => {
+            val docStr   = dom.window.prompt("Doctor ID (number):", "")
+            val startStr = dom.window.prompt("Start datetime (yyyy-MM-ddTHH:mm):", "")
 
-			// h3("Billing Codes for Encounter"),
-			// billingList(billingForEncounterSignal)
-		)
+            if (docStr == null || startStr == null) () // user cancelled
+            else {
+              val doctorIdOpt = docStr.trim match
+                case s if s.nonEmpty =>
+                  try Some(s.toLong) catch case _: Throwable => None
+                case _ => None
+              val startOpt = parseLdt(startStr.trim)
 
-		dom.document.querySelector("#app") match
-			case null => consoleOut("No element with id 'app' found.")
-			case el: dom.html.Element => render(el, app)
-	}
+              (doctorIdOpt, startOpt) match
+                case (Some(doctorId), Some(start)) =>
+                  given Owner = unsafeWindowOwner
+                  EventStream.fromFuture(ModelFetch.createEncounter(accId, doctorId, start, Nil))
+                    .flatMapSwitch(_ => EventStream.fromFuture(ModelFetch.fetchEncountersByAccountId(accId)))
+                    .foreach { es =>
+                      encountersVar.set(es)
+                      AccountsTable.selectedAccountIdVar.set(Some(accId))
+                    }
+                case _ =>
+                  dom.window.alert("Invalid Doctor ID or datetime. Use yyyy-MM-ddTHH:mm")
+            }
+          },
+          onViewAllEncounters = accId => {
+            AccountsTable.selectedAccountIdVar.set(Some(accId))
+          }
+        ),
 
+        hr(),
+
+        h3("Encounters"),
+        EncountersTable.bind(encountersVar.signal),
+
+        hr(),
+
+        h3("Billing Codes"),
+        BillingCodesTable.bind(billingsForEncounterSignal),
+
+        
+        
+        ContextMenu.view
+      )
+
+    render(dom.document.querySelector("#app"), app)

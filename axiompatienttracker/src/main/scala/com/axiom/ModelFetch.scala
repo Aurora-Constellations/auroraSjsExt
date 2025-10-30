@@ -167,3 +167,15 @@ object ModelFetch :
   //         false
   //       }
   //   }
+  def testEncounterEndpoint(encounterId: Int, patientId: Int): Future[Unit] =
+    val url = s"http://localhost:8080/encounters/$encounterId/$patientId"
+    println(s"Testing endpoint: $url")
+
+    Fetch.get(url).future.text(abortController)
+      .map { response =>
+        println(s"Response from $url:")
+        println(response.data)
+      }
+      .recover { case ex =>
+        println(s"Error calling $url: ${ex.getMessage}")
+      }
