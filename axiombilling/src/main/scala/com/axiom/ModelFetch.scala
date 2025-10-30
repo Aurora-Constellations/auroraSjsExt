@@ -6,6 +6,10 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import zio.json._
 import org.scalajs.dom.AbortController
 import com.axiom.model.shared.dto.{Patient, Account, Encounter, Billing}
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import org.scalajs.dom
+import org.scalajs.dom.experimental.{Headers => DomHeaders, RequestInit, HttpMethod}
 
 object ModelFetch:
 
@@ -34,3 +38,30 @@ object ModelFetch:
     Fetch.get("http://localhost:8080/billings")
       .future.text(abortController)
       .map(r => r.data.fromJson[List[Billing]].getOrElse(Nil))
+
+  final case class CreateAccountRequest(patientId: Long, startDate: String)
+  object CreateAccountRequest:
+    given zio.json.JsonEncoder[CreateAccountRequest] = zio.json.DeriveJsonEncoder.gen
+
+
+  def createAccount(patientId: Long, start: LocalDateTime): Future[Option[Account]] =
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm") // "2023-11-24T00:00"
+    val payload   = CreateAccountRequest(patientId, formatter.format(start)).toJson
+
+    val httpheaders = new DomHeaders()
+    httpheaders.set("Content-Type", "application/json")
+
+    val req = new RequestInit:
+      method = HttpMethod.POST
+      body   = payload
+      this.headers = httpheaders
+
+    dom.experimental.Fetch
+      .fetch("http://localhost:8080/account", req)
+      .toFuture
+      .flatMap(_.text().toFuture)                  // read response body as text
+      .map(_.fromJson[Account].toOption)           // try decode as Account
+      .recover { case ex =>
+        dom.console.error(s"[createAccount] failed: ${ex.getMessage}")
+        None
+      }

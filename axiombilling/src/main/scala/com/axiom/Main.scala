@@ -5,6 +5,8 @@ import com.axiom.model.shared.dto.{Patient, Account, Encounter, Billing}
 import com.axiom.ui._
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom
+import com.raquo.airstream.flatten.FlattenStrategy.allowFlatMap
+import java.time.LocalDateTime
 
 object Main:
 
@@ -33,11 +35,7 @@ object Main:
           EventStream.fromFuture(ModelFetch.fetchPatients)
             .foreach(patientsVar.set)
 
-          // 2) load all billings  ( filter client-side by encounterId)
-          EventStream.fromFuture(ModelFetch.fetchAllBillings)
-            .foreach(billingsVar.set)
-
-          // 3) when patient selected -> fetch accounts
+          // 2) when patient selected -> fetch accounts
           PatientsTable.selectedPatientIdVar.signal
             .changes
             .collect { case Some(pid) => pid }
@@ -47,11 +45,12 @@ object Main:
             .foreach { as =>
               accountsVar.set(as)
               encountersVar.set(Nil)
+              billingsVar.set(Nil)
               AccountsTable.selectedAccountIdVar.set(None)
               EncountersTable.selectedEncounterIdVar.set(None)
             }
 
-          // 4) when account selected -> fetch encounters
+          // 3) when account selected -> fetch encounters
           AccountsTable.selectedAccountIdVar.signal
             .changes
             .collect { case Some(accId) => accId }
@@ -61,13 +60,60 @@ object Main:
             .foreach { es =>
               encountersVar.set(es)
               EncountersTable.selectedEncounterIdVar.set(None)
+              billingsVar.set(Nil)
             }
+
+          //4) When encounter selected → fetch all billings 
+          EncountersTable.selectedEncounterIdVar.signal
+            .changes
+            .collect { case Some(_) => () }
+            .take(1) // fetch all billings 
+            .flatMap(_ =>
+              EventStream.fromFuture(ModelFetch.fetchAllBillings)
+            )
+            .foreach(billingsVar.set)
         },
 
         h2("Patient Billing Dashboard"),
 
         h3("Patients"),
-        PatientsTable.bind(patientsVar.signal),
+        PatientsTable.bindWithContextMenu(
+          patientsSignal = patientsVar.signal,
+          accountsVar    = accountsVar
+        )(
+          onViewAllAccounts = pid => {
+            // refresh accounts for this patient 
+            given Owner = unsafeWindowOwner
+            AccountsTable.showAll()
+            EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
+              .foreach { as =>
+                accountsVar.set(as)
+                AccountsTable.selectedAccountIdVar.set(None)
+                EncountersTable.selectedEncounterIdVar.set(None)
+                ContextMenu.hide()
+              }
+          },
+          onCreateAccount = pid => {
+            given Owner = unsafeWindowOwner
+            val start = LocalDateTime.now() 
+            EventStream.fromFuture(ModelFetch.createAccount(pid, start))
+              .flatMapSwitch { _ =>
+                // Refresh accounts for this patient after POST
+                EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
+              }
+              .foreach { as =>
+                accountsVar.set(as)
+                AccountsTable.selectedAccountIdVar.set(None)
+                EncountersTable.selectedEncounterIdVar.set(None)
+                ContextMenu.hide()
+              }
+        },
+          onViewActiveAccount = accId => {
+            AccountsTable.showActive()
+            AccountsTable.selectedAccountIdVar.set(Some(accId))
+            ContextMenu.hide()
+          }
+        ),
 
         hr(),
 
@@ -82,7 +128,11 @@ object Main:
         hr(),
 
         h3("Billing Codes"),
-        BillingCodesTable.bind(billingsForEncounterSignal)
+        BillingCodesTable.bind(billingsForEncounterSignal),
+
+        
+        
+        ContextMenu.view
       )
 
     render(dom.document.querySelector("#app"), app)

@@ -5,6 +5,8 @@ import com.axiom.shared.table._
 import com.axiom.shared.table.TypeClass.CellDataConvertor
 import com.axiom.shared.table.TableDerivation.given
 import shapeless3.deriving.Labelling   
+import org.scalajs.dom
+import com.axiom.ui.ContextMenu
 
 final class ReactiveTable[T <: Product](using conv: CellDataConvertor[T],lab: Labelling[T]) extends GridT[T, CellData]:
 
@@ -15,7 +17,10 @@ final class ReactiveTable[T <: Product](using conv: CellDataConvertor[T],lab: La
     conv.celldataList(cc).toList
 
   
-  def render(onRowClick: Option[Int => Unit] = None): Element =
+  def render(
+    onRowClick: Option[Int => Unit] = None,
+    onRowContextMenu: Option[(Int, dom.MouseEvent) => Unit]= None
+    ): Element =
     div(
       cls := "table-container",
       table(
@@ -26,6 +31,7 @@ final class ReactiveTable[T <: Product](using conv: CellDataConvertor[T],lab: La
             rows.toList.zipWithIndex.map { case (row, i) =>
               tr(
                 onClick.mapTo(i) --> { idx => onRowClick.foreach(_(idx)) },
+                onContextMenu.preventDefault --> {e => onRowContextMenu.foreach(_(i, e))},
                 row.map(c => td(c.data.element))
               )
             }
