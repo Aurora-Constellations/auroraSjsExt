@@ -54,8 +54,9 @@ object PatientsTable:
         }
       ),
       patientsSignal --> { ps =>
-        current.set(ps)
-        table.populate(ps.map(p => PatientRow(p.accountNumber, p.firstName, p.sex, p.dob, p.admitDate, p.room)))
+        val limited = ps.take(5)
+        current.set(limited) 
+        table.populate(limited.map(p => PatientRow(p.accountNumber, p.firstName, p.sex, p.dob, p.admitDate, p.room)))
         selectedPatientIdVar.set(None)
       }
     )
