@@ -24,7 +24,10 @@ object ContextMenu:
           Some(
             div(
               cls := "ctx-menu",
-              styleAttr := s"position:fixed; left:${x}px; top:${y}px; z-index:10000;",
+              position := "fixed",
+              left := s"${x}px",
+              top := s"${y}px",
+              zIndex := 10000,
               items.map(it =>
                 div(
                   cls := "ctx-item",
