@@ -45,7 +45,7 @@ object ModelFetch:
 
 
   def createAccount(patientId: Long, start: LocalDateTime): Future[Option[Account]] =
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm") // "2023-11-24T00:00"
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm") 
     val payload   = CreateAccountRequest(patientId, formatter.format(start)).toJson
 
     val httpheaders = new DomHeaders()
@@ -63,5 +63,42 @@ object ModelFetch:
       .map(_.fromJson[Account].toOption)           // try decode as Account
       .recover { case ex =>
         dom.console.error(s"[createAccount] failed: ${ex.getMessage}")
+        None
+      }
+
+
+  final case class CreateEncounterRequest(
+  accountId: Long,
+  doctorId: Long,
+  startDate: String,
+  auroraFileContent: List[Int]
+)
+  object CreateEncounterRequest:
+    given JsonEncoder[CreateEncounterRequest] = DeriveJsonEncoder.gen
+
+  def createEncounter(
+    accountId: Long,
+    doctorId: Long,
+    start: LocalDateTime,
+    auroraFileContent: List[Int] = Nil // can default to empty if needed
+  ): Future[Option[Encounter]] =
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+    val payload   = CreateEncounterRequest(accountId, doctorId, formatter.format(start), auroraFileContent).toJson
+
+    val httpHeaders = new DomHeaders()
+    httpHeaders.set("Content-Type", "application/json")
+
+    val req = new RequestInit:
+      method = HttpMethod.POST
+      body   = payload
+      this.headers = httpHeaders
+
+    dom.experimental.Fetch
+      .fetch("http://localhost:8080/encounter", req)
+      .toFuture
+      .flatMap(_.text().toFuture)
+      .map(_.fromJson[Encounter].toOption)
+      .recover { case ex =>
+        dom.console.error(s"[createEncounter] failed: ${ex.getMessage}")
         None
       }

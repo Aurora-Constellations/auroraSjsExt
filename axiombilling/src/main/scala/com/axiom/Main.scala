@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom
 import com.raquo.airstream.flatten.FlattenStrategy.allowFlatMap
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 object Main:
 
@@ -24,6 +25,11 @@ object Main:
           case (Some(eid), all) => all.filter(_.encounterId == eid)
           case _                => Nil
         }
+
+    // helper to parse datetime string
+    def parseLdt(s: String): Option[LocalDateTime] =
+      try Some(LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")))
+      catch case _: Throwable => None
 
     val app =
       div(
@@ -82,7 +88,6 @@ object Main:
           accountsVar    = accountsVar
         )(
           onViewAllAccounts = pid => {
-            // refresh accounts for this patient 
             given Owner = unsafeWindowOwner
             AccountsTable.showAll()
             EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
@@ -98,7 +103,6 @@ object Main:
             val start = LocalDateTime.now() 
             EventStream.fromFuture(ModelFetch.createAccount(pid, start))
               .flatMapSwitch { _ =>
-                // Refresh accounts for this patient after POST
                 EventStream.fromFuture(ModelFetch.fetchAccountsByPatientId(pid))
               }
               .foreach { as =>
@@ -118,7 +122,36 @@ object Main:
         hr(),
 
         h3("Accounts"),
-        AccountsTable.bind(accountsVar.signal),
+        AccountsTable.bindWithContextMenu(accountsVar.signal)(
+          onCreateEncounter = accId => {
+            val docStr   = dom.window.prompt("Doctor ID (number):", "")
+            val startStr = dom.window.prompt("Start datetime (yyyy-MM-ddTHH:mm):", "")
+
+            if (docStr == null || startStr == null) () // user cancelled
+            else {
+              val doctorIdOpt = docStr.trim match
+                case s if s.nonEmpty =>
+                  try Some(s.toLong) catch case _: Throwable => None
+                case _ => None
+              val startOpt = parseLdt(startStr.trim)
+
+              (doctorIdOpt, startOpt) match
+                case (Some(doctorId), Some(start)) =>
+                  given Owner = unsafeWindowOwner
+                  EventStream.fromFuture(ModelFetch.createEncounter(accId, doctorId, start, Nil))
+                    .flatMapSwitch(_ => EventStream.fromFuture(ModelFetch.fetchEncountersByAccountId(accId)))
+                    .foreach { es =>
+                      encountersVar.set(es)
+                      AccountsTable.selectedAccountIdVar.set(Some(accId))
+                    }
+                case _ =>
+                  dom.window.alert("Invalid Doctor ID or datetime. Use yyyy-MM-ddTHH:mm")
+            }
+          },
+          onViewAllEncounters = accId => {
+            AccountsTable.selectedAccountIdVar.set(Some(accId))
+          }
+        ),
 
         hr(),
 
