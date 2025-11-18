@@ -9,63 +9,79 @@ import org.scalajs.dom.experimental.{Fetch, HttpMethod, Headers, RequestInit, Re
 @JSExportTopLevel("ClaudeClient")
 object ClaudeClient {
 
-	private val apiKey = js.Dynamic.global.process.env.selectDynamic("CLAUDE_API_KEY").asInstanceOf[js.UndefOr[String]]
-	private val model = js.Dynamic.global.process.env.selectDynamic("CLAUDE_MODEL").asInstanceOf[js.UndefOr[String]]
+  private val apiKey = js.Dynamic.global.process.env.selectDynamic("CLAUDE_API_KEY").asInstanceOf[js.UndefOr[String]]
+  private val model = js.Dynamic.global.process.env.selectDynamic("CLAUDE_MODEL").asInstanceOf[js.UndefOr[String]]
 
-	private val apiUrl = "https://api.anthropic.com/v1/messages"
+  private val apiUrl = "https://api.anthropic.com/v1/messages"
 
-	def getMcpFromPrompt(prompt: String): Future[js.Dynamic] = {
-		val reqHeaders = new Headers()
-		reqHeaders.set("x-api-key", apiKey.getOrElse(""))
-		reqHeaders.set("anthropic-version", "2023-06-01")
-		reqHeaders.set("Content-type", "application/json")
+  def getMcpFromPrompt(prompt: String): Future[js.Dynamic] = {
+    val reqHeaders = new Headers()
+    reqHeaders.set("x-api-key", apiKey.getOrElse(""))
+    reqHeaders.set("anthropic-version", "2023-06-01")
+    reqHeaders.set("Content-type", "application/json")
 
-		val reqBody =
-			js.JSON.stringify(
-				js.Dynamic.literal(
-					"model" -> model,
-					"max_tokens" -> 1500,
-					"temperature" -> 0,
-					"system" -> claudeDirections,
-					"messages" -> js.Array(
-						js.Dynamic.literal(
-							"role" -> "user",
-							"content" -> prompt
-						)
-					)
-				)
-			)
+    val reqBody =
+      js.JSON.stringify(
+        js.Dynamic.literal(
+          "model" -> model.getOrElse("claude-3-5-sonnet-20240620"),
+          "max_tokens" -> 1500,
+          "temperature" -> 0,
+          "system" -> claudeDirections,
+          "messages" -> js.Array(
+            js.Dynamic.literal(
+              "role" -> "user",
+              "content" -> prompt
+            )
+          )
+        )
+      )
 
-		val req = new RequestInit {
-			method = HttpMethod.POST
-			this.headers = reqHeaders
-			this.body = reqBody
-		}
+    val req = new RequestInit {
+      method = HttpMethod.POST
+      this.headers = reqHeaders
+      this.body = reqBody
+    }
 
-		Fetch.fetch(apiUrl, req).toFuture
-			.flatMap(_.json().toFuture)
-			.map { jsVal =>
-				val dyn = jsVal.asInstanceOf[js.Dynamic]
-				if (!js.isUndefined(dyn.selectDynamic("error"))) {
-					val msg = dyn.selectDynamic("error").selectDynamic("message").asInstanceOf[String]
-					throw new Exception(s"Claude API error: $msg")
-				}
+    Fetch
+      .fetch(apiUrl, req)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { jsVal =>
+        val dyn = jsVal.asInstanceOf[js.Dynamic]
+        if (!js.isUndefined(dyn.selectDynamic("error"))) {
+          val msg = dyn.selectDynamic("error").selectDynamic("message").asInstanceOf[String]
+          throw new Exception(s"Claude API error: $msg")
+        }
 
-				val content = dyn.selectDynamic("content").asInstanceOf[js.UndefOr[js.Array[js.Dynamic]]]
-				if (content.isEmpty || content.get.length == 0) {
-					throw new Exception("Claude response had no content field!")
-				}
+        val content = dyn.selectDynamic("content").asInstanceOf[js.UndefOr[js.Array[js.Dynamic]]]
+        if (content.isEmpty || content.get.length == 0) {
+          throw new Exception("Claude response had no content field!")
+        }
 
-				val text = content.get(0).selectDynamic("text").asInstanceOf[String]
-				js.JSON.parse(text)
-			}
+        val text = content.get(0).selectDynamic("text").asInstanceOf[String]
 
-	}
-	private val claudeDirections = """You are Aurora Assistant, a JSON-only design agent for medical software.
+        // Strip markdown code fences if present
+        val cleanedText = text
+          .replaceAll("```json\\s*", "")
+          .replaceAll("```\\s*", "")
+          .trim()
+
+        try {
+          js.JSON.parse(cleanedText)
+        } catch {
+          case e: Exception =>
+            throw new Exception(s"Failed to parse JSON response: $cleanedText", e)
+        }
+      }
+  }
+  private val claudeDirections = """You are Aurora Assistant, a JSON-only design agent for medical software.
 
 				Your job is to convert a user's request into a valid MCP (Model Context Protocol) command.
 
-				IMPORTANT: Only respond in raw JSON (no markdown, no comments, no explanations).
+				CRITICAL: Respond ONLY with raw JSON. Do NOT wrap your response in markdown code blocks.
+				Do NOT include ```json or ``` in your response.
+				Do NOT include any text before or after the JSON.
+				Your entire response must be valid JSON that can be parsed directly.
 				For narrative insertions, do not paraphrase the user's text.
 
 				You can handle two types of actions:
@@ -89,7 +105,7 @@ object ClaudeClient {
 
 				Available VS Code commands:
 				- AuroraSjsExt.aurora (Hello Aurora)
-				- AuroraSjsExt.patients (Patient Tracker)  
+				- AuroraSjsExt.patients (Patient Tracker)
 				- AuroraSjsExt.billing (Billing)
 				- AuroraSjsExt.processDSL (Merge PCMs or Merge Policies or Construct)
 				- AuroraSjsExt.toggleDiagramLayout (Toggle Diagram Layout)
