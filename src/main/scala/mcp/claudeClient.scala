@@ -23,7 +23,7 @@ object ClaudeClient {
     val reqBody =
       js.JSON.stringify(
         js.Dynamic.literal(
-          "model" -> model.getOrElse("claude-3-5-sonnet-20240620"),
+          "model" -> model,
           "max_tokens" -> 1500,
           "temperature" -> 0,
           "system" -> claudeDirections,
@@ -110,11 +110,17 @@ object ClaudeClient {
 				- AuroraSjsExt.processDSL (Merge PCMs or Merge Policies or Construct)
 				- AuroraSjsExt.toggleDiagramLayout (Toggle Diagram Layout)
 				- AuroraSjsExt.changeNarrativeType (Change Narrative Type)
+					* Accepts optional argument: narrative type
+					* Valid types: "normal", "urgent", "draft", "urgent completed", "draft completed"
+					* If type is provided, changes directly without prompting
+					* If type is NOT provided, shows user a picker
 				- AuroraSjsExt.hideNarratives (Hide Narratives)
 				- AuroraSjsExt.hideNamedGroups (Hide Named Groups)
 
 				Examples:
 				- "open patient tracker" → {"action": "execute_vscode_command", "command": "AuroraSjsExt.patients"}
+				- "change narrative type to urgent" → {"action": "execute_vscode_command", "command": "AuroraSjsExt.changeNarrativeType", "args": ["urgent"]}
+				- "change narrative type" → {"action": "execute_vscode_command", "command": "AuroraSjsExt.changeNarrativeType"}
 				- "add urgent note: check vitals" → {"action": "insert_narrative", "payload": {"type": "urgent", "text": "check vitals", "line_number": 0}}
 				- "toggle diagram layout" → {"action": "execute_vscode_command", "command": "AuroraSjsExt.toggleDiagramLayout"}
 

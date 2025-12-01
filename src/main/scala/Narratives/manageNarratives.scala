@@ -45,7 +45,7 @@ object ManageNarratives:
   }
 
 
-  def changeNarrativesType(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
+  def changeNarrativesType(context: ExtensionContext): js.Function1[Any, Any] = { args =>
     val narrativeTypes = Map(
       "normal" -> "--",
       "urgent" -> "!!",
@@ -69,33 +69,63 @@ object ManageNarratives:
         .split("\r?\n")
         .toList // Keep all lines, including empty ones and whitespace
 
-      vscode.window
-        .showQuickPick(
-          js.Array("normal", "urgent", "draft", "urgent completed", "draft completed"),
-          new vscode.QuickPickOptions {
-            placeHolder = "Select a narrative type"
+      // Check if narrative type was provided as argument
+      val providedType: Option[String] = args match {
+        case arr: js.Array[_] if arr.nonEmpty => 
+          Some(arr(0).toString.toLowerCase().trim)
+        case str: String if str.nonEmpty => 
+          Some(str.toLowerCase().trim)
+        case _ => None
+      }
+
+      providedType match {
+        case Some(chosenType) if narrativeTypes.contains(chosenType) =>
+          // Direct execution with provided type
+          val symbol = narrativeTypes(chosenType)
+          val updatedLines = selectedLines.map(line => updateNarrativeType(line, symbol))
+          editor.edit { editBuilder =>
+            val replacement = updatedLines.mkString("\n")
+            editBuilder.replace(targetRange, replacement)
+          }.toFuture.recover { case ex =>
+            vscode.window.showErrorMessage(s"Failed to update narratives: ${ex.getMessage}")
           }
-        )
-        .toFuture
-        .flatMap { chosen =>
-          if (chosen == null || chosen.toString.trim.isEmpty) Future.successful(())
-          else {
-            val chosenType = chosen.asInstanceOf[String]
-            val symbol = narrativeTypes.getOrElse(chosenType.toLowerCase(), "")
-            val updatedLines = selectedLines.map(line => updateNarrativeType(line, symbol))
-            editor.edit { editBuilder =>
-              val replacement = updatedLines.mkString("\n")
-              editBuilder.replace(targetRange, replacement)
-            }.toFuture
-          }
-        }
-        .recover { case ex =>
-          vscode.window.showErrorMessage(s"Failed to update narratives: ${ex.getMessage}")
-        }
+
+        case Some(invalidType) =>
+          // Invalid type provided
+          vscode.window.showErrorMessage(
+            s"Invalid narrative type: '$invalidType'. Valid types: ${narrativeTypes.keys.mkString(", ")}"
+          )
+
+        case None =>
+          // No type provided, show picker
+          vscode.window
+            .showQuickPick(
+              js.Array("normal", "urgent", "draft", "urgent completed", "draft completed"),
+              new vscode.QuickPickOptions {
+                placeHolder = "Select a narrative type"
+              }
+            )
+            .toFuture
+            .flatMap { chosen =>
+              if (chosen == null || chosen.toString.trim.isEmpty) Future.successful(())
+              else {
+                val chosenType = chosen.asInstanceOf[String]
+                val symbol = narrativeTypes.getOrElse(chosenType.toLowerCase(), "")
+                val updatedLines = selectedLines.map(line => updateNarrativeType(line, symbol))
+                editor.edit { editBuilder =>
+                  val replacement = updatedLines.mkString("\n")
+                  editBuilder.replace(targetRange, replacement)
+                }.toFuture
+              }
+            }
+            .recover { case ex =>
+              vscode.window.showErrorMessage(s"Failed to update narratives: ${ex.getMessage}")
+            }
+      }
     }
   }
 
   def updateNarrativeType(line: String, newPrefix: String): String = {
-    val pattern = raw"""(--|\?\?|!!|xx|\.\.)""".r
-    pattern.replaceAllIn(line, newPrefix)
+      val pattern = raw"""(--|\?\?|!!|xx|\.\.)""".r
+      pattern.replaceAllIn(line, newPrefix)
   }
