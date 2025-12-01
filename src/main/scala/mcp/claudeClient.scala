@@ -23,7 +23,7 @@ object ClaudeClient {
     val reqBody =
       js.JSON.stringify(
         js.Dynamic.literal(
-          "model" -> model.getOrElse("claude-3-5-sonnet-20240620"),
+          "model" -> model,
           "max_tokens" -> 1500,
           "temperature" -> 0,
           "system" -> claudeDirections,
