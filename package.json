@@ -16,6 +16,9 @@
 		"axiompatienttracker"
 	],
 	"main": "./out/extension",
+  "scripts": {
+    "postinstall": "cd pcmalgebra && npm install"
+  },
 	"contributes": {
 		"languages": [
 			{

@@ -121,6 +121,7 @@ lazy val root = project
       .dependsOn(audioToText / Compile / pack)
       .dependsOn(axiompatienttracker / Compile / fastLinkJS)
       .dependsOn(axiombilling / Compile / fastLinkJS)
+      .dependsOn(pcmalgebra / Compile / fastLinkJS)
       .dependsOn(copyToMedia)
       .dependsOn(installDependencies)
       .dependsOn(createDirectories)
@@ -131,7 +132,10 @@ lazy val root = project
     libraryDependencies ++= Dependencies.scalatest.value,
     libraryDependencies ++= Dependencies.cats.value,
 
-    testFrameworks += new TestFramework("utest.runner.Framework")
+    testFrameworks += new TestFramework("utest.runner.Framework"),
+    // ignore node library because scalablytyped cannot handle this for pcmalgebra
+    stIgnore += "node",
+    stIgnore += "typescript"
   )
 
 // --- Axiom Patient Tracker Frontend (Scala.js) ---
@@ -212,4 +216,52 @@ lazy val audioToText = project
     libraryDependencies ++= Dependencies.circe.value,
     libraryDependencies ++= Dependencies.cats.value,
     libraryDependencies ++= Dependencies.config.value
+  )
+
+lazy val pcmalgebra = project
+  .in(file("pcmalgebra"))
+  .enablePlugins(ScalaJSPlugin) // Enable the Scala.js plugin in this project
+  .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
+  .settings(
+    name := "pcmalgebra",
+    scalaVersion := DependencyVersions.scala,
+    Test / resourceDirectory := baseDirectory.value / "src" / "test" / "resources",
+
+    // Tell Scala.js that this is an application with a main method
+    scalaJSUseMainModuleInitializer := true,
+
+    /* Configure Scala.js to emit modules in the optimal way to
+     * connect to Vite's incremental reload.
+     * - emit ECMAScript modules
+     * - emit as many small modules as possible for classes in the "livechart" package
+     * - emit as few (large) modules as possible for all other classes
+     *   (in particular, for the standard library)
+     */
+    scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.ESModule)
+        .withModuleSplitStyle(
+          ModuleSplitStyle.SmallModulesFor(List("pcmalgebra")))
+    },
+
+    /*
+     *add resolver for scalatest
+     */
+    resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
+
+
+    /* Depend on the scalajs-dom library.
+     * It provides static types for the browser DOM APIs.
+     */
+    libraryDependencies ++= Dependencies.scalajsdom.value,
+    libraryDependencies ++= Dependencies.laminar.value,
+    libraryDependencies ++= Dependencies.upickle.value,
+    libraryDependencies ++= Dependencies.scalatest.value,
+    libraryDependencies +="org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
+    libraryDependencies ++= Dependencies.cats.value,
+
+    // Tell ScalablyTyped that we manage `npm install` ourselves
+    externalNpm := baseDirectory.value,
+    // ignore node library because scalablytyped cannot handle this for pcmalgebra
+    stIgnore += "node",
+    stIgnore += "typescript"
   )
