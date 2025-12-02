@@ -41,7 +41,7 @@ object fileutils:
 
 
   def cwd = Process.cwd()
-  def testResourcesPath = cwd / "src" / "test" / "resources"
+  def testResourcesPath = cwd / "pcmalgebra" / "src" / "test" / "resources"
 
   def readFileSync(path: String): String =
     fs.readFileSync(path, "utf-8")
