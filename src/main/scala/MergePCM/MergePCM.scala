@@ -7,47 +7,54 @@ import typings.auroraLangium.cliMod.parse
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
-import docere.sjsast.*
+import org.aurora.sjsast.* 
+import cats.syntax.semigroup._ // For |+| syntax
+import org.aurora.sjsast.catsgivens.given
 
 object MergePCM:
-    def parseIssues(input: String): List[String] = {
-        val issuePattern = """\bfrom\s+(\w+)""".r
-        issuePattern.findAllMatchIn(input).map(_.group(1)).toList
+    // Returns Map[moduleName -> alias]
+    def parseIssues(input: String): Map[String, String] = {
+        val importPattern = """(\w+)\s+from\s+(\w+)""".r
+        importPattern.findAllMatchIn(input).map { m =>
+            val alias = m.group(1)      // heart_failure
+            val moduleName = m.group(2) // CHF
+            moduleName -> alias
+        }.toMap
     }
 
-    def loadModules(moduleNames: List[String]): Map[String, String] = {
+    def loadModules(moduleImports: Map[String, String]): Map[String, (String, String)] = {
+        // Returns Map[moduleName -> (modulePath, alias)]
         val path = js.Dynamic.global.require("path")
         val fs = js.Dynamic.global.require("fs")
         vscode.window.activeTextEditor.toOption match {
         case Some(editor) =>
             val activeFilePath = editor.document.fileName
             val activeFileDir = path.dirname(activeFilePath)
-            moduleNames.flatMap { moduleName =>
+            moduleImports.flatMap { case (moduleName, alias) =>
                 val modulePath = path.join(activeFileDir, s"$moduleName.aurora").toString
-                val fileContent = fs.readFileSync(modulePath, "utf8").asInstanceOf[String]
                 println(s"Loading module from path: $modulePath")
                 if (fs.existsSync(modulePath).asInstanceOf[Boolean]) {
-                    Some(moduleName -> modulePath)
+                    Some(moduleName -> (modulePath, alias))
                 } else {
                     vscode.window.showWarningMessage(s"Module $moduleName not found.")
                     None
                 }
-            }.toMap
+            }
         case None =>
             vscode.window.showErrorMessage("No active editor found.")
-            Map.empty[String, String]
+            Map.empty
         }
     }
 
-    def generateDSL(modules: Map[String, String]): Future[String] = {
-        val modulePaths = modules.values.toList
-
+    def generateDSL(modules: Map[String, (String, String)]): Future[String] = {
+        // modules: Map[moduleName -> (modulePath, alias)]
+        val moduleEntries = modules.values.toList  // List[(modulePath, alias)]
         try {
-            val pcmFutures = modulePaths.map { modulePath =>
+            val pcmFutures = moduleEntries.map { case (modulePath, alias) =>
                 parse(modulePath).toFuture.map { parsed =>
                     try {
-                        val pcm = PCM(parsed)
-                        pcm
+                        val modulePCM = ModulePCM(parsed)
+                        modulePCM.toPCM(alias)  // Use the alias from "heart_failure from CHF"
                     } catch {
                         case e: Exception =>
                             println(s"Failed to build PCM from AST: ${e.getMessage}")
@@ -55,15 +62,12 @@ object MergePCM:
                     }
                 }
             }
-            for{
+            for {
                 pcms <- Future.sequence(pcmFutures)
             } yield {
-                // println(s"Parsed PCMs: $pcms")
-                val mergedPCM = pcms.reduce(_.merge(_))
+                val mergedPCM = pcms.reduce(_ |+| _)
                 println(s"Merged PCM keys: ${mergedPCM.cio.keys}")
-                val mergedResults = prettyPrint(mergedPCM)
-                // println(s"Merged results: $mergedResults")
-                mergedResults
+                prettyPrint(mergedPCM)
             }
         } catch {
           case e: Throwable =>

@@ -1,6 +1,6 @@
 package docere
 
-import docere.sjsast.*
+import org.aurora.sjsast.*
 import typings.auroraLangium.auroraLangiumStrings.QuReference
 object contructors:
   val issueCoordsX = List("a", "b")

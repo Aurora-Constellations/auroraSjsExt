@@ -13,10 +13,45 @@ object catsgivens :
   }
 
 
-  given [T]:BoundedSemilattice[Set[T]] = new BoundedSemilattice[Set[T]] :
+  // Generic Set union - used for simple types
+  given setGeneric[T]: BoundedSemilattice[Set[T]] = new BoundedSemilattice[Set[T]] {
     def empty: Set[T] = Set.empty
-    def combine (x: Set[T], y:Set[T]) :  Set[T] =
+    def combine(x: Set[T], y: Set[T]): Set[T] = x union y
+  }
+
+  given setQuReference: BoundedSemilattice[Set[QuReference]] = new BoundedSemilattice[Set[QuReference]] {
+    def empty: Set[QuReference] = Set.empty
+    def combine(x: Set[QuReference], y: Set[QuReference]): Set[QuReference] =
       x union y
+  }
+
+  // OrderCoordinate merges by name - combines refs
+  given setOrderCoordinate: BoundedSemilattice[Set[OrderCoordinate]] = new BoundedSemilattice[Set[OrderCoordinate]] {
+    def empty: Set[OrderCoordinate] = Set.empty
+    def combine(x: Set[OrderCoordinate], y: Set[OrderCoordinate]): Set[OrderCoordinate] =
+      mergeByName(x, y) { (a, b) =>
+        OrderCoordinate(
+          a.name,
+          a.narratives.union(b.narratives),
+          QuReferences(a.refs.refs.union(b.refs.refs))
+        )
+      }
+  }
+
+  // NGO merges by name
+  given setNGO: BoundedSemilattice[Set[NGO]] = new BoundedSemilattice[Set[NGO]] {
+    def empty: Set[NGO] = Set.empty
+    def combine(x: Set[NGO], y: Set[NGO]): Set[NGO] =
+      mergeByName(x, y) { (a, b) =>
+        NGO(
+          a.name,
+          a.orderCoordinates |+| b.orderCoordinates,
+          a.narrative.union(b.narrative),
+          QuReferences(a.quRefs.refs.union(b.quRefs.refs)),
+          a.qu.union(b.qu)
+        )
+      }
+  }
   
 
   given [T]:BoundedSemilattice[Map[String,CIO]] = new BoundedSemilattice[Map[String,CIO]] {
@@ -88,11 +123,22 @@ object catsgivens :
       }
   }
 
-
-
-
-
-
+  private def mergeByName[T <: SjsNode](x: Set[T], y: Set[T])(merge: (T, T) => T): Set[T] =
+    if (x.isEmpty) y
+    else if (y.isEmpty) x
+    else {
+      val xMap = x.map(item => item.name -> item).toMap
+      val yMap = y.map(item => item.name -> item).toMap
+      val allKeys = xMap.keySet.union(yMap.keySet)
+      allKeys.map { name =>
+        (xMap.get(name), yMap.get(name)) match {
+          case (Some(a), Some(b)) => merge(a, b)
+          case (Some(a), None)    => a
+          case (None, Some(b))    => b
+          case (None, None)       => throw new Exception("Impossible")
+        }
+      }.toSet
+    }
 
   
 end catsgivens

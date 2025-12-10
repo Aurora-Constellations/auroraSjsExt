@@ -112,7 +112,7 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
 lazy val root = project
   .in(file("."))
   .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
-  .dependsOn(axiompatienttracker)
+  .dependsOn(axiompatienttracker, pcmalgebra)
   .settings(
     name := "auroraSjsExt",
     open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,

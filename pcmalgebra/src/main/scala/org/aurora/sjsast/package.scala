@@ -1,9 +1,9 @@
 package org.aurora.sjsast
 
 
-export catsgivens.given
+// export catsgivens.given // Creates cyclic error
 export cats.syntax.semigroup._ // for |+|
-export org.aurora.sjsast.ShowAurora.given
+// export org.aurora.sjsast.ShowAurora.given // Creates cyclic error
 export cats.syntax.show._ 
 
 type CIO = Clinical|Issues|Orders
@@ -21,7 +21,7 @@ extension [T<:SjsNode](s:Set[T])
 
 
   
-def combine[T <:SjsNode](x:Set[T], y:Set[T]): Set[T] = 
-  x |+| y
+// def combine[T <:SjsNode](x:Set[T], y:Set[T]): Set[T] = 
+//   x |+| y
 
 

@@ -6,10 +6,10 @@ import scala.util.*
 import concurrent.ExecutionContext.Implicits.global
 import com.axiom.patienttracker.showPatients
 import com.axiom.billing.showBilling
-import docere.sjsast.*
+import org.aurora.sjsast.*
 import cats.implicits.toShow
 import cats.syntax.all.toShow
-import docere.sjsast.toShow
+import org.aurora.sjsast.toShow
 import cats.syntax.show.toShow
 import com.axiom.MergePCM.MergePCM.*
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
