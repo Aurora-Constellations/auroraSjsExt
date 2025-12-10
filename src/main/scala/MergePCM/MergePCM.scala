@@ -77,14 +77,29 @@ object MergePCM:
 
     def updateCurrentFile(context: ExtensionContext, generatedDSL: String): Unit = {
         println(s"Updating current file with generated DSL...")
-        val editor = vscode.window.activeTextEditor
-        editor.foreach { ed =>
+        vscode.window.activeTextEditor.foreach { ed =>
             val document = ed.document
-            val lastLine = document.lineCount - 1
-            val position = document.lineAt(lastLine).range.end
-            ed.edit(editBuilder => {
-            editBuilder.insert(position, s"\n\n$generatedDSL") // Add new line before inserting
-            })
+            val currentText = document.getText()
+            
+            // Find existing Orders section and replace, or append if not found
+            val ordersPattern = """(?s)(Orders:.*?)(?=\n\n[A-Z]|\n*$)""".r
+            
+            val newText = if (ordersPattern.findFirstIn(currentText).isDefined) {
+                // Replace existing Orders section
+                ordersPattern.replaceFirstIn(currentText, generatedDSL.trim)
+            } else {
+                // Append if no Orders section exists
+                currentText + "\n\n" + generatedDSL
+            }
+            
+            val fullRange = new vscode.Range(
+                new vscode.Position(0, 0),
+                document.lineAt(document.lineCount - 1).range.end
+            )
+            
+            ed.edit { editBuilder =>
+                editBuilder.replace(fullRange, newText)
+            }
         }
     }
 
