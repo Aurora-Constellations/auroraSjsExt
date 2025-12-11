@@ -171,17 +171,23 @@ object PublishCommands:
   }
 
   def processDSL(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
-    val editor = vscode.window.activeTextEditor
-    editor.foreach { ed =>
-      val document = ed.document
-      val text = document.getText()
-      val issuesSection = text.split("\n").takeWhile(!_.startsWith("//")).mkString("\n")
-      val moduleNames = parseIssues(issuesSection)
-      val modules = loadModules(moduleNames)
-      val generatedDSL = generateDSL(modules)
-      generatedDSL.onComplete {
-        case Success(result) => updateCurrentFile(context, result)
-        case Failure(e)      => vscode.window.showErrorMessage(s"Error generating DSL: ${e.getMessage}")
+    vscode.window.activeTextEditor.foreach { ed =>
+      val currentContent = ed.document.getText()
+      val moduleImports = parseIssues(currentContent)
+      val modules = loadModules(moduleImports)
+
+      if (modules.nonEmpty) {
+        generateOrdersDSL(modules).onComplete {
+          case Success(ordersDSL) if ordersDSL.nonEmpty =>
+            val beforeOrders = extractSectionBeforeOrders(currentContent)
+            replaceFileContent(s"$beforeOrders\n\n$ordersDSL")
+          case Success(_) =>
+            vscode.window.showWarningMessage("No orders generated.")
+          case Failure(e) =>
+            vscode.window.showErrorMessage(s"Error generating DSL: ${e.getMessage}")
+        }
+      } else {
+        vscode.window.showInformationMessage("No modules to merge.")
       }
     }
   }
