@@ -1,27 +1,14 @@
 package org.aurora.sjsast
 
+import scala.collection.mutable.LinkedHashSet
+import scala.collection.mutable.LinkedHashMap
 
-// export catsgivens.given // Creates cyclic error
-export cats.syntax.semigroup._ // for |+|
-// export org.aurora.sjsast.ShowAurora.given // Creates cyclic error
-export cats.syntax.show._ 
+// Alias for LinkedHashSet
+type LHSet[T] = LinkedHashSet[T]
 
-type CIO = Clinical|Issues|Orders
- 
-trait SjsNode :
-  val name:String
-  def merge(p:SjsNode):SjsNode 
+// Helper for creating sets
+def LHSet[T](elems: T*): LHSet[T] = LinkedHashSet(elems*)
 
-
-extension [T<:SjsNode](s:Set[T]) 
-  private def kv(o:T) = o.name -> o
-  def asMap:Map[String,SjsNode] =  s.map{kv}.toMap
-  // def merge(s1:Set[T]):Set [T] =
-  //   combine(s,s1)
-
-
-  
-// def combine[T <:SjsNode](x:Set[T], y:Set[T]): Set[T] = 
-//   x |+| y
-
+// Alias for LinkedHashMap
+type LHMap[K, V] = LinkedHashMap[K, V]
 

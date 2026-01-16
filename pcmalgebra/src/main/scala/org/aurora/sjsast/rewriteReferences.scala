@@ -1,45 +1,56 @@
 package org.aurora.sjsast
 
-object rewriteReferences:
+import scala.collection.mutable.LinkedHashSet
 
-	def rewriteOrdersReferences(orders: Orders, originalName: String, aliasName: String): Orders =
-		val rewrittenNGOs = orders.ngo.map { ngo =>
-			val rewrittenCoords = ngo.orderCoordinates.map { oc =>
-				if oc.refs.refs.isEmpty then
-				// No refs - add alias directly
-				oc.copy(refs = QuReferences(Set(QuReference("", aliasName))))
-				else
-					// Has refs - rewrite them
-					val rewrittenRefs = rewriteQuReferences(oc.refs, originalName, aliasName)
-					oc.copy(refs = rewrittenRefs)
-			}
-			val rewrittenQuRefs = rewriteQuReferences(ngo.quRefs, originalName, aliasName)
-			ngo.copy(orderCoordinates = rewrittenCoords, quRefs = rewrittenQuRefs)
-		}
-		orders.copy(ngo = rewrittenNGOs)
+object RewriteReferences:
 
-	def rewriteClinicalReferences(clinical: Clinical, originalName: String, aliasName: String): Clinical =
-		val rewrittenNGCs = clinical.ngc.map { ngc =>
-			val rewrittenCoords = ngc.ccoords.map { ccv =>
-				if ccv.refs.isEmpty then
-				// No refs - add alias directly
-				ccv.copy(refs = Set(RefCoordinate(aliasName)))
-				else
-					// Has refs - rewrite them
-					val rewrittenRefs = ccv.refs.map { rc =>
-						if rc.name == originalName then rc.copy(name = aliasName) else rc
-					}
-					ccv.copy(refs = rewrittenRefs)
-			}
-			val rewrittenQuRefs = rewriteQuReferences(ngc.quRefs, originalName, aliasName)
-			ngc.copy(ccoords = rewrittenCoords, quRefs = rewrittenQuRefs)
-		}
-		clinical.copy(ngc = rewrittenNGCs)
+  def addAliasToModule(module: ModulePCM, alias: String): ModulePCM =
+    val newCio = module.cio.map { (key, section) =>
+      key -> addAliasToCIO(section, alias, module.name) // Pass module.name (e.g. "CHF")
+    }
+    module.copy(cio = newCio)
 
-	def rewriteQuReferences(qrs: QuReferences, originalName: String, aliasName: String): QuReferences =
-		val rewrittenRefs = qrs.refs.map { qr =>
-			if qr.name == originalName then qr.copy(name = aliasName) else qr
-		}
-		qrs.copy(refs = rewrittenRefs)
+  private def addAliasToCIO(section: CIO, alias: String, moduleName: String): CIO = section match
+    case o: Orders =>
+      o.copy(namedGroups = o.namedGroups.map(ng => addAliasToNGO(ng, alias, moduleName)))
+    case c: Clinical =>
+      c.copy(namedGroups = c.namedGroups.map(ng => addAliasToClinicalGroup(ng, alias, moduleName)))
+    case i: Issues =>
+      i.copy(coordinates = i.coordinates.map(c => addAliasToCoord(c, alias, moduleName)))
 
-end rewriteReferences
+  private def addAliasToNGO(ng: NGO, alias: String, moduleName: String): NGO =
+    // Update the orders within the group and carry over the group's own references/qualifiers
+    ng.copy(
+      orders = ng.orders.map(o => addAliasToCoord(o, alias, moduleName)),
+      // Optional: If you want the NGO itself to have an alias reference:
+      refs = QuReferences(LinkedHashSet(QuReference(alias, ""))) 
+    )
+
+  private def addAliasToClinicalGroup(ng: NGC, alias: String, moduleName: String): NGC =
+    ng.copy(coordinates = ng.coordinates.map(c => addAliasToCoord(c, alias, moduleName)))
+
+  private def addAliasToCoord(c: OrderCoordinate, alias: String, moduleName: String): OrderCoordinate =
+    // Find the symbol attached to the module name inside the parentheses (e.g., '?' from ?chf)
+    val existingQu = c.refs.refs
+      .find(_.refName == moduleName)
+      .map(_.qu)
+      .getOrElse("")
+
+    // Create the new alias reference with that preserved string symbol
+    val newAliasRef = QuReference(refName = alias, qu = existingQu)
+    
+    // Update coordinate with the new alias reference
+    c.copy(refs = QuReferences(LinkedHashSet(newAliasRef)))
+
+  private def addAliasToCoord(c: IssueCoordinate, alias: String, moduleName: String): IssueCoordinate =
+    val existingQu = c.refs.refs.find(_.refName == moduleName).map(_.qu).getOrElse("")
+    c.copy(refs = addRef(c.refs, alias, existingQu))
+
+  private def addAliasToCoord(c: ClinicalCoordinate, alias: String, moduleName: String): ClinicalCoordinate =
+    val existingQu = c.refs.refs.find(_.refName == moduleName).map(_.qu).getOrElse("")
+    c.copy(refs = addRef(c.refs, alias, existingQu))
+
+  private def addRef(refs: QuReferences, alias: String, qu: String): QuReferences =
+    val newRef = QuReference(refName = alias, qu = qu)
+    // We clear the old module name reference and keep only the aliased one for the merge
+    QuReferences(LinkedHashSet(newRef))

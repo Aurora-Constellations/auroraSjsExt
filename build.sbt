@@ -116,6 +116,7 @@ lazy val root = project
   .settings(
     name := "auroraSjsExt",
     open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,
+    scalacOptions ++= Seq("-Xmax-inlines", "100"),
     Compile / fastOptJS := (Compile / fastOptJS)
       .dependsOn(audioToText / Compile/ compile)
       .dependsOn(audioToText / Compile / pack)
@@ -258,6 +259,7 @@ lazy val pcmalgebra = project
     libraryDependencies ++= Dependencies.scalatest.value,
     libraryDependencies +="org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
     libraryDependencies ++= Dependencies.cats.value,
+    libraryDependencies ++= Dependencies.magnolia.value,
 
     // Tell ScalablyTyped that we manage `npm install` ourselves
     externalNpm := baseDirectory.value,

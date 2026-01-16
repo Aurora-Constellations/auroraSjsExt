@@ -21,4 +21,6 @@ object DependencyVersions {
   val config            = "1.4.3"
   val `upickle`          = "4.3.0"
   val scalatestdiscipline = "2.3.0"
+  val magnolia            = "1.3.18"
+
 }

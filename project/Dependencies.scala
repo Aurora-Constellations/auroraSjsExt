@@ -99,4 +99,11 @@ object Dependencies {
     )
   }
 
+  val magnolia : Def.Initialize[Seq[ModuleID]] = Def.setting {
+    Seq(
+      // https://mvnrepository.com/artifact/com.softwaremill.magnolia1_3/magnolia
+      "com.softwaremill.magnolia1_3" %%% "magnolia" % DependencyVersions.magnolia
+    )
+  }
+
 }
