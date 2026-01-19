@@ -30,66 +30,60 @@ object Show extends AutoDerivation[Show]:
 
   // --- 1. Basic AST nodes ---
   
-  // Just print the punctuation/text, e.g. "??q4h;"
   given Show[NL_STATEMENT] = _.name 
 
-  // Individual reference format: "!chf"
-  given Show[QuReference] = r => 
-    val symbol = if (r.qu == "undefined" || r.qu == "null") "" else r.qu
-    s"$symbol${r.refName}"
+  // Individual reference format: "!chf" or "?chf"
+  given Show[QuReference] = r => s"${r.qu}${r.refName}"
 
   given Show[QuReferences] = q =>
     if (q.refs.isEmpty) "" 
-    else "(" + q.refs.map(r => summon[Show[QuReference]].show(r)).mkString(", ") + ")"  
+    else "(" + q.refs.map(summon[Show[QuReference]].show).mkString(", ") + ")"
 
   // --- 2. Coordinates (Items) ---
   
-  // Coordinate format: "!iv"
   given Show[OrderCoordinate] = o =>
     val refs = o.refs.show
     val narr = if (o.narratives.isEmpty) "" else s" ${o.narratives.map(_.show).mkString(" ")}"
-    // Format: NAS(?ahah, !fsdnf)
     s"${o.name}$refs$narr"
 
   given Show[IssueCoordinate] = i =>
-    val refs = if i.refs.refs.isEmpty then "" else s" ${i.refs.show}"
-    val narr = if i.narratives.isEmpty then "" else s" ${i.narratives.map(_.show).mkString(" ")}"
+    val refs = if (i.refs.refs.isEmpty) "" else s" ${i.refs.show}"
+    val narr = if (i.narratives.isEmpty) "" else s" ${i.narratives.map(_.show).mkString(" ")}"
     s"${i.name}$refs$narr"
 
   given Show[ClinicalCoordinate] = c =>
-    val refs = if c.refs.refs.isEmpty then "" else s" ${c.refs.show}"
-    val narr = if c.narratives.isEmpty then "" else s" ${c.narratives.map(_.show).mkString(" ")}"
+    val refs = if (c.refs.refs.isEmpty) "" else s" ${c.refs.show}"
+    val narr = if (c.narratives.isEmpty) "" else s" ${c.narratives.map(_.show).mkString(" ")}"
     s"${c.name}$refs$narr"
 
   // --- 3. Groups ---
 
-  // Format: "GroupName: narrative \n  Order1 \n  Order2"
   given Show[NGO] = g =>
     val leadQus = g.qu.map(_.query).mkString("")
-    val narr = if g.narratives.isEmpty then "" else s" ${g.narratives.map(_.show).mkString(" ")}"
+    val narr = if (g.narratives.isEmpty) "" else s" ${g.narratives.map(_.show).mkString(" ")}"
     val orders = g.orders.map(_.show).mkString("\n  ")
     s"$leadQus${g.name}$narr\n  $orders"
 
   given Show[NGC] = g =>
-    val narr = if g.narratives.isEmpty then "" else s" ${g.narratives.map(_.show).mkString(" ")}"
+    val narr = if (g.narratives.isEmpty) "" else s" ${g.narratives.map(_.show).mkString(" ")}"
     val coords = g.coordinates.map(_.show).mkString("\n  ")
     s"${g.name}$narr\n  $coords"
 
   // --- 4. Sections (CIO) ---
   
   given Show[Orders] = o =>
-    val narr = if o.narratives.isEmpty then "" else o.narratives.map(_.show).mkString("\n") + "\n"
-    val groups = o.namedGroups.map(summon[Show[NGO]].show).mkString("\n\n")
+    val narr = if (o.narratives.isEmpty) "" else o.narratives.map(_.show).mkString("\n") + "\n"
+    val groups = o.namedGroups.map(_.show).mkString("\n\n")
     s"${o.name}:\n$narr$groups"
 
   given Show[Clinical] = c =>
-    val narr = if c.narratives.isEmpty then "" else c.narratives.map(_.show).mkString("\n") + "\n"
-    val groups = c.namedGroups.map(summon[Show[NGC]].show).mkString("\n\n")
+    val narr = if (c.narratives.isEmpty) "" else c.narratives.map(_.show).mkString("\n") + "\n"
+    val groups = c.namedGroups.map(_.show).mkString("\n\n")
     s"${c.name}:\n$narr$groups"
 
   given Show[Issues] = i =>
-    val narr = if i.narratives.isEmpty then "" else i.narratives.map(_.show).mkString("\n") + "\n"
-    val coords = i.coordinates.map(summon[Show[IssueCoordinate]].show).mkString("\n")
+    val narr = if (i.narratives.isEmpty) "" else i.narratives.map(_.show).mkString("\n") + "\n"
+    val coords = i.coordinates.map(_.show).mkString("\n")
     s"${i.name}:\n$narr$coords"
 
   // Dispatch for the sealed trait

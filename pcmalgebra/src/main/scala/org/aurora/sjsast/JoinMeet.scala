@@ -9,6 +9,7 @@ trait JoinMeet[T]:
 object JoinMeet extends AutoDerivation[JoinMeet]:
 
   // --- Helpers for Merging Named Items ---
+  // Merges two sets by name, recursively joining items with the same name
   private def mergeNamedSets[T](a: LHSet[T], b: LHSet[T], getName: T => String)(using jm: JoinMeet[T]): LHSet[T] =
     val merged = LinkedHashMap.empty[String, T]
     a.foreach { item => merged(getName(item)) = item }
@@ -23,7 +24,10 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
 
   // --- Basic Types ---
   given JoinMeet[String] = (a, b) => 
-    if a == b then a else if a.isEmpty then b else if b.isEmpty then a else s"$a; $b"
+    if (a == b) then a 
+    else if (a.isEmpty) then b 
+    else if (b.isEmpty) then a 
+    else s"$a; $b"
     
   given JoinMeet[Int] = _ + _
   given JoinMeet[Boolean] = _ || _
@@ -37,23 +41,21 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
   given [K, V](using jm: JoinMeet[V]): JoinMeet[LHMap[K, V]] = (a, b) =>
     val res = a.clone()
     b.foreach { (k, v) =>
-      if res.contains(k) then res(k) = jm.join(res(k), v)
+      if (res.contains(k)) then res(k) = jm.join(res(k), v)
       else res(k) = v
     }
     res
 
-  // Default Set behavior (Union)
+  // Default Set behavior: Union (no deduplication by name)
   given [T]: JoinMeet[LHSet[T]] = (a, b) => a ++ b
 
   // --- SPECIFIC MERGE STRATEGIES ---
   
-  // 1. QuReferences
+  // QuReferences: Union of all references
   given joinQuRefs: JoinMeet[QuReferences] = (a, b) =>
-    // FIX: Removed .distinctBy. Sets automatically handle uniqueness.
-    val combined = a.refs ++ b.refs
-    QuReferences(combined)
+    QuReferences(a.refs ++ b.refs)
 
-  // 2. Coordinates: Merge by Name
+  // Coordinates: Merge by name (items with same name are recursively joined)
   given joinOrderCoords: JoinMeet[LHSet[OrderCoordinate]] = (a, b) =>
     mergeNamedSets(a, b, _.name)
 
@@ -63,7 +65,7 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
   given joinClinicalCoords: JoinMeet[LHSet[ClinicalCoordinate]] = (a, b) =>
     mergeNamedSets(a, b, _.name)
 
-  // 3. Named Groups: Merge by Name
+  // Named Groups: Merge by name (groups with same name are recursively joined)
   given joinNGOs: JoinMeet[LHSet[NGO]] = (a, b) =>
     mergeNamedSets(a, b, _.name)
 
@@ -79,7 +81,7 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
 
   def split[T](ctx: SealedTrait[JoinMeet, T]): JoinMeet[T] = (a, b) =>
     ctx.choose(a) { sub =>
-      if sub.cast.isDefinedAt(b) then
+      if (sub.cast.isDefinedAt(b)) then
         sub.typeclass.join(sub.value, sub.cast(b))
       else
         a 

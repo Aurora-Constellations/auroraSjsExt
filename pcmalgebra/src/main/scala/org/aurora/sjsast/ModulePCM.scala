@@ -39,8 +39,7 @@ object ModulePCM:
       quArray.foreach { q =>
         val d = q.asInstanceOf[js.Dynamic]
         val sym = if (js.typeOf(q) == "string") q.toString
-                  else if (!js.isUndefined(d.name)) d.name.toString
-                  else if (!js.isUndefined(d.value)) d.value.toString
+                  else if (!js.isUndefined(d.query)) d.query.toString  // <-- Change to .query
                   else ""
         if (sym.nonEmpty) set.add(QU(sym))
       }
@@ -48,17 +47,15 @@ object ModulePCM:
     set
 
   private def extractQuString(quArray: js.Array[G.QU]): String =
-    if (quArray != null && quArray.length > 0) {
-      val raw = quArray(0)
-      // Functional check: is it a primitive string or an object?
-      if (js.typeOf(raw) == "string") raw.toString 
-      else {
-        val d = raw.asInstanceOf[js.Dynamic]
-        if (!js.isUndefined(d.name)) d.name.toString
-        else if (!js.isUndefined(d.value)) d.value.toString
-        else ""
-      }
-    } else ""
+  if (quArray != null && quArray.length > 0) {
+    val raw = quArray(0)
+    if (js.typeOf(raw) == "string") raw.toString 
+    else {
+      val d = raw.asInstanceOf[js.Dynamic]
+      if (!js.isUndefined(d.query)) d.query.toString  // <-- Change to .query
+      else ""
+    }
+  } else ""
 
   private def extractQuRefs(qurc: js.UndefOr[G.QuReferences]): QuReferences =
     qurc.toOption match {
