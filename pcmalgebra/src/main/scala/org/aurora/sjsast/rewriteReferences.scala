@@ -4,19 +4,7 @@ import scala.collection.mutable.LinkedHashSet
 
 object RewriteReferences:
 
-  def addAliasToModule(module: ModulePCM, alias: String): ModulePCM =
-    val issueNames: Set[String] = module.cio.values.collect {
-      case i: Issues => i.coordinates.map(_.name) 
-    }.flatten.toSet
-
-    val targets = if (issueNames.nonEmpty) issueNames else Set(module.name)
-
-    val newCio = module.cio.map { (key, section) =>
-      key -> addAliasToCIO(section, alias, targets)
-    }
-    module.copy(cio = newCio)
-
-  private def addAliasToCIO(section: CIO, alias: String, targets: Set[String]): CIO =
+  def addAliasToCIO(section: CIO, alias: String, targets: Set[String]): CIO =
     section match
       case i: Issues => 
         val newCoords = i.coordinates.map(ic => addAliasToIssueCoord(ic, alias, targets))

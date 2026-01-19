@@ -97,12 +97,12 @@ object Show extends AutoDerivation[Show]:
 
   // --- 5. Modules ---
   
-  given Show[ModulePCM] = m =>
+  given Show[Module] = m =>
     val sections = m.cio.values.map(_.show).mkString("\n\n")
     s"module: ${m.name}\n\n$sections"
 
   given Show[PCM] = p =>
-    p.modules.values.map(_.show).mkString("\n\n")
+    p.cio.values.map(_.show).mkString("\n\n")
 
   // --- Magnolia Derivation Hooks (Fallback for unknown types) ---
   def join[T](ctx: CaseClass[Show, T]): Show[T] = t =>

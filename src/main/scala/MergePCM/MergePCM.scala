@@ -49,47 +49,51 @@ object MergePCM:
         val moduleEntries = modules.values.toList       
         val pcmFutures = moduleEntries.map { 
             case (modulePath, alias) =>
-                parse(modulePath).toFuture.map { parsed =>
-                    try {
-                        val rawModule = ModulePCM(parsed) 
-                        
-                        // --- FIX: Inject Alias Here ---
-                        val aliasedModule = RewriteReferences.addAliasToModule(rawModule, alias)
-
-                        PCM(name = alias, modules = LinkedHashMap(alias -> aliasedModule))
-
-                    } catch {
-                        case e: Exception => println(s"Error: ${e.getMessage}"); PCM()
-                    }
-                }.recover { case e: Exception => println(s"Parse Error: ${e.getMessage}"); PCM() }
+            parse(modulePath).toFuture.map { parsed =>
+                try {
+                val module = Module(parsed)
+                
+                // Create ModulePCM wrapper and convert to PCM with alias
+                val modulePCM = ModulePCM(module)
+                modulePCM.toPCM(alias)  // This applies the alias rewriting
+                
+                } catch {
+                case e: Exception => 
+                    println(s"Error: ${e.getMessage}")
+                    PCM()
+                }
+            }.recover { 
+                case e: Exception => 
+                println(s"Parse Error: ${e.getMessage}")
+                PCM() 
+            }
         }
         Future.sequence(pcmFutures)
     }
 
     def generateOrdersDSL(modules: Map[String, (String, String)]): Future[String] = {
-        parseModules(modules).map { pcmList =>        
-            if (pcmList.isEmpty || pcmList.forall(_.modules.isEmpty)) {
+        parseModules(modules).map { modulePCMs =>        
+            if (modulePCMs.isEmpty || modulePCMs.forall(_.cio.isEmpty)) {
+                println("No valid PCMs to merge")
                 ""
             } else {
-                val validPCMs = pcmList.filter(_.modules.nonEmpty)
-                if (validPCMs.isEmpty) "" 
-                else {
-                    // 1. Merge all PCMs (JoinMeet now handles merging correctly)
+                val validPCMs = modulePCMs.filter(_.cio.nonEmpty)
+                println(s"Valid PCMs: ${validPCMs.size}")
+                
+                if (validPCMs.isEmpty) {
+                    ""
+                } else {
                     val mergedPCM = validPCMs.reduce(_ |+| _)
-                    println(s"Merged Keys: ${mergedPCM.modules.keys}")
-
-                    // 2. Extract "Orders" sections
-                    val allOrders = mergedPCM.modules.values.flatMap { mod =>
-                        mod.cio.get("Orders").map(_.asInstanceOf[Orders])
-                    }
-
-                    if (allOrders.isEmpty) "" 
-                    else {
-                        // 3. Merge Orders (JoinMeet merges groups by name)
-                        val combinedOrders = allOrders.reduce(_ |+| _)
-                        
-                        // 4. Show
-                        combinedOrders.show
+                    println(s"Merged PCM keys: ${mergedPCM.cio.keys}")
+                    
+                    mergedPCM.cio.get("Orders") match {
+                        case Some(orders) =>
+                            val ordersStr = orders.asInstanceOf[Orders].show
+                            println(s"Generated Orders DSL length: ${ordersStr.length}")
+                            ordersStr
+                        case None =>
+                            println("No Orders in merged PCM")
+                            ""
                     }
                 }
             }
