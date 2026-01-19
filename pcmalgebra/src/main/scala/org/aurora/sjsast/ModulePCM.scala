@@ -6,7 +6,6 @@ import scala.scalajs.js
 
 case class ModulePCM(
     name: String,
-    // CIO is now the sealed trait
     cio: LinkedHashMap[String, CIO] = LinkedHashMap.empty
 )
 
@@ -34,39 +33,15 @@ object ModulePCM:
     else ""
 
   private def extractQuSet(quArray: js.Array[G.QU]): LHSet[QU] =
-    val set = LinkedHashSet.empty[QU]
-    if (quArray != null) {
-      quArray.foreach { q =>
-        val d = q.asInstanceOf[js.Dynamic]
-        val sym = if (js.typeOf(q) == "string") q.toString
-                  else if (!js.isUndefined(d.query)) d.query.toString  // <-- Change to .query
-                  else ""
-        if (sym.nonEmpty) set.add(QU(sym))
-      }
-    }
-    set
+    LinkedHashSet.from(quArray.toSeq.map(QU.fromJs))
 
-  private def extractQuString(quArray: js.Array[G.QU]): String =
-  if (quArray != null && quArray.length > 0) {
-    val raw = quArray(0)
-    if (js.typeOf(raw) == "string") raw.toString 
-    else {
-      val d = raw.asInstanceOf[js.Dynamic]
-      if (!js.isUndefined(d.query)) d.query.toString  // <-- Change to .query
-      else ""
-    }
-  } else ""
+  private def extractQU(quArray: js.Array[G.QU]): QU =
+    QU.fromJsArray(quArray)
 
   private def extractQuRefs(qurc: js.UndefOr[G.QuReferences]): QuReferences =
     qurc.toOption match {
       case Some(refsObj) =>
-        val parsed = refsObj.quRefs.map { (r: G.QuReference) =>
-          QuReference(
-            refName = r.ref.asInstanceOf[js.Dynamic].ref.name.toString,
-            qu = extractQuString(r.qu)
-          )
-        }
-        QuReferences(LinkedHashSet.from(parsed))
+        QuReferences.fromJs(refsObj)
       case None => QuReferences()
     }
 
@@ -81,14 +56,20 @@ object ModulePCM:
              val coords = ng.coord.flatMap { item =>
                if getType(item) == "ClinicalCoordinate" then
                  val cc = item.asInstanceOf[G.ClinicalCoordinate]
-                 Some(ClinicalCoordinate(cc.name, NL_STATEMENT.fromJsSeq(cc.narrative.toSeq)))
+                 Some(ClinicalCoordinate(
+                   name = cc.name, 
+                   narratives = NL_STATEMENT.fromJsSeq(cc.narrative.toSeq),
+                   refs = extractQuRefs(cc.qurc),
+                   qu = extractQU(cc.qu)
+                 ))
                else None
              }
              
              NGC(
                name = ng.name, 
                narratives = NL_STATEMENT.fromJsSeq(ng.narrative.toSeq),
-               coordinates = LinkedHashSet.from(coords)
+               coordinates = LinkedHashSet.from(coords),
+               refs = extractQuRefs(ng.asInstanceOf[js.Dynamic].qurc.asInstanceOf[js.UndefOr[G.QuReferences]])
              )
            }
 
@@ -103,7 +84,9 @@ object ModulePCM:
           val coords = i.coord.map { ic =>
              IssueCoordinate(
                name = ic.name,
-               narratives = NL_STATEMENT.fromJsSeq(ic.narrative.toSeq)
+               narratives = NL_STATEMENT.fromJsSeq(ic.narrative.toSeq),
+               refs = extractQuRefs(ic.qurc),
+               qu = extractQU(ic.qu)
              )
           }
           
@@ -122,7 +105,7 @@ object ModulePCM:
                   Some(OrderCoordinate(
                     name = oc.name,
                     narratives = NL_STATEMENT.fromJsSeq(oc.narrative.toSeq),
-                    refs = extractQuRefs(oc.qurc) // Uses the QuReference(String) logic
+                    refs = extractQuRefs(oc.qurc)
                   ))
                 else None
               }
@@ -131,6 +114,7 @@ object ModulePCM:
                 name = ng.name,
                 narratives = NL_STATEMENT.fromJsSeq(ng.narrative.toSeq),
                 orders = LinkedHashSet.from(orderItems),
+                refs = extractQuRefs(ng.asInstanceOf[js.Dynamic].qurc.asInstanceOf[js.UndefOr[G.QuReferences]]),
                 qu = extractQuSet(ng.asInstanceOf[js.Dynamic].qu.asInstanceOf[js.Array[G.QU]])
               )
             }

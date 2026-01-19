@@ -5,13 +5,13 @@ import scala.scalajs.js
 
 case class QuReference(
     refName: String,
-    qu: String
+    qu: QU = QU()
 )
 
 object QuReference:
   def fromJs(qr: G.QuReference): QuReference =
     // Extract the qu string from the array of QU objects
-    val quString = QU.fromJsArray(qr.qu)
+    val qu = QU.fromJsArray(qr.qu)
     
     // Extract the reference name from the Langium Reference
     val refName = try {
@@ -30,4 +30,4 @@ object QuReference:
         ""
     }
     
-    QuReference(refName = refName, qu = quString)
+    QuReference(refName = refName, qu = qu)

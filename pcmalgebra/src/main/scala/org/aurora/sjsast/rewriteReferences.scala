@@ -5,12 +5,12 @@ import scala.collection.mutable.LinkedHashSet
 object RewriteReferences:
 
   def addAliasToModule(module: ModulePCM, alias: String): ModulePCM =
-    // 1. Extract the internal Issue names defined in this module (e.g., "chf" from "chf :Congestive_heart_failure")
     val issueNames: Set[String] = module.cio.values.collect {
       case i: Issues => i.coordinates.map(_.name) 
     }.flatten.toSet
-    // 2. Define the targets we are looking for in the references.
+
     val targets = if (issueNames.nonEmpty) issueNames else Set(module.name)
+
     val newCio = module.cio.map { (key, section) =>
       key -> addAliasToCIO(section, alias, targets)
     }
@@ -55,32 +55,18 @@ object RewriteReferences:
   // Shared function to transform QuReferences
   private def transformQuReferences(refs: QuReferences, alias: String, targets: Set[String]): QuReferences =
     val newRefs = refs.refs.map { ref =>
-      // Check if this reference's refName matches any target (with or without prefix)
       val matchResult = findMatchingTarget(ref.refName, targets)
       
       matchResult match
-        case Some((prefix, matchedTarget)) =>
-          // Replace the matched target with the alias, preserving the prefix
-          QuReference(refName = s"$prefix$alias", qu = ref.qu)
+        case Some(matchedTarget) =>
+          // Keep the same QU, just replace the refName with alias
+          QuReference(refName = alias, qu = ref.qu)
         case None =>
-          // No match, keep the reference as is
           ref
     }
+    
     QuReferences(newRefs)
 
-  // Helper function to find if refName matches any target, with or without a prefix
-  private def findMatchingTarget(refName: String, targets: Set[String]): Option[(String, String)] =
-    // First check for exact match (no prefix)
-    if (targets.contains(refName)) {
-      return Some(("", refName))
-    }
-    // Then check if refName has a single-character prefix followed by a target
-    if (refName.length > 1) {
-      val potentialPrefix = refName.head.toString
-      val potentialTarget = refName.tail
-      
-      if (targets.contains(potentialTarget)) {
-        return Some((potentialPrefix, potentialTarget))
-      }
-    }
-    None
+  // Simplified: now we don't look for prefix in refName, it's in QU
+  private def findMatchingTarget(refName: String, targets: Set[String]): Option[String] =
+    if (targets.contains(refName)) Some(refName) else None

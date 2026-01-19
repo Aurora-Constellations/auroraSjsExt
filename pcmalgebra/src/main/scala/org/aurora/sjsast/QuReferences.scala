@@ -10,6 +10,6 @@ case class QuReferences(
 
 object QuReferences:
   def fromJs(qrs: G.QuReferences): QuReferences =
-    val refsArray = qrs.asInstanceOf[js.Dynamic].selectDynamic("refs").asInstanceOf[js.Array[G.QuReference]]
+    val refsArray = qrs.asInstanceOf[js.Dynamic].selectDynamic("quRefs").asInstanceOf[js.Array[G.QuReference]]
     val scalaRefs = LinkedHashSet.from(refsArray.toSeq.map(QuReference.fromJs))
     QuReferences(refs = scalaRefs)

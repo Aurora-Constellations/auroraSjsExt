@@ -7,7 +7,7 @@ import scala.collection.mutable.LinkedHashSet
 case class OrderCoordinate(
     name: String,
     narratives: LHSet[NL_STATEMENT] = LHSet(),
-    refs: QuReferences = QuReferences(),
+    refs: QuReferences = QuReferences()
 )
 
 object OrderCoordinate:
@@ -18,8 +18,6 @@ object OrderCoordinate:
       case Some(qrs) => QuReferences.fromJs(qrs)
       case None => QuReferences()
     }
-    val qu = LinkedHashSet.from(oc.qu.toSeq.map(QU.fromJs))
-    val comments = LinkedHashSet.from(oc.comment.toSeq)
     
     OrderCoordinate(
       name = name, 

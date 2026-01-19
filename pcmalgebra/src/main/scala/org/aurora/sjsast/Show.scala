@@ -16,6 +16,7 @@ object Show extends AutoDerivation[Show]:
   given Show[String] = (t: String) => t
   given Show[Int] = _.toString
   given Show[Boolean] = _.toString
+  given Show[Char] = _.toString
   
   // --- Generic Collections (Fallback) ---
   given [T](using s: Show[T]): Show[Option[T]] = 
@@ -23,21 +24,23 @@ object Show extends AutoDerivation[Show]:
     case None => ""
 
   given [T](using s: Show[T]): Show[LHSet[T]] = 
-    _.map(s.show).mkString(", ")
+    _.map(s.show).mkString("")
 
   given [K, V](using sk: Show[K], sv: Show[V]): Show[LHMap[K, V]] = 
     _.map { (k, v) => s"${sk.show(k)}: ${sv.show(v)}" }.mkString("\n")
 
   // --- 1. Basic AST nodes ---
   
-  given Show[NL_STATEMENT] = _.name 
+  given Show[NL_STATEMENT] = _.name
+  
+  given Show[QU] = qu => qu.query.mkString("")
 
   // Individual reference format: "!chf" or "?chf"
-  given Show[QuReference] = r => s"${r.qu}${r.refName}"
+  given Show[QuReference] = r => s"${r.qu.show}${r.refName}"
 
   given Show[QuReferences] = q =>
     if (q.refs.isEmpty) "" 
-    else "(" + q.refs.map(summon[Show[QuReference]].show).mkString(", ") + ")"
+    else "(" + q.refs.map(_.show).mkString(", ") + ")"
 
   // --- 2. Coordinates (Items) ---
   
@@ -59,7 +62,7 @@ object Show extends AutoDerivation[Show]:
   // --- 3. Groups ---
 
   given Show[NGO] = g =>
-    val leadQus = g.qu.map(_.query).mkString("")
+    val leadQus = g.qu.map(_.show).mkString("")
     val narr = if (g.narratives.isEmpty) "" else s" ${g.narratives.map(_.show).mkString(" ")}"
     val orders = g.orders.map(_.show).mkString("\n  ")
     s"$leadQus${g.name}$narr\n  $orders"
