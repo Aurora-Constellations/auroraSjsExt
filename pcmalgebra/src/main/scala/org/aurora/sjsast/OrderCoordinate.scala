@@ -15,7 +15,7 @@ object OrderCoordinate:
     val name = oc.name
     val narratives = NL_STATEMENT.fromJsSeq(oc.narrative.toSeq)
     val refs = oc.qurc.toOption match {
-      case Some(qrs) => QuReferences.fromJs(qrs)
+      case Some(qrs) => QuReferences(qrs)
       case None => QuReferences()
     }
     

@@ -9,13 +9,10 @@ case class QU(
 )
 
 object QU:
-  def fromJs(q: G.QU): QU =
+  def apply(q: G.QU): QU =
     QU(query = LinkedHashSet.from(q.query.toSeq))
   
-  def fromJsArray(arr: js.Array[G.QU]): QU =
+  def apply(arr: js.Array[G.QU]): QU =
     // Combine all QU query characters into one set
     val allChars = arr.flatMap(_.query.toSeq)
     QU(query = LinkedHashSet.from(allChars))
-  
-  def toStringQu(qu: QU): String =
-    qu.query.mkString("")

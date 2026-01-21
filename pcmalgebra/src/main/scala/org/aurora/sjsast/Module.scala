@@ -33,15 +33,15 @@ object Module:
     else ""
 
   private def extractQuSet(quArray: js.Array[G.QU]): LHSet[QU] =
-    LinkedHashSet.from(quArray.toSeq.map(QU.fromJs))
+    LinkedHashSet.from(quArray.toSeq.map(QU(_)))
 
   private def extractQU(quArray: js.Array[G.QU]): QU =
-    QU.fromJsArray(quArray)
+    QU(quArray)
 
   private def extractQuRefs(qurc: js.UndefOr[G.QuReferences]): QuReferences =
     qurc.toOption match {
       case Some(refsObj) =>
-        QuReferences.fromJs(refsObj)
+        QuReferences(refsObj)
       case None => QuReferences()
     }
 

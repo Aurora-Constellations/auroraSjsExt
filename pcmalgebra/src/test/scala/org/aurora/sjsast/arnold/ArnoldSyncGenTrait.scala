@@ -46,5 +46,5 @@ trait ArnoldSyncGenTrait extends wordspec.AnyWordSpec with should.Matchers with 
     OrderCoordinate(
       name = name,
       narratives = narratives(2),
-      qurefs = quReferences(refs: _*)
+      qurefs = quReferences(refs*)
     )

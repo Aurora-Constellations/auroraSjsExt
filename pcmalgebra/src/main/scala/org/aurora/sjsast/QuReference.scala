@@ -9,9 +9,9 @@ case class QuReference(
 )
 
 object QuReference:
-  def fromJs(qr: G.QuReference): QuReference =
+  def apply(qr: G.QuReference): QuReference =
     // Extract the qu string from the array of QU objects
-    val qu = QU.fromJsArray(qr.qu)
+    val qu = QU(qr.qu)
     
     // Extract the reference name from the Langium Reference
     val refName = try {
