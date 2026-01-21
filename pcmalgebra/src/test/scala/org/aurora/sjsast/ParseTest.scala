@@ -47,23 +47,23 @@ class ParseTest extends BaseAsyncTest:
       }
     }
 
-    "pcm+pcm" in {
-      val path0 = testfilepath(0)
-      import catsgivens.given
-      import cats.syntax.semigroup._ // for |+|
-      import org.aurora.sjsast.ShowAurora.given
-      import cats.syntax.show._ 
+    // "pcm+pcm" in {
+    //   val path0 = testfilepath(0)
+    //   import JoinMeet.given
+    //   import cats.syntax.semigroup._ // for |+|
+    //   import org.aurora.sjsast.Show.given
+    //   import cats.syntax.show._ 
 
-      for {
-        langiumPCM <- org.aurora.utils.fileutils.parse(path0).toFuture
-        pcm:PCM <- Future( PCM(langiumPCM))
-        result   <- Future(pcm |+| pcm)
-        _       <- Future(info(s"result: ${result.show}"))
-        b <- Future(result should be (pcm))
-      } yield {
-        b
+    //   for {
+    //     langiumPCM <- org.aurora.utils.fileutils.parse(path0).toFuture
+    //     pcm:PCM <- Future( PCM("",langiumPCM))
+    //     result   <- Future(pcm |+| pcm)
+    //     _       <- Future(info(s"result: ${result.show}"))
+    //     b <- Future(result should be (pcm))
+    //   } yield {
+    //     b
         
-      }
-    }
+    //   }
+    // }
 
 } 

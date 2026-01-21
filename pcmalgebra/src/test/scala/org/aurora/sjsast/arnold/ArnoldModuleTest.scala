@@ -9,7 +9,7 @@ class ArnoldModuleTest extends BaseAsyncTest:
 
       for {
         astPCM      <- parse(0)
-        modulePCM   <- Future(ModulePCM(astPCM))
+        modulePCM   <- Future(ModulePCM(Module(astPCM)))
       } yield modulePCM.module.name should be("moduleA")
     } 
   }
