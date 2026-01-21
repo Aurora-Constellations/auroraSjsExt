@@ -11,7 +11,7 @@ case class OrderCoordinate(
 )
 
 object OrderCoordinate:
-  def fromJs(oc: G.OrderCoordinate): OrderCoordinate =
+  def apply(oc: G.OrderCoordinate): OrderCoordinate =
     val name = oc.name
     val narratives = NL_STATEMENT.fromJsSeq(oc.narrative.toSeq)
     val refs = oc.qurc.toOption match {
