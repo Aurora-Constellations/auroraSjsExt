@@ -227,10 +227,6 @@ lazy val pcmalgebra = project
     name := "pcmalgebra",
     scalaVersion := DependencyVersions.scala,
     Test / resourceDirectory := baseDirectory.value / "src" / "test" / "resources",
-
-    // Tell Scala.js that this is an application with a main method
-    scalaJSUseMainModuleInitializer := true,
-
     /* Configure Scala.js to emit modules in the optimal way to
      * connect to Vite's incremental reload.
      * - emit ECMAScript modules

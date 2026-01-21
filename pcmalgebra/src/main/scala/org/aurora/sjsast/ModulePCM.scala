@@ -8,7 +8,7 @@ case class ModulePCM(module: Module):
    * Convert the module to a PCM without any aliasing
    */
   def toPCM: PCM = 
-    PCM(name = module.name, cio = module.cio)
+    PCM(cio = module.cio)
   
   /**
    * Convert the module to a PCM with aliased references
@@ -29,4 +29,4 @@ case class ModulePCM(module: Module):
       key -> RewriteReferences.addAliasToCIO(section, aliasName, targets)
     }
     
-    PCM(name = aliasName, cio = aliasedCIO)
+    PCM(cio = aliasedCIO)

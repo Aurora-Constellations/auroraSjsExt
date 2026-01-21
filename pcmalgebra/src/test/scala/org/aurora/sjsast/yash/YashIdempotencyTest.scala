@@ -14,7 +14,7 @@ class YashIdempotencyTest extends AnyWordSpec with Matchers:
       val oc = OrderCoordinate("NAS", LHSet(NL_STATEMENT("test")), QuReferences(LHSet(ref)))
       val ngo = NGO(name="Diet", ordercoord=LHSet(oc), narratives = LHSet(), qurefs=QuReferences(LHSet()), qu=LHSet())
       val orders = Orders(ngo=LHSet(ngo), narratives = LHSet())
-      val pcm = PCM("",LinkedHashMap("Orders" -> orders))
+      val pcm = PCM(LinkedHashMap("Orders" -> orders))
 
       // Idempotency: a |+| a == a
       (pcm |+| pcm) shouldBe pcm
@@ -33,8 +33,8 @@ class YashIdempotencyTest extends AnyWordSpec with Matchers:
       val orders1 = Orders(ngo=LHSet(ngo1), narratives = LHSet())
       val orders2 = Orders(ngo=LHSet(ngo2), narratives = LHSet())
 
-      val pcm1 = PCM("",LinkedHashMap("Orders" -> orders1))
-      val pcm2 = PCM("",LinkedHashMap("Orders" -> orders2))
+      val pcm1 = PCM(LinkedHashMap("Orders" -> orders1))
+      val pcm2 = PCM(LinkedHashMap("Orders" -> orders2))
       val merged = pcm1 |+| pcm2
       val mergedAgain = merged |+| pcm1 |+| pcm2
 
