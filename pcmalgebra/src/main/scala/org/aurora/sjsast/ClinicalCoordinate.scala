@@ -3,6 +3,6 @@ package org.aurora.sjsast
 case class ClinicalCoordinate(
     name: String,
     narratives: LHSet[NL_STATEMENT] = LHSet(),
-    refs: QuReferences = QuReferences(),
+    qurefs: QuReferences = QuReferences(),
     qu: QU = QU()
 )

@@ -7,25 +7,25 @@ object RewriteReferences:
   def addAliasToCIO(section: CIO, alias: String, targets: Set[String]): CIO =
     section match
       case i: Issues => 
-        val newCoords = i.coordinates.map(ic => addAliasToIssueCoord(ic, alias, targets))
-        i.copy(coordinates = newCoords)
+        val newCoords = i.ic.map(ic => addAliasToIssueCoord(ic, alias, targets))
+        i.copy(ic = newCoords)
       
       case o: Orders => 
-        val newNamedGroups = o.namedGroups.map(ngo => addAliasToNGO(ngo, alias, targets))
-        o.copy(namedGroups = newNamedGroups)
+        val newNamedGroups = o.ngo.map(ngo => addAliasToNGO(ngo, alias, targets))
+        o.copy(ngo = newNamedGroups)
       
       case c: Clinical => 
-        val newNamedGroups = c.namedGroups.map(ngc => addAliasToNGC(ngc, alias, targets))
-        c.copy(namedGroups = newNamedGroups)
+        val newNamedGroups = c.ngc.map(ngc => addAliasToNGC(ngc, alias, targets))
+        c.copy(ngc = newNamedGroups)
 
   private def addAliasToIssueCoord(ic: IssueCoordinate, alias: String, targets: Set[String]): IssueCoordinate =
-    val newRefs = transformQuReferences(ic.refs, alias, targets)
-    ic.copy(refs = newRefs)
+    val newRefs = transformQuReferences(ic.qurefs, alias, targets)
+    ic.copy(qurefs = newRefs)
 
   private def addAliasToNGO(ngo: NGO, alias: String, targets: Set[String]): NGO =
-    val newOrders = ngo.orders.map(oc => addAliasToOrderCoord(oc, alias, targets))
-    val newRefs = transformQuReferences(ngo.refs, alias, targets)
-    ngo.copy(orders = newOrders, refs = newRefs)
+    val newOrders = ngo.ordercoord.map(oc => addAliasToOrderCoord(oc, alias, targets))
+    val newRefs = transformQuReferences(ngo.qurefs, alias, targets)
+    ngo.copy(ordercoord = newOrders, qurefs = newRefs)
 
   private def addAliasToNGC(ngc: NGC, alias: String, targets: Set[String]): NGC =
     val newCoords = ngc.coordinates.map(cc => addAliasToClinicalCoord(cc, alias, targets))
@@ -33,16 +33,16 @@ object RewriteReferences:
     ngc.copy(coordinates = newCoords, refs = newRefs)
 
   private def addAliasToClinicalCoord(cc: ClinicalCoordinate, alias: String, targets: Set[String]): ClinicalCoordinate =
-    val newRefs = transformQuReferences(cc.refs, alias, targets)
-    cc.copy(refs = newRefs)
+    val newRefs = transformQuReferences(cc.qurefs, alias, targets)
+    cc.copy(qurefs = newRefs)
 
-  private def addAliasToOrderCoord(c: OrderCoordinate, alias: String, targets: Set[String]): OrderCoordinate =
-    val newRefs = transformQuReferences(c.refs, alias, targets)
-    c.copy(refs = newRefs)
+  private def addAliasToOrderCoord(oc: OrderCoordinate, alias: String, targets: Set[String]): OrderCoordinate =
+    val newRefs = transformQuReferences(oc.qurefs, alias, targets)
+    oc.copy(qurefs = newRefs)
 
   // Shared function to transform QuReferences
-  private def transformQuReferences(refs: QuReferences, alias: String, targets: Set[String]): QuReferences =
-    val newRefs = refs.refs.map { ref =>
+  private def transformQuReferences(qurefs: QuReferences, alias: String, targets: Set[String]): QuReferences =
+    val newRefs = qurefs.qurc.map { ref =>
       val matchResult = findMatchingTarget(ref.refName, targets)
       
       matchResult match

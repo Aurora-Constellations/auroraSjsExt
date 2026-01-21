@@ -16,16 +16,16 @@ class ArnoldQuReferencesMergeTest extends BaseAsyncTest:
   "Merging QuReferences" should {
     "combine the qualifiers" in { 
 
-      val quRef1 = QuReference("r1", QU(LHSet('~')))
-      val quRef2 = QuReference("r2", QU(LHSet('!')))
-      val quRef3 = QuReference("r1", QU(LHSet(' ')))
-      val quRef4 = QuReference("r2", QU(LHSet(' ')))
+      val quRef1 = QuReference(QU(LHSet('~')),"r1")
+      val quRef2 = QuReference(QU(LHSet('!')), "r2")
+      val quRef3 = QuReference(QU(LHSet(' ')), "r1")
+      val quRef4 = QuReference(QU(LHSet(' ')), "r2")
       val refSet1 = QuReferences(LHSet(quRef1,quRef2))
       val refSet2 = QuReferences(LHSet(quRef3,quRef4))
 
       for {
         quResult   <- Future(quRef1 |+| quRef2)
-        assertion  <- quResult should be (QuReference("r1", QU(LHSet('~'))) |+| QuReference("r2", QU(LHSet('!'))))
+        assertion  <- quResult should be (QuReference(QU(LHSet('~')), "r1") |+| QuReference(QU(LHSet('!')), "r2"))
         mergeResult <- Future( refSet1 |+| refSet2 )
         _     <- finfo(s"$mergeResult")
         assert1    <- true should be(true)

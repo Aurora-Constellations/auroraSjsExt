@@ -4,8 +4,8 @@ import org.aurora.sjsast.{GenAst => G}
 import scala.scalajs.js
 
 case class QuReference(
-    refName: String,
-    qu: QU = QU()
+    qu: QU = QU(),
+    refName: String
 )
 
 object QuReference:

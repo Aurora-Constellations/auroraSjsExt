@@ -18,7 +18,7 @@ case class ModulePCM(module: Module):
   def toPCM(aliasName: String): PCM = 
     // Extract the original issue name from the module's Issues section
     val originalIssueNames: Set[String] = module.cio.values.collect {
-      case i: Issues => i.coordinates.map(_.name)
+      case i: Issues => i.ic.map(_.name)
     }.flatten.toSet
     
     // If no issues found, use the module name as fallback

@@ -56,7 +56,7 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
   
   // QuReferences: Union of all references
   given joinQuRefs: JoinMeet[QuReferences] = (a, b) =>
-    QuReferences(a.refs ++ b.refs)
+    QuReferences(a.qurc ++ b.qurc)
 
   // Coordinates: Merge by name (items with same name are recursively joined)
   given joinOrderCoords: JoinMeet[LHSet[OrderCoordinate]] = (a, b) =>

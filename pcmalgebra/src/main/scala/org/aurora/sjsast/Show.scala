@@ -36,36 +36,36 @@ object Show extends AutoDerivation[Show]:
   given Show[QU] = qu => qu.query.mkString("")
 
   // Individual reference format: "!chf" or "?chf"
-  given Show[QuReference] = r => s"${r.qu.show}${r.refName}"
+  given Show[QuReference] = qurc => s"${qurc.qu.show}${qurc.refName}"
 
-  given Show[QuReferences] = q =>
-    if (q.refs.isEmpty) "" 
-    else "(" + q.refs.map(_.show).mkString(", ") + ")"
+  given Show[QuReferences] = qurefs =>
+    if (qurefs.qurc.isEmpty) "" 
+    else "(" + qurefs.qurc.map(_.show).mkString(", ") + ")"
 
   // --- 2. Coordinates (Items) ---
   
-  given Show[OrderCoordinate] = o =>
-    val refs = o.refs.show
-    val narr = if (o.narratives.isEmpty) "" else s" ${o.narratives.map(_.show).mkString(" ")}"
-    s"${o.name}$refs$narr"
+  given Show[OrderCoordinate] = oc =>
+    val refs = oc.qurefs.show
+    val narr = if (oc.narratives.isEmpty) "" else s" ${oc.narratives.map(_.show).mkString(" ")}"
+    s"${oc.name}$refs$narr"
 
-  given Show[IssueCoordinate] = i =>
-    val refs = if (i.refs.refs.isEmpty) "" else s" ${i.refs.show}"
-    val narr = if (i.narratives.isEmpty) "" else s" ${i.narratives.map(_.show).mkString(" ")}"
-    s"${i.name}$refs$narr"
+  given Show[IssueCoordinate] = ic =>
+    val refs = if (ic.qurefs.qurc.isEmpty) "" else s" ${ic.qurefs.show}"
+    val narr = if (ic.narratives.isEmpty) "" else s" ${ic.narratives.map(_.show).mkString(" ")}"
+    s"${ic.name}$refs$narr"
 
   given Show[ClinicalCoordinate] = c =>
-    val refs = if (c.refs.refs.isEmpty) "" else s" ${c.refs.show}"
+    val refs = if (c.qurefs.qurc.isEmpty) "" else s" ${c.qurefs.show}"
     val narr = if (c.narratives.isEmpty) "" else s" ${c.narratives.map(_.show).mkString(" ")}"
     s"${c.name}$refs$narr"
 
   // --- 3. Groups ---
 
-  given Show[NGO] = g =>
-    val leadQus = g.qu.map(_.show).mkString("")
-    val narr = if (g.narratives.isEmpty) "" else s" ${g.narratives.map(_.show).mkString(" ")}"
-    val orders = g.orders.map(_.show).mkString("\n  ")
-    s"$leadQus${g.name}$narr\n  $orders"
+  given Show[NGO] = ngo =>
+    val leadQus = ngo.qu.map(_.show).mkString("")
+    val narr = if (ngo.narratives.isEmpty) "" else s" ${ngo.narratives.map(_.show).mkString(" ")}"
+    val orders = ngo.ordercoord.map(_.show).mkString("\n  ")
+    s"$leadQus${ngo.name}$narr\n  $orders"
 
   given Show[NGC] = g =>
     val narr = if (g.narratives.isEmpty) "" else s" ${g.narratives.map(_.show).mkString(" ")}"
@@ -76,17 +76,17 @@ object Show extends AutoDerivation[Show]:
   
   given Show[Orders] = o =>
     val narr = if (o.narratives.isEmpty) "" else o.narratives.map(_.show).mkString("\n") + "\n"
-    val groups = o.namedGroups.map(_.show).mkString("\n\n")
+    val groups = o.ngo.map(_.show).mkString("\n\n")
     s"${o.name}:\n$narr$groups"
 
   given Show[Clinical] = c =>
     val narr = if (c.narratives.isEmpty) "" else c.narratives.map(_.show).mkString("\n") + "\n"
-    val groups = c.namedGroups.map(_.show).mkString("\n\n")
+    val groups = c.ngc.map(_.show).mkString("\n\n")
     s"${c.name}:\n$narr$groups"
 
   given Show[Issues] = i =>
     val narr = if (i.narratives.isEmpty) "" else i.narratives.map(_.show).mkString("\n") + "\n"
-    val coords = i.coordinates.map(_.show).mkString("\n")
+    val coords = i.ic.map(_.show).mkString("\n")
     s"${i.name}:\n$narr$coords"
 
   // Dispatch for the sealed trait

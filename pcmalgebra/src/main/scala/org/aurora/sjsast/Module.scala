@@ -59,7 +59,7 @@ object Module:
                  Some(ClinicalCoordinate(
                    name = cc.name, 
                    narratives = NL_STATEMENT.fromJsSeq(cc.narrative.toSeq),
-                   refs = extractQuRefs(cc.qurc),
+                   qurefs = extractQuRefs(cc.qurc),
                    qu = extractQU(cc.qu)
                  ))
                else None
@@ -75,7 +75,7 @@ object Module:
 
            val section = Clinical(
              narratives = NL_STATEMENT.fromJsSeq(c.narrative.toSeq),
-             namedGroups = LinkedHashSet.from(groups)
+             ngc = LinkedHashSet.from(groups)
            )
            map.update("Clinical", section)
 
@@ -85,43 +85,43 @@ object Module:
              IssueCoordinate(
                name = ic.name,
                narratives = NL_STATEMENT.fromJsSeq(ic.narrative.toSeq),
-               refs = extractQuRefs(ic.qurc),
+               qurefs = extractQuRefs(ic.qurc),
                qu = extractQU(ic.qu)
              )
           }
           
           val section = Issues(
             narratives = NL_STATEMENT.fromJsSeq(i.narrative.toSeq),
-            coordinates = LinkedHashSet.from(coords)
+            ic = LinkedHashSet.from(coords)
           )
           map.update("Issues", section)
 
         case "Orders" =>
             val o = element.asInstanceOf[G.Orders]
-            val groups = o.namedGroups.map { ng =>
-              val orderItems = ng.orders.flatMap { item =>
+            val groups = o.namedGroups.map { ngo =>
+              val orderItems = ngo.orders.flatMap { item =>
                 if getType(item) == "OrderCoordinate" then
                   val oc = item.asInstanceOf[G.OrderCoordinate]
                   Some(OrderCoordinate(
                     name = oc.name,
                     narratives = NL_STATEMENT.fromJsSeq(oc.narrative.toSeq),
-                    refs = extractQuRefs(oc.qurc)
+                    qurefs = extractQuRefs(oc.qurc)
                   ))
                 else None
               }
               
               NGO(
-                name = ng.name,
-                narratives = NL_STATEMENT.fromJsSeq(ng.narrative.toSeq),
-                orders = LinkedHashSet.from(orderItems),
-                refs = extractQuRefs(ng.asInstanceOf[js.Dynamic].qurc.asInstanceOf[js.UndefOr[G.QuReferences]]),
-                qu = extractQuSet(ng.asInstanceOf[js.Dynamic].qu.asInstanceOf[js.Array[G.QU]])
+                name = ngo.name,
+                narratives = NL_STATEMENT.fromJsSeq(ngo.narrative.toSeq),
+                ordercoord = LinkedHashSet.from(orderItems),
+                qurefs = extractQuRefs(ngo.asInstanceOf[js.Dynamic].qurc.asInstanceOf[js.UndefOr[G.QuReferences]]),
+                qu = extractQuSet(ngo.asInstanceOf[js.Dynamic].qu.asInstanceOf[js.Array[G.QU]])
               )
             }
 
             val section = Orders(
               narratives = NL_STATEMENT.fromJsSeq(o.narrative.toSeq),
-              namedGroups = LinkedHashSet.from(groups)
+              ngo = LinkedHashSet.from(groups)
             )
             map.update("Orders", section)
         case _ => // Ignore

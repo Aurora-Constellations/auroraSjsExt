@@ -10,10 +10,10 @@ class YashIdempotencyTest extends AnyWordSpec with Matchers:
 
   "PCM merge" should {
     "be idempotent" in {
-      val ref = QuReference("chf", QU(LHSet('~')))
+      val ref = QuReference(QU(LHSet('~')), "chf")
       val oc = OrderCoordinate("NAS", LHSet(NL_STATEMENT("test")), QuReferences(LHSet(ref)))
-      val ngo = NGO(name="Diet", orders=LHSet(oc), narratives = LHSet(), refs=QuReferences(LHSet()), qu=LHSet())
-      val orders = Orders(namedGroups=LHSet(ngo), narratives = LHSet())
+      val ngo = NGO(name="Diet", ordercoord=LHSet(oc), narratives = LHSet(), qurefs=QuReferences(LHSet()), qu=LHSet())
+      val orders = Orders(ngo=LHSet(ngo), narratives = LHSet())
       val pcm = PCM("",LinkedHashMap("Orders" -> orders))
 
       // Idempotency: a |+| a == a
@@ -21,17 +21,17 @@ class YashIdempotencyTest extends AnyWordSpec with Matchers:
     }
 
     "merge same NGO only once" in {
-      val ref1 = QuReference("chf", QU(LHSet('~')))
-      val ref2 = QuReference("mi", QU(LHSet('~')))
-      
+      val ref1 = QuReference(QU(LHSet('~')), "chf")
+      val ref2 = QuReference(QU(LHSet('~')), "mi")
+
       val oc1 = OrderCoordinate("NAS", LHSet(), QuReferences(LHSet(ref1)))
       val oc2 = OrderCoordinate("NAS", LHSet(), QuReferences(LHSet(ref2)))
 
-      val ngo1 = NGO(name="Diet", orders=LHSet(oc1), narratives = LHSet(), refs=QuReferences(LHSet()), qu=LHSet())
-      val ngo2 = NGO(name="Diet", orders=LHSet(oc2), narratives = LHSet(), refs=QuReferences(LHSet()), qu=LHSet())
+      val ngo1 = NGO(name="Diet", ordercoord=LHSet(oc1), narratives = LHSet(), qurefs=QuReferences(LHSet()), qu=LHSet())
+      val ngo2 = NGO(name="Diet", ordercoord=LHSet(oc2), narratives = LHSet(), qurefs=QuReferences(LHSet()), qu=LHSet())
 
-      val orders1 = Orders(namedGroups=LHSet(ngo1), narratives = LHSet())
-      val orders2 = Orders(namedGroups=LHSet(ngo2), narratives = LHSet())
+      val orders1 = Orders(ngo=LHSet(ngo1), narratives = LHSet())
+      val orders2 = Orders(ngo=LHSet(ngo2), narratives = LHSet())
 
       val pcm1 = PCM("",LinkedHashMap("Orders" -> orders1))
       val pcm2 = PCM("",LinkedHashMap("Orders" -> orders2))

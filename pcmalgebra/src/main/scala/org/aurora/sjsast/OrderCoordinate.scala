@@ -7,7 +7,7 @@ import scala.collection.mutable.LinkedHashSet
 case class OrderCoordinate(
     name: String,
     narratives: LHSet[NL_STATEMENT] = LHSet(),
-    refs: QuReferences = QuReferences()
+    qurefs: QuReferences = QuReferences()
 )
 
 object OrderCoordinate:
@@ -22,5 +22,5 @@ object OrderCoordinate:
     OrderCoordinate(
       name = name, 
       narratives = narratives, 
-      refs = refs
+      qurefs = refs
     )

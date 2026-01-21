@@ -15,7 +15,7 @@ class YashModuleTest extends BaseAsyncTest:
             // Convert with alias
             aliasedPCM = modulePCM.toPCM("heart_failure")
             orders = aliasedPCM.cio.get("Orders").get.asInstanceOf[Orders]
-            firstRef = orders.namedGroups.head.orders.head.refs.refs.head
+            firstRef = orders.ngo.head.ordercoord.head.qurefs.qurc.head
             
             } yield {
                 firstRef.refName should be("heart_failure")
