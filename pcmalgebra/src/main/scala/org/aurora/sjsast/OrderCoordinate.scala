@@ -1,22 +1,20 @@
 package org.aurora.sjsast
 
-import org.aurora.sjsast.{GenAst => G}
 import scala.scalajs.js
-import scala.collection.mutable.LinkedHashSet
 
 case class OrderCoordinate(
     name: String,
     narratives: LHSet[NL_STATEMENT] = LHSet(),
-    qurefs: QuReferences = QuReferences()
+    qurefs: LHSet[QuReferences] = LHSet()
 )
 
 object OrderCoordinate:
-  def apply(oc: G.OrderCoordinate): OrderCoordinate =
+  def apply(oc: GenAst.OrderCoordinate): OrderCoordinate =
     val name = oc.name
-    val narratives = NL_STATEMENT.fromJsSeq(oc.narrative.toSeq)
+    val narratives = LHSet(oc.narrative.toList.map(NL_STATEMENT(_))*)
     val refs = oc.qurc.toOption match {
-      case Some(qrs) => QuReferences(qrs)
-      case None => QuReferences()
+      case Some(qrs) => LHSet(QuReferences(qrs))
+      case None => LHSet()
     }
     
     OrderCoordinate(

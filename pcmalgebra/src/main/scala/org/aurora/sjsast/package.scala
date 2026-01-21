@@ -1,14 +1,16 @@
 package org.aurora.sjsast
 
-import scala.collection.mutable.LinkedHashSet
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.{LinkedHashSet, LinkedHashMap}
 
-// Alias for LinkedHashSet
+// 1. Define the type alias
 type LHSet[T] = LinkedHashSet[T]
 
-// Helper for creating sets
-def LHSet[T](elems: T*): LHSet[T] = LinkedHashSet(elems*)
+// 2. Create a companion object for the alias
+object LHSet:
+  // This "exports" all members of LinkedHashSet into LHSet's scope
+  export LinkedHashSet.{apply, from, empty, newBuilder}
 
-// Alias for LinkedHashMap
 type LHMap[K, V] = LinkedHashMap[K, V]
 
+object LHMap:
+  export LinkedHashMap.{apply, from, empty, newBuilder}

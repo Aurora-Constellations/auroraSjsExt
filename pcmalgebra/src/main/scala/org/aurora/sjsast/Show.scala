@@ -1,8 +1,6 @@
 package org.aurora.sjsast
 
 import magnolia1._
-import scala.collection.mutable.LinkedHashSet
-import scala.collection.mutable.LinkedHashMap
 
 trait Show[T]:
   def show(t: T): String
@@ -17,6 +15,17 @@ object Show extends AutoDerivation[Show]:
   given Show[Int] = _.toString
   given Show[Boolean] = _.toString
   given Show[Char] = _.toString
+
+  given Show[QU] = qu => qu.query.mkString("")
+
+  // Individual reference format: "!chf" or "?chf"
+  given Show[QuReference] = qurc => s"${qurc.qu.show}${qurc.refName}"
+
+  given Show[LHSet[QuReferences]] = qs =>
+    if (qs.isEmpty) ""
+    else
+      val allRefs = qs.flatMap(_.qurc)
+      "(" + allRefs.map(_.show).mkString(", ") + ")"
   
   // --- Generic Collections (Fallback) ---
   given [T](using s: Show[T]): Show[Option[T]] = 
@@ -32,11 +41,6 @@ object Show extends AutoDerivation[Show]:
   // --- 1. Basic AST nodes ---
   
   given Show[NL_STATEMENT] = _.name
-  
-  given Show[QU] = qu => qu.query.mkString("")
-
-  // Individual reference format: "!chf" or "?chf"
-  given Show[QuReference] = qurc => s"${qurc.qu.show}${qurc.refName}"
 
   given Show[QuReferences] = qurefs =>
     if (qurefs.qurc.isEmpty) "" 
@@ -50,14 +54,16 @@ object Show extends AutoDerivation[Show]:
     s"${oc.name}$refs$narr"
 
   given Show[IssueCoordinate] = ic =>
-    val refs = if (ic.qurefs.qurc.isEmpty) "" else s" ${ic.qurefs.show}"
+    val refs = if (ic.qurefs.isEmpty) "" else s" ${ic.qurefs.map(_.show).mkString(" ")}"
     val narr = if (ic.narratives.isEmpty) "" else s" ${ic.narratives.map(_.show).mkString(" ")}"
     s"${ic.name}$refs$narr"
 
-  given Show[ClinicalCoordinate] = c =>
-    val refs = if (c.qurefs.qurc.isEmpty) "" else s" ${c.qurefs.show}"
-    val narr = if (c.narratives.isEmpty) "" else s" ${c.narratives.map(_.show).mkString(" ")}"
-    s"${c.name}$refs$narr"
+  given Show[ClinicalCoordinate] = cc =>
+    val refs = if (cc.qurefs.isEmpty) "" else 
+      val all = cc.qurefs.flatMap(_.qurc)
+      s" (${all.map(_.show).mkString(", ")})"
+    val narr = if (cc.narratives.isEmpty) "" else s" ${cc.narratives.map(_.show).mkString(" ")}"
+    s"${cc.name}$refs$narr"
 
   // --- 3. Groups ---
 

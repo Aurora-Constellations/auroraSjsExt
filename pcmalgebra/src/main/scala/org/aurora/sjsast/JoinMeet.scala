@@ -1,7 +1,6 @@
 package org.aurora.sjsast
 
 import magnolia1._
-import scala.collection.mutable.{LinkedHashSet, LinkedHashMap}
 
 trait JoinMeet[T]:
   def join(a: T, b: T): T
@@ -14,7 +13,7 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
   // --- Helpers for Merging Named Items ---
   // Merges two sets by name, recursively joining items with the same name
   private def mergeNamedSets[T](a: LHSet[T], b: LHSet[T], getName: T => String)(using jm: JoinMeet[T]): LHSet[T] =
-    val merged = LinkedHashMap.empty[String, T]
+    val merged = LHMap[String, T]()
     a.foreach { item => merged(getName(item)) = item }
     b.foreach { item =>
       val name = getName(item)
@@ -23,7 +22,7 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
       else
         merged(name) = item
     }
-    LinkedHashSet.from(merged.values)
+    LHSet.from(merged.values)
 
   // --- Basic Types ---
   given JoinMeet[String] = (a, b) => 

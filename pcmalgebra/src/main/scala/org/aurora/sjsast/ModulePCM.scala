@@ -1,7 +1,5 @@
 package org.aurora.sjsast
 
-import scala.collection.mutable.LinkedHashMap
-
 case class ModulePCM(module: Module):
   
   /**

@@ -1,4 +1,7 @@
 package org.aurora.sjsast
- 
-import scala.collection.mutable.LinkedHashSet
-case class ClinicalValue (name :String, narrative:LinkedHashSet[NL_STATEMENT]=LinkedHashSet.empty, qurefs:QuReferences)
+
+case class ClinicalValue(
+    name :String, 
+    narrative:LHSet[NL_STATEMENT] = LHSet(), 
+    qurefs:LHSet[QuReferences] = LHSet()
+)

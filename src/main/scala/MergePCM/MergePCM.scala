@@ -6,12 +6,10 @@ import vscode.{ExtensionContext}
 import typings.auroraLangium.cliMod.parse
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.mutable.{LinkedHashMap, LinkedHashSet}
 
 import org.aurora.sjsast.*
-import org.aurora.sjsast.JoinMeet
+import org.aurora.sjsast.JoinMeet._
 import org.aurora.sjsast.JoinMeet.given 
-import org.aurora.sjsast.Show
 import org.aurora.sjsast.Show.given 
 import org.aurora.sjsast.Show._ 
 
@@ -19,9 +17,6 @@ import org.aurora.sjsast.Show._
 import org.aurora.sjsast.RewriteReferences
 
 object MergePCM:
-
-    extension [T](a: T)(using jm: JoinMeet[T])
-        def |+|(b: T): T = jm.join(a, b)
 
     // ... parseIssues and loadModules remain the same ...
     def parseIssues(input: String): Map[String, String] = {

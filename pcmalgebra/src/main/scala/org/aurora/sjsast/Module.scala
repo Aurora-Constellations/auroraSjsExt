@@ -1,12 +1,11 @@
 package org.aurora.sjsast
 
-import scala.collection.mutable.{LinkedHashMap, LinkedHashSet}
 import org.aurora.sjsast.{GenAst => G}
 import scala.scalajs.js
 
 case class Module(
     name: String,
-    cio: LinkedHashMap[String, CIO] = LinkedHashMap.empty
+    cio: LHMap[String, CIO] = LHMap()
 )
 
 object Module:
@@ -33,20 +32,20 @@ object Module:
     else ""
 
   private def extractQuSet(quArray: js.Array[G.QU]): LHSet[QU] =
-    LinkedHashSet.from(quArray.toSeq.map(QU(_)))
+    LHSet.from(quArray.toSeq.map(QU(_)))
 
   private def extractQU(quArray: js.Array[G.QU]): QU =
     QU(quArray)
 
-  private def extractQuRefs(qurc: js.UndefOr[G.QuReferences]): QuReferences =
+  private def extractQuRefs(qurc: js.UndefOr[G.QuReferences]): LHSet[QuReferences] =
     qurc.toOption match {
       case Some(refsObj) =>
-        QuReferences(refsObj)
-      case None => QuReferences()
+        LHSet(QuReferences(refsObj))
+      case None => LHSet()
     }
 
-  private def cioFromElements(elements: js.Array[Any]): LinkedHashMap[String, CIO] =
-    val map = LinkedHashMap.empty[String, CIO]
+  private def cioFromElements(elements: js.Array[Any]): LHMap[String, CIO] =
+    val map = LHMap[String, CIO]()
 
     elements.foreach { element =>
       getType(element) match
@@ -58,7 +57,7 @@ object Module:
                  val cc = item.asInstanceOf[G.ClinicalCoordinate]
                  Some(ClinicalCoordinate(
                    name = cc.name, 
-                   narratives = NL_STATEMENT.fromJsSeq(cc.narrative.toSeq),
+                   narratives = NL_STATEMENT(cc.narrative.toSeq),
                    qurefs = extractQuRefs(cc.qurc),
                    qu = extractQU(cc.qu)
                  ))
@@ -67,15 +66,15 @@ object Module:
              
              NGC(
                name = ng.name, 
-               narratives = NL_STATEMENT.fromJsSeq(ng.narrative.toSeq),
-               coordinates = LinkedHashSet.from(coords),
+               narratives = NL_STATEMENT(ng.narrative.toSeq),
+               coordinates = LHSet.from(coords),
                refs = extractQuRefs(ng.asInstanceOf[js.Dynamic].qurc.asInstanceOf[js.UndefOr[G.QuReferences]])
              )
            }
 
            val section = Clinical(
-             narratives = NL_STATEMENT.fromJsSeq(c.narrative.toSeq),
-             ngc = LinkedHashSet.from(groups)
+             narratives = NL_STATEMENT(c.narrative.toSeq),
+             ngc = LHSet.from(groups)
            )
            map.update("Clinical", section)
 
@@ -84,15 +83,15 @@ object Module:
           val coords = i.coord.map { ic =>
              IssueCoordinate(
                name = ic.name,
-               narratives = NL_STATEMENT.fromJsSeq(ic.narrative.toSeq),
+               narratives = NL_STATEMENT(ic.narrative.toSeq),
                qurefs = extractQuRefs(ic.qurc),
                qu = extractQU(ic.qu)
              )
           }
           
           val section = Issues(
-            narratives = NL_STATEMENT.fromJsSeq(i.narrative.toSeq),
-            ic = LinkedHashSet.from(coords)
+            narratives = NL_STATEMENT(i.narrative.toSeq),
+            ic = LHSet.from(coords)
           )
           map.update("Issues", section)
 
@@ -104,7 +103,7 @@ object Module:
                   val oc = item.asInstanceOf[G.OrderCoordinate]
                   Some(OrderCoordinate(
                     name = oc.name,
-                    narratives = NL_STATEMENT.fromJsSeq(oc.narrative.toSeq),
+                    narratives = NL_STATEMENT(oc.narrative.toSeq),
                     qurefs = extractQuRefs(oc.qurc)
                   ))
                 else None
@@ -112,16 +111,16 @@ object Module:
               
               NGO(
                 name = ngo.name,
-                narratives = NL_STATEMENT.fromJsSeq(ngo.narrative.toSeq),
-                ordercoord = LinkedHashSet.from(orderItems),
+                narratives = NL_STATEMENT(ngo.narrative.toSeq),
+                ordercoord = LHSet.from(orderItems),
                 qurefs = extractQuRefs(ngo.asInstanceOf[js.Dynamic].qurc.asInstanceOf[js.UndefOr[G.QuReferences]]),
                 qu = extractQuSet(ngo.asInstanceOf[js.Dynamic].qu.asInstanceOf[js.Array[G.QU]])
               )
             }
 
             val section = Orders(
-              narratives = NL_STATEMENT.fromJsSeq(o.narrative.toSeq),
-              ngo = LinkedHashSet.from(groups)
+              narratives = NL_STATEMENT(o.narrative.toSeq),
+              ngo = LHSet.from(groups)
             )
             map.update("Orders", section)
         case _ => // Ignore

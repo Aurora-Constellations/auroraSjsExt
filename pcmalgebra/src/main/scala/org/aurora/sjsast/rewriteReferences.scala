@@ -1,7 +1,5 @@
 package org.aurora.sjsast
 
-import scala.collection.mutable.LinkedHashSet
-
 object RewriteReferences:
 
   def addAliasToCIO(section: CIO, alias: String, targets: Set[String]): CIO =
@@ -19,25 +17,35 @@ object RewriteReferences:
         c.copy(ngc = newNamedGroups)
 
   private def addAliasToIssueCoord(ic: IssueCoordinate, alias: String, targets: Set[String]): IssueCoordinate =
-    val newRefs = transformQuReferences(ic.qurefs, alias, targets)
+    val newRefs = LHSet(
+      ic.qurefs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*
+    )
     ic.copy(qurefs = newRefs)
 
   private def addAliasToNGO(ngo: NGO, alias: String, targets: Set[String]): NGO =
     val newOrders = ngo.ordercoord.map(oc => addAliasToOrderCoord(oc, alias, targets))
-    val newRefs = transformQuReferences(ngo.qurefs, alias, targets)
+    val newRefs = LHSet(
+      ngo.qurefs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*
+    )
     ngo.copy(ordercoord = newOrders, qurefs = newRefs)
 
   private def addAliasToNGC(ngc: NGC, alias: String, targets: Set[String]): NGC =
     val newCoords = ngc.coordinates.map(cc => addAliasToClinicalCoord(cc, alias, targets))
-    val newRefs = transformQuReferences(ngc.refs, alias, targets)
+    val newRefs = LHSet(
+      ngc.refs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*
+    )
     ngc.copy(coordinates = newCoords, refs = newRefs)
 
   private def addAliasToClinicalCoord(cc: ClinicalCoordinate, alias: String, targets: Set[String]): ClinicalCoordinate =
-    val newRefs = transformQuReferences(cc.qurefs, alias, targets)
+    val newRefs = LHSet(
+      cc.qurefs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*
+    )
     cc.copy(qurefs = newRefs)
 
   private def addAliasToOrderCoord(oc: OrderCoordinate, alias: String, targets: Set[String]): OrderCoordinate =
-    val newRefs = transformQuReferences(oc.qurefs, alias, targets)
+    val newRefs = LHSet(
+      oc.qurefs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*
+    )
     oc.copy(qurefs = newRefs)
 
   // Shared function to transform QuReferences
