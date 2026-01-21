@@ -3,7 +3,7 @@ object DependencyVersions {
   val scala             = "3.5.1"
   val scalajsdom        = "2.8.0"
   val scalajsmacrotaskexecutor = "1.1.1"
-  val laminar           = "17.1.0"
+  val laminar           = "17.2.1"
   val laminext          = "0.17.0"
   val zioJson           = "0.7.3"
   val borerjson         = "1.14.0"
@@ -14,8 +14,13 @@ object DependencyVersions {
   val shapeless3        = "3.4.3"
   val scalaAsync        = "1.0.1"
   val cats              = "2.13.0"
+  val cats_discipline_core = "1.7.0"
   val catsEffect        = "3.5.2"
   val sttpClient4       = "4.0.0-M6"
   val circe             = "0.14.14"
   val config            = "1.4.3"
+  val `upickle`          = "4.3.0"
+  val scalatestdiscipline = "2.3.0"
+  val magnolia            = "1.3.18"
+
 }

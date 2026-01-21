@@ -31,7 +31,10 @@ object Dependencies {
   val cats = Def.setting {
     Seq(
        "org.typelevel" %%% "cats-core" % DependencyVersions.cats,
-       "org.typelevel" %% "cats-effect" % DependencyVersions.catsEffect
+       "org.typelevel" %% "cats-effect" % DependencyVersions.catsEffect,
+       "org.typelevel" %%% "cats-laws" % DependencyVersions.cats % Test,
+       // https://mvnrepository.com/artifact/org.typelevel/discipline-core
+        "org.typelevel" %%% "discipline-core" % DependencyVersions.cats_discipline_core % Test
     )
   }
 
@@ -69,7 +72,8 @@ object Dependencies {
   val scalatest   :     Def.Initialize[Seq[ModuleID]] = Def.setting {
     Seq(
       "org.scalactic" %%% "scalactic"  % DependencyVersions.scalatest,
-      "org.scalatest" %%% "scalatest" % DependencyVersions.scalatest % "test"
+      "org.scalatest" %%% "scalatest" % DependencyVersions.scalatest % "test",
+      "org.typelevel" %%% "discipline-scalatest" % DependencyVersions.scalatestdiscipline  % Test
     )
   }
 
@@ -86,6 +90,19 @@ object Dependencies {
     Seq(
       "io.bullet" %%% "borer-core" % DependencyVersions.borerjson,
       "io.bullet" %%% "borer-derivation" % DependencyVersions.borerjson
+    )
+  }
+
+  val upickle: Def.Initialize[Seq[ModuleID]] = Def.setting {
+    Seq(
+      "com.lihaoyi" %%% "upickle" % DependencyVersions.`upickle`
+    )
+  }
+
+  val magnolia : Def.Initialize[Seq[ModuleID]] = Def.setting {
+    Seq(
+      // https://mvnrepository.com/artifact/com.softwaremill.magnolia1_3/magnolia
+      "com.softwaremill.magnolia1_3" %%% "magnolia" % DependencyVersions.magnolia
     )
   }
 
