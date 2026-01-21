@@ -8,6 +8,9 @@ trait JoinMeet[T]:
 
 object JoinMeet extends AutoDerivation[JoinMeet]:
 
+  extension [T](a: T)(using jm: JoinMeet[T])
+    def |+|(b: T): T = jm.join(a, b)
+
   // --- Helpers for Merging Named Items ---
   // Merges two sets by name, recursively joining items with the same name
   private def mergeNamedSets[T](a: LHSet[T], b: LHSet[T], getName: T => String)(using jm: JoinMeet[T]): LHSet[T] =
