@@ -25,6 +25,7 @@ import scala.concurrent.Future
 import scala.scalajs.js.annotation.JSImport
 import scala.compiletime.uninitialized
 import scala.scalajs.js.timers.{SetIntervalHandle, setInterval, clearInterval}
+import org.aurora.sjsast.GenAst
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -169,21 +170,29 @@ object PublishCommands:
   def processDSL(context: ExtensionContext): js.Function1[Any, Any] = { _ =>
     vscode.window.activeTextEditor.foreach { ed =>
       val currentContent = ed.document.getText()
-      val moduleImports = parseIssues(currentContent)
-      val modules = loadModules(moduleImports)
-
-      if (modules.nonEmpty) {
-        generateOrdersDSL(modules).onComplete {
-          case Success(ordersDSL) if ordersDSL.nonEmpty =>
-            val beforeOrders = extractSectionBeforeOrders(currentContent)
-            replaceFileContent(s"$beforeOrders\n\n$ordersDSL")
-          case Success(_) =>
-            vscode.window.showWarningMessage("No orders generated.")
-          case Failure(e) =>
-            vscode.window.showErrorMessage(s"Error generating DSL: ${e.getMessage}")
-        }
-      } else {
-        vscode.window.showInformationMessage("No modules to merge.")
+      val currentFilePath = ed.document.fileName
+      
+      parse(currentFilePath).toFuture.onComplete {
+        case Success(parsed) =>
+          try {
+            val currentPCM = parsed.asInstanceOf[GenAst.PCM]
+            
+            generateOrdersDSL(currentPCM).onComplete {
+              case Success(ordersDSL) if ordersDSL.nonEmpty =>
+                val beforeOrders = extractSectionBeforeOrders(currentContent)
+                replaceFileContent(s"$beforeOrders\n\n$ordersDSL")
+              case Success(_) =>
+                vscode.window.showWarningMessage("No orders generated.")
+              case Failure(e) =>
+                vscode.window.showErrorMessage(s"Error generating DSL: ${e.getMessage}")
+            }
+          } catch {
+            case e: Exception =>
+              vscode.window.showErrorMessage(s"Error parsing current file: ${e.getMessage}")
+          }
+            
+        case Failure(e) =>
+          vscode.window.showErrorMessage(s"Error loading current file: ${e.getMessage}")
       }
     }
   }
