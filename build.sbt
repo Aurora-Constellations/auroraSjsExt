@@ -266,6 +266,7 @@ lazy val pcmalgebra = project
 lazy val d3example = project
   .in(file("d3example"))
   .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
+  .dependsOn(pcmalgebra)
   .settings(
     name := "d3example",
     scalaJSUseMainModuleInitializer := true,
