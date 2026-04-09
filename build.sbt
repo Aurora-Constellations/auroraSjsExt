@@ -111,6 +111,7 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
 // --- Root Project ---
 lazy val root = project
   .in(file("."))
+  .aggregate(pcmalgebra)
   .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
   .dependsOn(axiompatienttracker, pcmalgebra)
   .settings(

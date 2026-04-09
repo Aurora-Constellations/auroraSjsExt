@@ -1,0 +1,5 @@
+{
+  "name": "vscode",
+  "version": "0.0.0-test-shim",
+  "main": "index.js"
+}

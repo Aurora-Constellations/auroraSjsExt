@@ -110,7 +110,7 @@ object MergePCM:
         // 1. Convert local file to ProcessedPCM (IR)
         val localPCM = ProcessedPCM(currentPCM)
         
-        parseModulesFromURIs(moduleURIs, moduleImports).map { modulePCMs =>
+        parseModulesFromURIs(moduleURIs, moduleImports).flatMap { modulePCMs =>
             val localPCM = ProcessedPCM(currentPCM)
             
             // Merge only Clinical and Orders from modules, but keep local Issues
@@ -122,7 +122,18 @@ object MergePCM:
             )
 
             val modeledPCM = ParametricModeling.applyAgeConstraint(finalPCM)
-            modeledPCM.show
+            val scored = ClinicalScoring(modeledPCM)
+
+            if scored.derivedModuleImports.isEmpty then
+                Future.successful(scored.pcm.show)
+            else
+                val derivedModuleURIs = getModuleURIs(currentPCM, scored.derivedModuleImports.keySet)
+                parseModulesFromURIs(derivedModuleURIs, scored.derivedModuleImports).map { parsedScoreModules =>
+                    val mergedWithScores = (scored.pcm :: parsedScoreModules).reduce(_ |+| _)
+                    mergedWithScores
+                        .copy(cio = mergedWithScores.cio.updated("Issues", scored.pcm.cio("Issues")))
+                        .show
+                }
         }
     }
     
