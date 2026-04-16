@@ -6,28 +6,32 @@ ThisBuild / organization := "com.axiom"
 ThisBuild / version := "0.0.1"
 ThisBuild / scalaVersion := DependencyVersions.scala
 
+// Shared ScalablyTyped Settings
+// Points all projects to the root node_modules and ignores problematic types
+val sharedStSettings = Seq(
+  externalNpm := (ThisBuild / baseDirectory).value,
+  stIgnore ++= Seq("node", "typescript").toList
+)
+
 // --- Custom Task: Install Dependencies ---
 lazy val installDependencies = Def.task[Unit] {
-  val base = baseDirectory.value
+  val rootBase = (ThisBuild / baseDirectory).value
   val log = streams.value.log
-  val nodeModulesDir = base / "node_modules"
-  val auroraLangiumDir = nodeModulesDir / "aurora-langium"
-
-  if (!nodeModulesDir.exists()) {
+  
+  if (!(rootBase / "node_modules").exists()) {
+    log.info("Installing monorepo dependencies at root...")
     val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
     val npmCommand = if (isWindows) "npm.cmd" else "npm"
-    val pb = new java.lang.ProcessBuilder(npmCommand, "install")
-      .directory(base)
-      .redirectErrorStream(true)
-    pb ! log
+    Process(Seq(npmCommand, "install"), rootBase) ! log
   }
+
+  val auroraLangiumDir = rootBase / "node_modules" / "aurora-langium"
+  val base = baseDirectory.value 
 
   def copyDir(src: File, dest: File): Unit = {
     if (src.exists && src.isDirectory) {
       IO.copyDirectory(src, dest)
       log.info(s"Copied ${src.getName} to ${dest.getAbsolutePath}")
-    } else {
-      log.warn(s"Directory ${src.getAbsolutePath} does not exist!")
     }
   }
 
@@ -111,7 +115,6 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
 // --- Root Project ---
 lazy val root = project
   .in(file("."))
-  .aggregate(pcmalgebra)
   .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
   .dependsOn(axiompatienttracker, pcmalgebra)
   .settings(
@@ -124,21 +127,18 @@ lazy val root = project
       .dependsOn(axiompatienttracker / Compile / fastLinkJS)
       .dependsOn(axiombilling / Compile / fastLinkJS)
       .dependsOn(pcmalgebra / Compile / fastLinkJS)
+      .dependsOn(d3example / Compile / fastLinkJS)
       .dependsOn(copyToMedia)
       .dependsOn(installDependencies)
       .dependsOn(createDirectories)
       .value,
     Compile / fastOptJS / artifactPath := baseDirectory.value / "out" / "extension.js",
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
-    externalNpm := baseDirectory.value,
     libraryDependencies ++= Dependencies.scalatest.value,
     libraryDependencies ++= Dependencies.cats.value,
-
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    // ignore node library because scalablytyped cannot handle this for pcmalgebra
-    stIgnore += "node",
-    stIgnore += "typescript"
+    testFrameworks += new TestFramework("utest.runner.Framework")
   )
+  .settings(sharedStSettings)
 
 // --- Axiom Patient Tracker Frontend (Scala.js) ---
 lazy val axiompatienttracker = project
@@ -153,7 +153,6 @@ lazy val axiompatienttracker = project
       _.withModuleKind(ModuleKind.ESModule)
         .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("axiompatienttracker")))
     },
-    externalNpm := baseDirectory.value,
     resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
     libraryDependencies ++= Dependencies.scalajsdom.value,
     libraryDependencies ++= Dependencies.scalajsmacrotaskexecutor.value,
@@ -165,6 +164,7 @@ lazy val axiompatienttracker = project
     libraryDependencies ++= Dependencies.circe.value
 
   )
+  .settings(sharedStSettings)
 
 // --- Axiom Billing Frontend (Scala.js) ---
 lazy val axiombilling = project
@@ -179,7 +179,6 @@ lazy val axiombilling = project
       _.withModuleKind(ModuleKind.ESModule)
         .withModuleSplitStyle(ModuleSplitStyle.SmallModulesFor(List("axiombilling")))
     },
-    externalNpm := baseDirectory.value,
     resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
     libraryDependencies ++= Dependencies.scalajsdom.value,
     libraryDependencies ++= Dependencies.scalajsmacrotaskexecutor.value,
@@ -188,6 +187,7 @@ lazy val axiombilling = project
     libraryDependencies ++= Dependencies.aurorajslibs.value,
     libraryDependencies ++= Dependencies.shapeless3.value
   )
+  .settings(sharedStSettings)
 
 // --- Shared Cross-Project (shared between frontend + backend) ---
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
@@ -212,7 +212,7 @@ lazy val audioToText = project
   .settings(
     name := "audiototext",
     // mainClass := Some("com.axiom.audio.Main"),
-    packMain := Map("audiototext" -> "com.axiom.audio.Main"), 
+    packMain := Map("audiototext" -> "com.axiom.audio.Main"),
     libraryDependencies ++= Dependencies.betterfiles.value,
     libraryDependencies ++= Dependencies.sttpClient4.value,
     libraryDependencies ++= Dependencies.circe.value,
@@ -220,6 +220,7 @@ lazy val audioToText = project
     libraryDependencies ++= Dependencies.config.value
   )
 
+// --- PCM Algebra ---
 lazy val pcmalgebra = project
   .in(file("pcmalgebra"))
   .enablePlugins(ScalaJSPlugin) // Enable the Scala.js plugin in this project
@@ -258,10 +259,46 @@ lazy val pcmalgebra = project
     libraryDependencies +="org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
     libraryDependencies ++= Dependencies.cats.value,
     libraryDependencies ++= Dependencies.magnolia.value,
-
-    // Tell ScalablyTyped that we manage `npm install` ourselves
-    externalNpm := baseDirectory.value,
-    // ignore node library because scalablytyped cannot handle this for pcmalgebra
-    stIgnore += "node",
-    stIgnore += "typescript"
   )
+  .settings(sharedStSettings)
+
+lazy val scorepcmcli = project
+  .in(file("scorepcmcli"))
+  .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
+  .dependsOn(pcmalgebra)
+  .settings(
+    name := "scorepcmcli",
+    scalaVersion := DependencyVersions.scala,
+    scalaJSUseMainModuleInitializer := true,
+    scalacOptions ++= Seq("-Yretain-trees", "-Xmax-inlines", "60", "-explain"),
+    resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
+    scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.CommonJSModule)
+        .withModuleSplitStyle(ModuleSplitStyle.FewestModules)
+    },
+    Compile / fastOptJS / artifactPath := baseDirectory.value / "score-pcm.js",
+    libraryDependencies ++= Dependencies.scalatest.value,
+    libraryDependencies ++= Dependencies.upickle.value
+  )
+  .settings(sharedStSettings)
+
+// --- D3 Example ---
+lazy val d3example = project
+  .in(file("d3example"))
+  .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
+  .settings(
+    name := "d3example",
+    scalaJSUseMainModuleInitializer := true,
+    scalacOptions ++= Seq("-encoding", "utf-8", "-deprecation", "-feature"),
+    scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.ESModule)
+       .withModuleSplitStyle(ModuleSplitStyle.FewestModules)
+    },
+    resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
+    libraryDependencies ++= (
+      Dependencies.scalajsdom.value ++
+      Dependencies.laminar.value ++
+      Dependencies.scalatest.value
+    )
+  )
+  .settings(sharedStSettings)

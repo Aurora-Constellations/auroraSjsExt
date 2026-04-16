@@ -1,0 +1,9 @@
+module: gcs_severe
+
+Issues:
+gcs_severe : Severe_glasgow_coma_scale
+
+Orders:
+Clinical_Scoring_Notes:
+  document_score_basis (gcs_severe) ?? derived severe adult GCS from the currently documented eye verbal and motor findings;
+  review_local_neurologic_protocol (gcs_severe) ?? correlate the derived score with serial bedside assessment and site specific escalation pathways;
