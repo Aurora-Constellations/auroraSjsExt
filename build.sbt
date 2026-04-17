@@ -1,5 +1,6 @@
 import scala.sys.process._
 import org.scalajs.linker.interface.{ModuleSplitStyle, ModuleKind}
+import org.scalajs.jsenv.nodejs.NodeJSEnv
 
 // Common Settings
 ThisBuild / organization := "com.axiom"
@@ -121,6 +122,11 @@ lazy val root = project
     name := "auroraSjsExt",
     open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,
     scalacOptions ++= Seq("-Xmax-inlines", "100"),
+    Test / jsEnv := new NodeJSEnv(
+      NodeJSEnv.Config().withEnv(
+        Map("NODE_PATH" -> (baseDirectory.value / "node_modules").getAbsolutePath)
+      )
+    ),
     Compile / fastOptJS := (Compile / fastOptJS)
       .dependsOn(audioToText / Compile/ compile)
       .dependsOn(audioToText / Compile / pack)
@@ -263,7 +269,7 @@ lazy val pcmalgebra = project
   .settings(sharedStSettings)
 
 lazy val scorepcmcli = project
-  .in(file("scorepcmcli"))
+  .in(file("pcmalgebra/cli"))
   .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
   .dependsOn(pcmalgebra)
   .settings(
@@ -276,7 +282,7 @@ lazy val scorepcmcli = project
       _.withModuleKind(ModuleKind.CommonJSModule)
         .withModuleSplitStyle(ModuleSplitStyle.FewestModules)
     },
-    Compile / fastOptJS / artifactPath := baseDirectory.value / "score-pcm.js",
+    Compile / fastOptJS / artifactPath := baseDirectory.value / "score-pcm.cjs",
     libraryDependencies ++= Dependencies.scalatest.value,
     libraryDependencies ++= Dependencies.upickle.value
   )

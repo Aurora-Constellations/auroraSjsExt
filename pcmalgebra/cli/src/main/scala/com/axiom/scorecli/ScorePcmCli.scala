@@ -1,22 +1,22 @@
 package com.axiom.scorecli
 
-import org.aurora.sjsast.{ClinicalScoringConsoleSummary, PCM, GenAst}
+import org.aurora.sjsast.{GenAst, PCM}
+import org.aurora.sjsast.scoring.summary.{Cha2Ds2VascSummary, GcsAdultSummary, ScoreSummary}
 import typings.auroraLangium.distTypesSrcExtensionSrcParserParserMod.parseFromText
 import typings.auroraLangium.distTypesSrcLanguageAuroraModuleMod.createAuroraServices
 import typings.langium.libLspDefaultLspModuleMod.DefaultSharedModuleContext
 import ujson.*
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import scala.scalajs.js.annotation.*
 
 object ScorePcmCli:
-
   final case class ScoredFileReport(
       file: String,
-      scores: ClinicalScoringConsoleSummary.ScoreSummary
+      scores: ScoreSummary
   )
 
   @js.native
@@ -45,7 +45,7 @@ object ScorePcmCli:
         val pcm = PCM(parsed.asInstanceOf[GenAst.PCM])
         ScoredFileReport(
           file = Path.basename(absolutePath),
-          scores = ClinicalScoringConsoleSummary.fromPcm(pcm)
+          scores = ScoreSummary.fromPcm(pcm)
         )
       }
 
@@ -58,7 +58,7 @@ object ScorePcmCli:
       )
     ).render(indent = 2)
 
-  private def gcsJson(summary: ClinicalScoringConsoleSummary.GcsAdultSummary): Obj =
+  private def gcsJson(summary: GcsAdultSummary): Obj =
     Obj.from(
       List(
         Some("status" -> Str(summary.status)),
@@ -68,7 +68,7 @@ object ScorePcmCli:
       ).flatten
     )
 
-  private def cha2ds2Json(summary: ClinicalScoringConsoleSummary.Cha2Ds2VascSummary): Obj =
+  private def cha2ds2Json(summary: Cha2Ds2VascSummary): Obj =
     Obj.from(
       List(
         Some("status" -> Str(summary.status)),

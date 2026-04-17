@@ -9,7 +9,6 @@ export scala.util.Try
 
 //the following two imports were helped by exporting them from arith-utils from the typesript project
 export typings.auroraLangium.cliMod.AstUtils.{streamAllContents}
-export typings.auroraLangium.cliMod.GenAst as GenAst
 export typings.auroraLangium.cliMod.PCM
 export typings.auroraLangium.cliMod.parse
 

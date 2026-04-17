@@ -97,6 +97,32 @@ class ClinicalScoringTest extends AnyWordSpec with Matchers {
       derivedIssue(update.pcm, "score_gcs_moderate") shouldBe None
     }
 
+    "derive GCS from synonym inputs" in {
+      val pcm = PCM(
+        cio = LHMap(
+          "Clinical" -> Clinical(
+            ngc = LHSet(
+              NGC(
+                name = "Neurologic:",
+                coordinates = LHSet(
+                  textValue("gcs_eye", "to_voice"),
+                  textValue("gcs_verbal", "confused"),
+                  textValue("gcs_motor", "withdraws")
+                )
+              )
+            )
+          )
+        )
+      )
+
+      val update = ClinicalScoring(pcm)
+
+      scoreValue(update.pcm, "gcs_total") shouldBe Some(IntValue(11))
+      scoreValue(update.pcm, "gcs_total_source") shouldBe Some(StringValue("derived"))
+      scoreValue(update.pcm, "gcs_severity") shouldBe Some(StringValue("moderate"))
+      derivedIssue(update.pcm, "score_gcs_moderate").map(_.fromMods) shouldBe Some(List("gcs_moderate"))
+    }
+
     "ignore manual GCS totals when a component is not testable" in {
       val pcm = PCM(
         cio = LHMap(
@@ -122,6 +148,31 @@ class ClinicalScoringTest extends AnyWordSpec with Matchers {
       scoreValue(update.pcm, "gcs_total_source") shouldBe None
       scoreValue(update.pcm, "gcs_severity") shouldBe None
       scoreValue(update.pcm, "gcs_status") shouldBe Some(StringValue("not_testable"))
+    }
+
+    "mark GCS as incomplete when components are missing and no manual total is present" in {
+      val pcm = PCM(
+        cio = LHMap(
+          "Clinical" -> Clinical(
+            ngc = LHSet(
+              NGC(
+                name = "Neurologic:",
+                coordinates = LHSet(
+                  intValue("gcs_eye", 4),
+                  intValue("gcs_motor", 5)
+                )
+              )
+            )
+          )
+        )
+      )
+
+      val update = ClinicalScoring(pcm)
+
+      scoreValue(update.pcm, "gcs_total") shouldBe None
+      scoreValue(update.pcm, "gcs_status") shouldBe Some(StringValue("incomplete"))
+      derivedIssue(update.pcm, "score_gcs_severe") shouldBe None
+      derivedIssue(update.pcm, "score_gcs_moderate") shouldBe None
     }
 
     "withhold CHA2DS2-VASc when required risk factors are unknown" in {
@@ -154,6 +205,42 @@ class ClinicalScoringTest extends AnyWordSpec with Matchers {
       scoreValue(update.pcm, "cha2ds2_vasc_status") shouldBe Some(StringValue("insufficient_data"))
       derivedIssue(update.pcm, "score_af_stroke_risk_high") shouldBe None
       derivedIssue(update.pcm, "score_af_stroke_risk_intermediate") shouldBe None
+    }
+
+    "prefer explicit negative AF risk factors over issue-derived positives" in {
+      val pcm = PCM(
+        cio = LHMap(
+          "Clinical" -> Clinical(
+            ngc = LHSet(
+              NGC(
+                name = "Demographics:",
+                coordinates = LHSet(
+                  intValue("age", 70, "yr"),
+                  textValue("sex", "male"),
+                  textValue("cha2ds2_vasc_heart_failure", "absent"),
+                  textValue("cha2ds2_vasc_hypertension", "absent"),
+                  textValue("cha2ds2_vasc_diabetes", "absent"),
+                  textValue("prior_stroke_tia_te", "absent"),
+                  textValue("vascular_disease", "absent")
+                )
+              )
+            )
+          ),
+          "Issues" -> Issues(
+            ic = LHSet(
+              IssueCoordinate("atrial_fibrillation"),
+              IssueCoordinate("hypertension")
+            )
+          )
+        )
+      )
+
+      val update = ClinicalScoring(pcm)
+
+      scoreValue(update.pcm, "cha2ds2_vasc_total") shouldBe Some(IntValue(1))
+      scoreValue(update.pcm, "cha2ds2_vasc_risk_band") shouldBe Some(StringValue("intermediate"))
+      derivedIssue(update.pcm, "score_af_stroke_risk_high") shouldBe None
+      derivedIssue(update.pcm, "score_af_stroke_risk_intermediate").map(_.fromMods) shouldBe Some(List("af_stroke_risk_intermediate"))
     }
 
     "be idempotent across repeated scoring passes" in {

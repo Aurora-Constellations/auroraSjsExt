@@ -6,7 +6,6 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main:
-
   @js.native
   @JSImport("process", JSImport.Namespace)
   private object Process extends js.Object:

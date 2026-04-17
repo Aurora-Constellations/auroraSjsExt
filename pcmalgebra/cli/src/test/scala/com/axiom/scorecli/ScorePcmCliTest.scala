@@ -9,13 +9,12 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class ScorePcmCliTest extends AsyncWordSpec with Matchers:
   override implicit def executionContext: ExecutionContext = queue
 
-  private val fixtureRoot = "scorepcmcli/src/test/resources/scorepcmcli"
+  private val fixtureRoot = "pcmalgebra/cli/src/test/resources/scorepcmcli"
 
   private def fixture(name: String): String =
     s"$fixtureRoot/$name"
 
   "ScorePcmCli" should {
-
     "score a severe GCS PCM" in {
       ScorePcmCli.scoreFile(fixture("gcs-severe.aurora")).map { report =>
         report.file shouldBe "gcs-severe.aurora"
