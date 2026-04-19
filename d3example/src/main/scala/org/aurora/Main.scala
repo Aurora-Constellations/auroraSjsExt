@@ -8,6 +8,9 @@ import scala.scalajs.js.annotation.JSImport
 import typings.d3.mod as d3
 import typings.d3Hierarchy.mod.HierarchyNode
 import org.aurora.sjsast.*
+import typings.elkjs.mod as elk
+import typings.elkjs.libElkApiMod.{ElkNode, ElkEdge}
+import typings.elkjs.mod.default as ELK
 
 @JSImport("@find/**/HelloWorld.less", JSImport.Namespace)
 @js.native private object Stylesheet extends js.Object
@@ -58,6 +61,22 @@ val _ = Stylesheet // force initialization to prevent DCE (Dead Code Elimination
     val orders = Orders(ngo=LHSet(ngo), narratives = LHSet())
     val pcm = PCM(LHMap("Orders" -> orders))
 
+
+    
+    val elkRoot = AstToElk.toElkRoot(pcm) /* convert to ELK root using ELK components */
+    val elk = new ELK()
+
+    /* elk layout is a promise */
+    elk.layout(elkRoot).`then`[Unit](
+      (g: ElkNode) => {
+        println("Layout done")
+        println(s"root id = ${g.id}")
+        println(s"children count = ${g.children.map(_.length).getOrElse(0)}")
+      },
+      (err: Any) => {
+        println(s"ELK error: $err")
+      }
+    )
     
 
     // 2. Parse the string using your existing parser logic
@@ -65,11 +84,11 @@ val _ = Stylesheet // force initialization to prevent DCE (Dead Code Elimination
     // val parsedAst = org.aurora.sjsast.package.parse(auroraCode)
 
     // 3. Transform AST to D3 format
-    val d3Data = AstTransformer.toD3(pcm)
-    println(d3Data) // Log the transformed data to verify it's correct
+    // val d3Data = AstTransformer.toD3(pcm)
+    // println(d3Data) // Log the transformed data to verify it's correct
 
-    // 4. Render
-    drawTree(d3Data)
+    // // 4. Render
+    // drawTree(d3Data)
   }
 
 def drawTree(data: js.Any): Unit = {
