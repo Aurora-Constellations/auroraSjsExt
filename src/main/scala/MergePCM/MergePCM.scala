@@ -5,6 +5,7 @@ import typings.auroraLangium.cliMod.parse
 import vscode.ExtensionContext
 
 import org.aurora.sjsast.*
+// Use alias to distinguish between the two PCM types
 import org.aurora.sjsast.{PCM => ProcessedPCM}
 import org.aurora.sjsast.JoinMeet.*
 import org.aurora.sjsast.JoinMeet.given
@@ -44,15 +45,24 @@ object MergePCM:
     def join(paths: String*): String = js.native
 
   def parseIssues(currentPCM: GenAst.PCM): Map[String, String] =
+    // Extract imports from Issues section
     currentPCM.elements.flatMap { element =>
       if element.$type == "Issues" then
         val issues = element.asInstanceOf[GenAst.Issues]
         issues.coord.flatMap { coord =>
-          coord.mods.headOption.flatMap { modRef =>
-            val refText = modRef.asInstanceOf[js.Dynamic].selectDynamic("$refText")
-            if refText != js.undefined then Some(refText.asInstanceOf[String] -> coord.name)
-            else None
-          }
+          val alias = coord.name
+          // Get the module name from the first mod reference using $refText
+          coord.mods.headOption match
+            case Some(modRef) =>
+              // Use $refText which contains the actual text reference
+              val refText = modRef.asInstanceOf[js.Dynamic].selectDynamic("$refText")
+              if refText != js.undefined then Some(refText.asInstanceOf[String] -> alias)
+              else
+                // println(s"No refText for $alias")
+                None
+            case None =>
+              // println(s"No mods for coordinate $alias")
+              None
         }.toSeq
       else Seq.empty[(String, String)]
     }.toMap
@@ -66,10 +76,13 @@ object MergePCM:
   ): Future[MergeResult] =
     val issueImports = parseIssues(currentPCM)
     val issueResolution = resolveLocalModulePaths(currentPCM, issueImports.keySet)
+    // 1. Convert local file to ProcessedPCM (IR)
     val localPCM = ProcessedPCM(currentPCM)
 
     loadModules(issueResolution.modulePaths, issueImports).flatMap { loadedIssueModules =>
       val mergedPCM = mergeAll(localPCM, loadedIssueModules.pcms)
+      // Merge only Clinical and Orders from modules, but keep local Issues
+      // If you want to strictly keep ONLY local issues:
       val finalPCM = withIssuesFrom(mergedPCM, localPCM)
       val modeledPCM = ParametricModeling.applyAgeConstraint(finalPCM)
       val scored = ClinicalScoring(modeledPCM)
@@ -110,6 +123,8 @@ object MergePCM:
     pcm.show
 
   private def resolveLocalModulePaths(currentPCM: GenAst.PCM, moduleNames: Iterable[String]): ModuleResolution =
+    // Use Node.js URL API to properly convert file:// URI to file path
+    // This handles Windows paths correctly across all platforms
     ScoreModuleResolver.currentPCMBaseDir(currentPCM) match
       case Some(baseDir) =>
         val entries = moduleNames.toList.distinct.sorted.map { moduleName =>
@@ -137,6 +152,7 @@ object MergePCM:
       val moduleFutures = modulePaths.toList.map { case (moduleName, modulePath) =>
         parse(modulePath).toFuture.map { parsed =>
           try
+            // Convert GenAst.PCM to ProcessedPCM
             val astPCM = parsed.asInstanceOf[GenAst.PCM]
             val modulePCM = ModulePCM(Module(astPCM))
             Right(modulePCM.toPCM(aliases.getOrElse(moduleName, moduleName)))
