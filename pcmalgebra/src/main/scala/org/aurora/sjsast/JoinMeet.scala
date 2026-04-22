@@ -66,7 +66,7 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
   given joinIssueCoords: JoinMeet[LHSet[IssueCoordinate]] = (a, b) =>
     mergeNamedSets(a, b, _.name)
 
-  given joinClinicalCoords: JoinMeet[LHSet[ClinicalCoordinate]] = (a, b) =>
+  given joinClinicalCoords: JoinMeet[LHSet[ClinicalItem]] = (a, b) =>
     mergeNamedSets(a, b, _.name)
 
   // Named Groups: Merge by name (groups with same name are recursively joined)

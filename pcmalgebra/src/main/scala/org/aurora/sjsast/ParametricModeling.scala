@@ -18,13 +18,13 @@ object ParametricModeling:
 
     private def hasAgeValue(clinical: Clinical): Boolean =
         clinical.ngc.exists(_.coordinates.exists {
-            case cv: ClinicalValue if cv.name.toLowerCase == "age" && cv.values.nonEmpty => true
+            case ci: ClinicalItem if ci.name.toLowerCase == "age" && ci.values.nonEmpty => true
             case _ => false
         })
         // clinical.ngc.exists(_.coordinates.exists(_.name.toLowerCase == "age"))
 
     private def injectAge(clinical: Clinical): Clinical =
-        val ageCoord = ClinicalValue(
+        val ageCoord = ClinicalItem(
             name = "age", 
             values = List(SingleValueUnit(StringValue("???"), "_"))
         )
@@ -42,7 +42,7 @@ object ParametricModeling:
                 NGC(
                     name = "Demographics:",
                     coordinates = LHSet(
-                        ClinicalValue(name = "age", values = List(SingleValueUnit(StringValue("???"), "_")))
+                        ClinicalItem(name = "age", values = List(SingleValueUnit(StringValue("???"), "_")))
                     )
                 )
             )

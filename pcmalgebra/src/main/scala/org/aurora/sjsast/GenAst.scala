@@ -12,9 +12,7 @@ object GenAst :
   type NGO                          = GenAstMod.NamedGroupOrder
   type NGC                          = GenAstMod.NamedGroupClinical
   type OrderCoordinate              = GenAstMod.OrderCoordinate
-  type ClinicalCoordinate           = GenAstMod.ClinicalCoordinate
-  type ClinicalValue                = GenAstMod.ClinicalValue
-  type ClinicalCoordinateValue      = GenAstMod.ClinicalCoordinate | GenAstMod.ClinicalValue
+  type ClinicalItem                 = GenAstMod.ClinicalItem
   type QU                           = GenAstMod.QU
   type QuReference                  = GenAstMod.QuReference
   type QuReferences                 = GenAstMod.QuReferences
@@ -26,3 +24,4 @@ object GenAst :
   type ArithModule                  = GenAstMod.ArithModule
   type Evaluation                   = GenAstMod.Evaluation
   type Expression                   = GenAstMod.Expression
+  type OrderElement                 = GenAstMod.OrderElement

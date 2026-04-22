@@ -26,22 +26,14 @@ object RewriteReferences:
     ngo.copy(ordercoord = newOrders, qurefs = newRefs)
 
   private def addAliasToNGC(ngc: NGC, alias: String, targets: Set[String]): NGC =
-    // Map over RefCoordinate and handle implementations polymorphically
-    val newCoords: LHSet[RefCoordinate] = ngc.coordinates.map {
-      case cc: ClinicalCoordinate => addAliasToClinicalCoord(cc, alias, targets)
-      case cv: ClinicalValue      => addAliasToClinicalValue(cv, alias, targets)
-      case other => other
-    }
+    // ngc.coordinates is now strictly LHSet[ClinicalItem], so no polymorphic matching is needed
+    val newCoords = ngc.coordinates.map(ci => addAliasToClinicalItem(ci, alias, targets))
     val newRefs = LHSet(ngc.refs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*)
     ngc.copy(coordinates = newCoords, refs = newRefs)
 
-  private def addAliasToClinicalCoord(cc: ClinicalCoordinate, alias: String, targets: Set[String]): ClinicalCoordinate =
+  private def addAliasToClinicalItem(cc: ClinicalItem, alias: String, targets: Set[String]): ClinicalItem =
     val newRefs = LHSet(cc.qurefs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*)
     cc.copy(qurefs = newRefs)
-
-  private def addAliasToClinicalValue(cv: ClinicalValue, alias: String, targets: Set[String]): ClinicalValue =
-    val newRefs = LHSet(cv.qurefs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*)
-    cv.copy(qurefs = newRefs)
 
   private def addAliasToOrderCoord(oc: OrderCoordinate, alias: String, targets: Set[String]): OrderCoordinate =
     val newRefs = LHSet(oc.qurefs.toList.map(qurcs => transformQuReferences(qurcs, alias, targets))*)

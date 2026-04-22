@@ -5,7 +5,7 @@ import scala.scalajs.js
 case class NGC(
     name: String,
     narratives: LHSet[NL_STATEMENT] = LHSet(),
-    coordinates: LHSet[RefCoordinate] = LHSet(),
+    coordinates: LHSet[ClinicalItem] = LHSet(),
     refs: LHSet[QuReferences] = LHSet()
 )
 
@@ -14,16 +14,8 @@ object NGC:
     val narratives = LHSet(ngc.narrative.toList.map(NL_STATEMENT.apply)*)
 
     val coords = LHSet(
-      ngc.coord.toList.map { (x: GenAst.ClinicalCoordinateValue) =>
-        val ast = x.asInstanceOf[js.Dynamic]
-        ast.`$type`.asInstanceOf[String] match {
-          case "ClinicalCoordinate" => 
-            ClinicalCoordinate(x.asInstanceOf[GenAst.ClinicalCoordinate])
-          case "ClinicalValue" => 
-            ClinicalValue(x.asInstanceOf[GenAst.ClinicalValue])
-          case _ => 
-            throw new Exception(s"Unsupported coordinate type in NGC")
-        }
+      ngc.coord.toList.map { x =>
+        ClinicalItem(x.asInstanceOf[GenAst.ClinicalItem])
       }*
     )
 

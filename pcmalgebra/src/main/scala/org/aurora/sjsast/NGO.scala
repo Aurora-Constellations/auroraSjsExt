@@ -1,5 +1,7 @@
 package org.aurora.sjsast
 
+import scala.scalajs.js
+
 case class NGO(
     name: String,
     narratives: LHSet[NL_STATEMENT] = LHSet(),
@@ -12,10 +14,12 @@ object NGO:
     def apply(ngo: GenAst.NGO): NGO = 
         val name = ngo.name
         val narratives = LHSet(ngo.narrative.toList.map(NL_STATEMENT(_))*)
+        // Ignoring MutuallyExclusive wraps. 
+        // We filter for objects directly typed as OrderCoordinate.
         val ordercoord =
             LHSet(
                 ngo.orders.toList
-                .filter(_.$type == "OrderCoordinate")
+                .filter(_.asInstanceOf[js.Dynamic].`$type`.asInstanceOf[String] == "OrderCoordinate")
                 .map { x =>
                     OrderCoordinate(x.asInstanceOf[GenAst.OrderCoordinate])
                 }*
