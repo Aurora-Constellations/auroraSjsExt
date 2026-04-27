@@ -11,6 +11,7 @@ import org.aurora.sjsast.*
 import typings.elkjs.mod as elk
 import typings.elkjs.libElkApiMod.{ElkNode, ElkEdge}
 import typings.elkjs.mod.default as ELK
+import scala.concurrent.Future
 
 @JSImport("@find/**/HelloWorld.less", JSImport.Namespace)
 @js.native private object Stylesheet extends js.Object
@@ -57,26 +58,18 @@ val _ = Stylesheet // force initialization to prevent DCE (Dead Code Elimination
 
     val ref = QuReference(QU(LHSet('~')), "chf")
     val oc = OrderCoordinate("OC1", LHSet(NL_STATEMENT("test")), LHSet(QuReferences(LHSet(ref))))
-    val ngo = NGO(name="O1", ordercoord=LHSet(oc), narratives = LHSet(), qurefs=LHSet(QuReferences(LHSet())), qu=LHSet())
+    val ngo = NGO(name="NGO1", ordercoord=LHSet(oc), narratives = LHSet(), qurefs=LHSet(QuReferences(LHSet())), qu=LHSet())
     val orders = Orders(ngo=LHSet(ngo), narratives = LHSet())
     val pcm = PCM(LHMap("Orders" -> orders))
 
-
     
-    val elkRoot = AstToElk.toElkRoot(pcm) /* convert to ELK root using ELK components */
-    val elk = new ELK()
+    // val graph = AstTransformer.toElkRoot(pcm) /* Create ELK graph object from PCM */
+    // println(graph.children.toString())
+    // println(graph.children)
+    // println(graph.edges.map(e => e.asInstanceOf[ElkEdge].id_ElkEdge))
 
-    /* elk layout is a promise */
-    elk.layout(elkRoot).`then`[Unit](
-      (g: ElkNode) => {
-        println("Layout done")
-        println(s"root id = ${g.id}")
-        println(s"children count = ${g.children.map(_.length).getOrElse(0)}")
-      },
-      (err: Any) => {
-        println(s"ELK error: $err")
-      }
-    )
+    // val elk = new ELK()
+    // val layoutFuture = elk.layout(graph).toFuture
     
 
     // 2. Parse the string using your existing parser logic
