@@ -3,65 +3,71 @@ package org.aurora
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import org.aurora.sjsast.*
+
+// 1. Define the strictly typed Scala case class
+case class D3Node(name: String, nodeType: String, children: List[D3Node] = List.empty) {
+  
+  // 2. Helper to convert the Scala class into a plain JavaScript object for D3
+  def toJS: js.Any = {
+    js.Dictionary(
+      "name" -> name,
+      "nodeType" -> nodeType,
+      "children" -> children.map(_.toJS).toJSArray
+    )
+  }
+}
 import typings.elkjs.libElkApiMod.{ElkNode, ElkEdge}
 import typings.elkjs.elkjsStrings.children
 
 object AstTransformer:
-  def toD3(node: Any): js.Dynamic =
+  
+  // 3. Return the case class instead of js.Dynamic
+  def toD3Node(node: Any): D3Node =
     node match
       case p: PCM =>
-        js.Dynamic.literal(
+        D3Node(
           name = "PCM",
-          nodeType = "Root",
-          children = p.cio.values.map(toD3).toJSArray
+          nodeType = "Unknown",
+          children = p.cio.values.map(toD3Node).toList
         )
       case o: Orders =>
-        js.Dynamic.literal(
+        D3Node(
           name = "Orders",
-          nodeType = "Module",
-          children = o.ngo.map(toD3).toJSArray
+          nodeType = "Unknown",
+          children = o.ngo.map(toD3Node).toList
         )
       case n: NGO =>
-        js.Dynamic.literal(
-          name = s"NGO: ${n.name}",
-          nodeType = "Node",
-          children = n.ordercoord.map(toD3).toJSArray
+        D3Node(
+          name = n.name,
+          nodeType = "Unknown",
+          children = n.ordercoord.map(toD3Node).toList
         )
       case oc: OrderCoordinate =>
-        js.Dynamic.literal(
-          name = s"Coord: ${oc.name}",
+        D3Node(
+          name = oc.name,
           nodeType = "Coordinate",
-          children = (oc.narratives.map(toD3) ++ oc.qurefs.map(toD3)).toJSArray
+          children = (oc.narratives.map(toD3Node) ++ oc.qurefs.map(toD3Node)).toList
         )
       case nl: NL_STATEMENT =>
-        js.Dynamic.literal(
-          name = s"NL: ${nl.name}",
-          nodeType = "Statement",
-          children = js.Array()
+        D3Node(
+          name = nl.name,
+          nodeType = "Statement"
         )
       case qrs: QuReferences =>
-        js.Dynamic.literal(
+        D3Node(
           name = "QuReferences",
-          nodeType = "Collection",
-          children = qrs.qurc.map(toD3).toJSArray
+          nodeType = "Unknown",
+          children = qrs.qurc.map(toD3Node).toList
         )
       case qr: QuReference =>
-        js.Dynamic.literal(
-          name = s"Ref: ${qr.refName}",
+        D3Node(
+          name = qr.refName,
           nodeType = "Reference",
-          children = js.Array(toD3(qr.qu))
-        )
-      case q: QU =>
-        js.Dynamic.literal(
-          name = "QU",
-          nodeType = "Query",
-          children = js.Array()
         )
       case other =>
-        js.Dynamic.literal(
+        D3Node(
           name = other.toString,
-          nodeType = "Unknown",
-          children = js.Array()
+          nodeType = "Unknown"
         )
   
   def toElkRoot(pcm: PCM, layoutAlgorithm: String = "LAYERED", layoutDirection: String = "RIGHT"): ElkNode =
