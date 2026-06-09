@@ -2,9 +2,9 @@ package org.aurora.sjsast
  
 import scala.scalajs.js
 
-sealed trait RefCoordinate{
+sealed trait RefCoordinate extends AstNode{
     def name: String
-}
+} 
 
 object RefCoordinate:
   def apply(ast: GenAst.ReferenceCoordinate): RefCoordinate =

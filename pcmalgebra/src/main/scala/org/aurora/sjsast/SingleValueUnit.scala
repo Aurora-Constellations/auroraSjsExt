@@ -4,7 +4,7 @@ case class SingleValueUnit(
     value: Value,
     unit: String,
     negative: Boolean = false
-)
+) extends AstNode
 
 object SingleValueUnit:
   def apply(ast: GenAst.SingleValueUnit): SingleValueUnit =
