@@ -2,7 +2,7 @@ package org.aurora.sjsast
 
 case class PCM(
     cio: LHMap[String, CIO] = LHMap()
-)
+) extends AstNode
 
 object PCM :      
     private def cioFromModuleOrElse(p: GenAst.PCM): LHMap[String, CIO] =

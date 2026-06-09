@@ -3,6 +3,7 @@ package org.aurora.sjsast
 object GenAst :
   import typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod as GenAstMod
   import typings.langium.libSyntaxTreeMod.Reference
+  import typings.langium.libSyntaxTreeMod.AstNode as LangiumAstNode
   
   type PCM                          = GenAstMod.PCM
   type Issues                       = GenAstMod.Issues
@@ -25,3 +26,4 @@ object GenAst :
   type Evaluation                   = GenAstMod.Evaluation
   type Expression                   = GenAstMod.Expression
   type OrderElement                 = GenAstMod.OrderElement
+  type AstNode                      = LangiumAstNode

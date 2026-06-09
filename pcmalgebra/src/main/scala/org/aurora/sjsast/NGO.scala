@@ -8,7 +8,7 @@ case class NGO(
     ordercoord: LHSet[OrderCoordinate] = LHSet(), // Assuming simplified structure, ignoring MutuallyExclusive for now
     qurefs: LHSet[QuReferences] = LHSet(),
     qu: LHSet[QU] = LHSet()
-)
+) extends AstNode
 
 object NGO:
     def apply(ngo: GenAst.NGO): NGO = 

@@ -7,7 +7,7 @@ case class NGC(
     narratives: LHSet[NL_STATEMENT] = LHSet(),
     coordinates: LHSet[ClinicalItem] = LHSet(),
     refs: LHSet[QuReferences] = LHSet()
-)
+) extends AstNode
 
 object NGC:
   def apply(ngc: GenAst.NGC): NGC =

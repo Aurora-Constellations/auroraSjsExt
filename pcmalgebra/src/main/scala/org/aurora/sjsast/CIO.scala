@@ -1,7 +1,7 @@
 package org.aurora.sjsast
 
 // Sealed trait and its children must be in the same file
-sealed trait CIO
+sealed trait CIO extends AstNode
 
 case class Clinical(
     name: String = "Clinical",
