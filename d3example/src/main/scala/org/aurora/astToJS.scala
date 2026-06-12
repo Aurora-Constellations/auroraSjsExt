@@ -28,25 +28,25 @@ object AstTransformer:
         D3Node(
           name = "PCM",
           nodeType = "Unknown",
-          children = p.cio.values.map(item => toD3Node(item.asInstanceOf[AstNode])).toList
+          children = p.cio.values.map(item => toD3Node(item)).toList
         )
       case o: Orders =>
         D3Node(
           name = "Orders",
           nodeType = "Unknown",
-          children = o.ngo.map(item => toD3Node(item.asInstanceOf[AstNode])).toList
+          children = o.ngo.map(item => toD3Node(item)).toList
         )
       case n: NGO =>
         D3Node(
           name = n.name,
           nodeType = "Unknown",
-          children = n.ordercoord.map(item => toD3Node(item.asInstanceOf[AstNode])).toList
+          children = n.ordercoord.map(item => toD3Node(item)).toList
         )
       case oc: OrderCoordinate =>
         D3Node(
           name = oc.name,
           nodeType = "Coordinate",
-          children = (oc.narratives.map(item => toD3Node(item.asInstanceOf[AstNode])) ++ oc.qurefs.map(item => toD3Node(item.asInstanceOf[AstNode]))).toList
+          children = (oc.narratives.map(item => toD3Node(item)) ++ oc.qurefs.map(item => toD3Node(item))).toList
         )
       case nl: NL_STATEMENT =>
         D3Node(
@@ -57,7 +57,7 @@ object AstTransformer:
         D3Node(
           name = "QuReferences",
           nodeType = "Unknown",
-          children = qrs.qurc.map(item => toD3Node(item.asInstanceOf[AstNode])).toList
+          children = qrs.qurc.map(item => toD3Node(item)).toList
         )
       case qr: QuReference =>
         D3Node(
