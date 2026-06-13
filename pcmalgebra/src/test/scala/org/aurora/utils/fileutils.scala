@@ -18,6 +18,7 @@ private object Process extends js.Object {
 object fs extends js.Object {
   def existsSync(path: String): Boolean = js.native
   def readFileSync(path: String, encoding: String): String = js.native
+  def writeFileSync(path: String, data: String): Unit = js.native
 }
 
 /**
@@ -45,6 +46,9 @@ object fileutils:
 
   def readFileSync(path: String): String =
     fs.readFileSync(path, "utf-8")
+
+  def writeFileSync(path: String, data: String): Unit =
+    fs.writeFileSync(path, data)  
   
 
   def createFileIfNotExists(path: String) =
@@ -54,7 +58,7 @@ object fileutils:
   def pathExists(path: String) =
     fsExtra.mod.pathExists(path)
 
-
-
   def parse(filename:String)  = cliMod.parse(filename)
+
+
 end fileutils

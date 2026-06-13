@@ -2,14 +2,19 @@ package org.aurora.sjsast
 
 import magnolia1._
 
+//TODO is there testing on joinmeet
+
 trait JoinMeet[T]:
   def join(a: T, b: T): T
+  //TODO what about the meet operation?
 
 object JoinMeet extends AutoDerivation[JoinMeet]:
 
   extension [T](a: T)(using jm: JoinMeet[T])
     def |+|(b: T): T = jm.join(a, b)
 
+
+  //TODO i need to understand this a bit more
   // --- Helpers for Merging Named Items ---
   // Merges two sets by name, recursively joining items with the same name
   private def mergeNamedSets[T](a: LHSet[T], b: LHSet[T], getName: T => String)(using jm: JoinMeet[T]): LHSet[T] =
@@ -59,6 +64,8 @@ object JoinMeet extends AutoDerivation[JoinMeet]:
   given joinQuRefs: JoinMeet[QuReferences] = (a, b) =>
     QuReferences(a.qurc ++ b.qurc)
 
+
+  //TODO  I feel like this can be generalized with magnolia?
   // Coordinates: Merge by name (items with same name are recursively joined)
   given joinOrderCoords: JoinMeet[LHSet[OrderCoordinate]] = (a, b) =>
     mergeNamedSets(a, b, _.name)

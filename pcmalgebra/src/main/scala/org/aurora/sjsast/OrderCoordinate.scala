@@ -1,7 +1,7 @@
 package org.aurora.sjsast
 
 import scala.scalajs.js
-
+//TODO common trait Named so that we can generalize typeclass derivations for LHSet[T <: Named]??
 case class OrderCoordinate(
     name: String,
     narratives: LHSet[NL_STATEMENT] = LHSet(),

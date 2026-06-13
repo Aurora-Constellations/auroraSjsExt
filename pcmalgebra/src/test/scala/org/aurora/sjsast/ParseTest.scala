@@ -17,8 +17,6 @@ class ParseTest extends BaseAsyncTest:
 
   "Parse" should {
     "parse file correctly" in { 
-      //TODO note if there is no file named Parse-0.aurora, it will automatically create one
-      //SHOULD TEST FILE NAMING BE MORE DESCRIPTIVE e.g. Parse-Valid.aurora
 
       for {
         pcm0 <- parse(0)
