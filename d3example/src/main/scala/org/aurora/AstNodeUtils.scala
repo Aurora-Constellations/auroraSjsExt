@@ -14,12 +14,31 @@ object AstNodeUtils {
   def getAllDescendants(node: AstNode): LHSet[AstNode] = 
     node match {
       case p: PCM => LHSet.from(p.cio.flatMap((s,c) => getAllDescendants(c)))
-      case i: Issues => i.narratives ++ i.ic
+      case i: Issues => i.narratives ++ i.ic ++ (i.ic.flatMap(getAllDescendants))
       case ic: IssueCoordinate => ic.narratives ++ ic.qurefs
-      case o: Orders => o.narratives ++ o.ngo
-      case ngo: NGO => ngo.narratives ++ ngo.ordercoord ++ ngo.qurefs
+      case o: Orders => o.narratives ++ o.ngo ++ (o.ngo.flatMap(getAllDescendants))
+      case ngo: NGO => ngo.narratives ++ ngo.ordercoord ++ ngo.qurefs ++ (ngo.ordercoord.flatMap(getAllDescendants))
       case oc: OrderCoordinate => oc.narratives ++ oc.qurefs
-      case q: QuReference => LHSet.empty[AstNode]
-      case n: NL_STATEMENT => LHSet.empty[AstNode]
+      case _ => LHSet.empty[AstNode]
     }  
+
+  def getAllEdges(node: AstNode): LHSet[AstNode]= 
+    node match {
+      case p: PCM => LHSet.from(p.cio.flatMap((s,c) => getAllEdges(c)))
+      case ic: IssueCoordinate => LHSet.from(ic.narratives.map(n => n.asInstanceOf[AstNode]))
+      case oc: OrderCoordinate => 
+        val startingSet = LHSet.from(oc.narratives.map(n => n.asInstanceOf[AstNode]))
+        oc.qurefs.flatMap(q => q.qurc).flatMap(r => startingSet.addOne(r)) /* This might cause an issue with the arrow direction */
+      case _ => LHSet.empty[AstNode]
+    }
+  
+    /* Later on, "name" should just be added as a property of AstNode */
+  def getName(a: AstNode): String =
+    a match {
+      case ic: IssueCoordinate => ic.name
+      case oc: OrderCoordinate => oc.name
+      case n: NL_STATEMENT => n.name
+      case q: QuReference => q.refName
+      case _ => ""
+    }
 }
