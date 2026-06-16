@@ -12,15 +12,17 @@ class ArnoldJoinMeet1SyncTest extends BaseSyncTest :
       import Show.{given,*}
 
 
-      case class B(s:String, s1:String)
-      val b1 = B("a", "x")
-      val b2 = B("b", "y")
-      val b3 = B("b", "z")
+      case class B(s:String, i: Int,s1:String, s2: String)
+
+      val b1 = B("a", 2, "x","1")
+      val b2 = B("b", 3,"y", "2")
+      val b3 = B("b", 4, "z", "3")
 
 
       info(s"${b1 |+| b2 |+| b3} ")
    }
   }
+  
 
   "typeclass derivation for LHSet" should {
     "work like this" in {
