@@ -16,8 +16,6 @@ import org.aurora.sjsast.NL_STATEMENT
 import org.aurora.sjsast.QuReference
 import org.aurora.AuroraElkUtils.*
 
-/* Add QU children for relevant */
-
 object AuroraElk:
 
     case class AuroraElkNode(node: ElkNode):

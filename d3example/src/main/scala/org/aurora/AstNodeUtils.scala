@@ -28,7 +28,8 @@ object AstNodeUtils {
       case ic: IssueCoordinate => LHSet.from(ic.narratives.map(n => n.asInstanceOf[AstNode]))
       case oc: OrderCoordinate => 
         val startingSet = LHSet.from(oc.narratives.map(n => n.asInstanceOf[AstNode]))
-        oc.qurefs.flatMap(q => q.qurc).flatMap(r => startingSet.addOne(r)) /* This might cause an issue with the arrow direction */
+        val withRefs = oc.qurefs.flatMap(q => q.qurc).flatMap(r => startingSet.addOne(r)) /* This might cause an issue with the arrow direction */
+        if withRefs.isEmpty then startingSet else withRefs // want to see if there is a more elegant way to write this
       case _ => LHSet.empty[AstNode]
     }
   
