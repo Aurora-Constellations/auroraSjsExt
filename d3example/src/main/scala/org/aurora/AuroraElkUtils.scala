@@ -9,6 +9,7 @@ import org.aurora.sjsast.OrderCoordinate
 import org.aurora.sjsast.NL_STATEMENT
 import typings.elkjs.libElkApiMod.ElkExtendedEdge
 import org.aurora.sjsast.AstNode
+import org.aurora.sjsast.LHSet
 
 object AuroraElkUtils {  
 
@@ -23,7 +24,7 @@ object AuroraElkUtils {
     direction: Direction
   )
 
-  def getDrawableChildren(node: AstNode): js.Array[ElkNode] =
+  def getDrawableDescendants(node: AstNode): LHSet[ElkNode] =
     val children = AstNodeUtils.getAllDescendants(node)
     children.flatMap(c => {
       c match
@@ -31,14 +32,17 @@ object AuroraElkUtils {
         case oc: OrderCoordinate => Option(oc.transformToElkNode)
         case n: NL_STATEMENT => Option(n.transformToElkNode)  
         case _ => None           
-      }).toJSArray
+      })
 
-  def getDrawableEdges(node: AstNode): js.Array[ElkExtendedEdge] =
-    val children = AstNodeUtils.getAllDescendants(node)
-    children.map(c => 
+  def getDrawableEdges(node: AstNode): LHSet[ElkExtendedEdge] =
+    val nodeAndChildren = AstNodeUtils.getAllDescendants(node).addOne(node)
+    nodeAndChildren.flatMap(c => 
       val sources = AstNodeUtils.getName(c).toJSArray
-      val targets = AstNodeUtils.getAllEdges(c).map(AstNodeUtils.getName).toJSArray            
-      js.Dynamic.literal(sources = sources, targets = targets).asInstanceOf[ElkExtendedEdge]
-      ).toJSArray
+      val targets = AstNodeUtils.getAllEdges(c).map(AstNodeUtils.getName).toJSArray    
+      targets.isEmpty match {
+        case true => None
+        case _ => Option(js.Dynamic.literal(sources = sources, targets = targets).asInstanceOf[ElkExtendedEdge])
+        }        
+      )
 
 }

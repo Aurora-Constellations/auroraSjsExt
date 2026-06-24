@@ -34,8 +34,8 @@ object AuroraElk:
                                                     "elk.algorithm" -> graphParams.layout.toString(),
                                                     "elk.direction" -> graphParams.direction.toString()
                                                 ),
-                                                children = getDrawableChildren(pcm),
-                                                edges = getDrawableEdges(pcm)
+                                                children = getDrawableDescendants(pcm).toJSArray,
+                                                edges = getDrawableEdges(pcm).toJSArray
                                             ).asInstanceOf[ElkNode]
         
         lazy val graph = AuroraElkNode(elkJsGraphObject)

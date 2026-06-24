@@ -40,4 +40,11 @@ object TestUtils {
   val oc2Edges = List(quRef1, nar2)
 
   val allDrawableDescendants = List(nar1, nar2, ic1, ic2, oc1, oc2, oc3)
+  val drawableIssuesDescendants = List(ic1, ic2)
+  val drawableOrdersDescendants = List(oc1, oc2, oc3, nar1, nar2)
+  val drawableOc1Descendants = List(nar1)
+
+  val allDrawableEdges = List((oc1, (nar1)), (oc2, (ic1, nar2)))
+  val drawableNgo1Edges = List((oc1, (nar1)), (oc2, (ic1, nar2)))
+  val drawableOc1Edges = List((oc1, (nar1)))
 }
