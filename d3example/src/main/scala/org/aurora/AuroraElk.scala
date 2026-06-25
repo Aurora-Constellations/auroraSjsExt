@@ -1,7 +1,6 @@
 package org.aurora
 
 import org.aurora.sjsast.PCM
-import org.aurora.AuroraElkUtils.AuroraElkParameters
 import typings.elkjs.libElkApiMod.{ElkNode}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
@@ -15,30 +14,35 @@ import org.aurora.sjsast.AstNode
 import org.aurora.sjsast.NL_STATEMENT
 import org.aurora.sjsast.QuReference
 import org.aurora.AuroraElkUtils.*
+import org.aurora.sjsast.LHSet
+import org.aurora.sjsast.LHMap
+import org.scalablytyped.runtime.StringDictionary
 
 object AuroraElk:
 
-    case class AuroraElkNode(node: ElkNode):
-        val children: js.Array[AuroraElkNode] = node.children.getOrElse(JsArrayUtils.empty[ElkNode]).map(c => AuroraElkNode(c))
-        val edges: js.Array[AuroraElkEdge] = node.edges.getOrElse(JsArrayUtils.empty[ElkExtendedEdge]).map(e => AuroraElkEdge(e))
+    case class Node(node: ElkNode):
+        val children: LHSet[Node] = node.children match {
+            case array: js.Array[ElkNode] => LHSet.from(array.iterator.map(Node.apply))
+            case _: Unit => LHSet.empty[Node]
+        }
+        val edges: LHSet[Edge] = node.edges match {
+            case array: js.Array[ElkExtendedEdge] => LHSet.from(array.iterator.map(Edge.apply))
+            case _: Unit => LHSet.empty[Edge] 
+        }
         val layout: String = node.layoutOptions.toOption.flatMap(opts => opts.get("elk.algorithm")).getOrElse("FORCE") /* default */
 
-    case class AuroraElkEdge(edge: ElkExtendedEdge):
-        val sources: js.Array[String] = edge.sources
-        val targets: js.Array[String] = edge.targets
+    case class Edge(edge: ElkExtendedEdge):
+        val sources: LHSet[String] = LHSet.from(edge.sources)
+        val targets: LHSet[String] = LHSet.from(edge.targets)
 
-    case class AuroraElkGraph(pcm: PCM, graphParams: AuroraElkParameters):
-        val elkJsGraphObject: ElkNode = js.Dynamic.literal(
-                                                id = "root",
-                                                layoutOptions = js.Dynamic.literal(
-                                                    "elk.algorithm" -> graphParams.layout.toString(),
-                                                    "elk.direction" -> graphParams.direction.toString()
-                                                ),
-                                                children = getDrawableDescendants(pcm).toJSArray,
-                                                edges = getDrawableEdges(pcm).toJSArray
-                                            ).asInstanceOf[ElkNode]
+    case class Graph(pcm: PCM, layoutOptions: StringDictionary[String]):
+        val elkRoot: ElkNode = ElkNode(id="root")
+
+        elkRoot.setChildren(getDrawableDescendants(pcm).toJSArray)
+        elkRoot.setEdges(getDrawableEdges(pcm).toJSArray)        
+        elkRoot.setLayoutOptions(layoutOptions)
         
-        lazy val graph = AuroraElkNode(elkJsGraphObject)
+        lazy val graph = Node(elkRoot)
         lazy val children = graph.children
         lazy val edges = graph.edges
         lazy val layout = graph.layout

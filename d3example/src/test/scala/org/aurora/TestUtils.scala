@@ -26,6 +26,7 @@ object TestUtils {
   val oc1 = OrderCoordinate(name="OC1", LHSet(nar1))
   val oc2 = OrderCoordinate(name="OC2", LHSet(nar2), qurefs = LHSet(quRefs1))
   val oc3 = OrderCoordinate(name="OC3")
+  val oc4 = OrderCoordinate(name="OC4", LHSet(nar1, nar2))
 
   val ngo1 = NGO(name="NGO1", ordercoord = LHSet(oc1, oc2, oc3))
   val ngo2 = NGO(name="NGO2")

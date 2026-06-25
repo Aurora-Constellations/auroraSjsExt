@@ -19,11 +19,6 @@ object AuroraElkUtils {
   enum Direction:
     case UP, DOWN
 
-  final case class AuroraElkParameters(
-    layout: Layout,
-    direction: Direction
-  )
-
   def getDrawableDescendants(node: AstNode): LHSet[ElkNode] =
     val children = AstNodeUtils.getAllDescendants(node)
     children.flatMap(c => {
@@ -37,11 +32,15 @@ object AuroraElkUtils {
   def getDrawableEdges(node: AstNode): LHSet[ElkExtendedEdge] =
     val nodeAndChildren = AstNodeUtils.getAllDescendants(node).addOne(node)
     nodeAndChildren.flatMap(c => 
-      val sources = AstNodeUtils.getName(c).toJSArray
-      val targets = AstNodeUtils.getAllEdges(c).map(AstNodeUtils.getName).toJSArray    
+      val sources = AstNodeUtils.getName(c)
+      val targets = AstNodeUtils.getAllEdges(c).map(AstNodeUtils.getName) 
+      val id =  sources + "" + targets.mkString("_") // we can change this later if needed
       targets.isEmpty match {
         case true => None
-        case _ => Option(js.Dynamic.literal(sources = sources, targets = targets).asInstanceOf[ElkExtendedEdge])
+        case _ => 
+          Option(
+            ElkExtendedEdge(id=id, sources=js.Array(sources), targets=targets.toJSArray)
+          )
         }        
       )
 

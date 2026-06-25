@@ -1,25 +1,29 @@
 package org.aurora
 
-import org.aurora.AuroraElk.AuroraElkNode
+import org.aurora.AuroraElk.Node
 import org.aurora.sjsast.*
 import typings.elkjs.libElkApiMod.ElkNode
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import org.aurora.AuroraElkUtils.getDrawableDescendants
+import org.aurora.AuroraElkUtils.getDrawableEdges
 
 trait TransformableToElkNode[A]:
     extension (a: A) def transformToElkNode: ElkNode
 
 given TransformableToElkNode[IssueCoordinate] with
   extension (ic: IssueCoordinate) def transformToElkNode: ElkNode =
-    js.Dynamic.literal(id = ic.name, children = getDrawableDescendants(ic).toJSArray).asInstanceOf[ElkNode]
+    ElkNode(id=ic.name).setChildren(getDrawableDescendants(ic).toJSArray)
+                       .setEdges(getDrawableEdges(ic).toJSArray)
 
 given TransformableToElkNode[OrderCoordinate] with
   extension (oc: OrderCoordinate) def transformToElkNode: ElkNode =
-    js.Dynamic.literal(id = oc.name, children = getDrawableDescendants(oc).toJSArray).asInstanceOf[ElkNode]
+    ElkNode(id=oc.name).setChildren(getDrawableDescendants(oc).toJSArray)
+                       .setEdges(getDrawableEdges(oc).toJSArray)
 
 given TransformableToElkNode[NL_STATEMENT] with
   extension (n: NL_STATEMENT) def transformToElkNode: ElkNode =
-    js.Dynamic.literal(id = n.name, children = js.Array()).asInstanceOf[ElkNode]
+    ElkNode(id=n.name).setChildren(getDrawableDescendants(n).toJSArray)
+                      .setEdges(getDrawableEdges(n).toJSArray)
 
 
