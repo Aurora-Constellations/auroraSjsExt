@@ -8,6 +8,8 @@ import org.aurora.AstNodeUtils.{getAllDescendants, getName}
 import org.aurora.TestUtils
 import org.aurora.AstNodeUtils.getAllEdges
 
+//discussion about testing workflows, pros/cons 
+
 
 class AstNodeUtilsTest extends wordspec.AsyncWordSpec with should.Matchers{
  

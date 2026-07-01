@@ -11,6 +11,8 @@ import org.aurora.AuroraElkUtils.getDrawableEdges
 import typings.elkjs.libElkApiMod.ElkNode
 import org.aurora.AuroraElk
 import org.aurora.AstNodeUtils.getAllDescendants
+import org.aurora.sjsast.LHMap
+import typings.langium.grammarMod
 
 
 class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
@@ -44,7 +46,7 @@ class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
       auroraElkNode.edges.isEmpty should be (true)
     }
     "create a node with one child and one edge" in {
-      val elkNode = ElkNode(id=TestUtils.oc4.name)
+      val elkNode = ElkNode(id=TestUtils.oc1.name)
       val elkNodeChild = ElkNode(id="nar1")
       elkNode.setChildren(js.Array(elkNodeChild))
       elkNode.setEdges(getDrawableEdges(TestUtils.oc1).toJSArray)
@@ -53,8 +55,8 @@ class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
       auroraElkNode.children.isEmpty should not be (true)
       auroraElkNode.children.head should be (AuroraElk.Node(elkNodeChild))
       auroraElkNode.edges.isEmpty should not be (true)
-      auroraElkNode.edges.flatMap(e => e.sources) should contain only (TestUtils.oc4.name)
-      auroraElkNode.edges.flatMap(e => e.targets) should contain only ("nar1")
+      auroraElkNode.edges.flatMap(e => e.sources) should contain only (TestUtils.oc1.name)
+      auroraElkNode.edges.flatMap(e => e.targets) should contain only(TestUtils.nar1.name)
     }
     "create a node with multiple children and multiple edges" in {
       val elkNode = ElkNode(id=TestUtils.oc4.name)
@@ -71,6 +73,18 @@ class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
       auroraElkNode.edges.isEmpty should not be (true)
       auroraElkNode.edges.flatMap(e => e.sources) should contain only (TestUtils.oc4.name)
       auroraElkNode.edges.flatMap(e => e.targets) should contain allElementsOf(List("nar1","nar2"))
+    }
+    "create a fully-fledged graph" in {
+      val layoutOptions = LHMap("elk.algorithm" -> "FORCE", "elk.direction" -> "RIGHT")
+      val graph = AuroraElk.Graph(TestUtils.pcm, layoutOptions)
+      
+      println(graph.children.head)
+      println("***")
+      println(TestUtils.allDescendantsAsAuroraNodes(2))
+      
+      graph.pcm should be (TestUtils.pcm)
+      graph.children.head should be (TestUtils.allDescendantsAsAuroraNodes(2))
+      
     }
   }
 

@@ -21,6 +21,8 @@ import org.scalablytyped.runtime.StringDictionary
 object AuroraElk:
 
     case class Node(node: ElkNode):
+        val id: String = node.id_ElkNode
+
         val children: LHSet[Node] = node.children match {
             case array: js.Array[ElkNode] => LHSet.from(array.iterator.map(Node.apply))
             case _: Unit => LHSet.empty[Node]
@@ -31,18 +33,33 @@ object AuroraElk:
         }
         val layout: String = node.layoutOptions.toOption.flatMap(opts => opts.get("elk.algorithm")).getOrElse("FORCE") /* default */
 
+        override def toString(): String = 
+            s"Node(id=${id}, children=${children.size})"
+
+        override def equals(that: Any): Boolean = 
+            that match {
+                case n: Node => 
+                    n.id == this.id && n.children == this.children && n.edges == this.edges
+                case _ => false
+            }
+
     case class Edge(edge: ElkExtendedEdge):
+        val id: String = edge.id match {
+            case s: String => s
+            case _ => "<no_id>"
+        }
         val sources: LHSet[String] = LHSet.from(edge.sources)
         val targets: LHSet[String] = LHSet.from(edge.targets)
 
-    case class Graph(pcm: PCM, layoutOptions: StringDictionary[String]):
+    case class Graph(pcm: PCM, layoutOptions: LHMap[String, String]): 
         val elkRoot: ElkNode = ElkNode(id="root")
-
+        val layoutOptionsDictionary = layoutOptions.toJSDictionary.asInstanceOf[LayoutOptions]
+        
         elkRoot.setChildren(getDrawableDescendants(pcm).toJSArray)
         elkRoot.setEdges(getDrawableEdges(pcm).toJSArray)        
-        elkRoot.setLayoutOptions(layoutOptions)
+        elkRoot.setLayoutOptions(layoutOptionsDictionary)
         
-        lazy val graph = Node(elkRoot)
+        val graph = Node(elkRoot)
         lazy val children = graph.children
         lazy val edges = graph.edges
         lazy val layout = graph.layout

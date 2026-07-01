@@ -1,5 +1,6 @@
 package org.aurora
 import org.aurora.sjsast.*
+import org.aurora.AuroraElkUtils.getDrawableDescendants
 
 object TestUtils {
     /**
@@ -48,4 +49,12 @@ object TestUtils {
   val allDrawableEdges = List((oc1, (nar1)), (oc2, (ic1, nar2)))
   val drawableNgo1Edges = List((oc1, (nar1)), (oc2, (ic1, nar2)))
   val drawableOc1Edges = List((oc1, (nar1)))
+
+  val allDescendantsAsAuroraNodes = List(AuroraElk.Node(nar1.transformToElkNode),
+                                         AuroraElk.Node(nar2.transformToElkNode), 
+                                         AuroraElk.Node(ic1.transformToElkNode), 
+                                         AuroraElk.Node(ic2.transformToElkNode), 
+                                         AuroraElk.Node(oc1.transformToElkNode),
+                                         AuroraElk.Node(oc2.transformToElkNode),
+                                         AuroraElk.Node(oc3.transformToElkNode))
 }
