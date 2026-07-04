@@ -13,12 +13,6 @@ import org.aurora.sjsast.LHSet
 
 object AuroraElkUtils {  
 
-  enum Layout:
-    case LAYERED, FORCE, RADIAL
-
-  enum Direction:
-    case UP, DOWN
-
   def getDrawableDescendants(node: AstNode): LHSet[ElkNode] =
     val children = AstNodeUtils.getAllDescendants(node)
     children.flatMap(c => {
@@ -32,16 +26,12 @@ object AuroraElkUtils {
   def getDrawableEdges(node: AstNode): LHSet[ElkExtendedEdge] =
     val nodeAndChildren = AstNodeUtils.getAllDescendants(node).addOne(node)
     nodeAndChildren.flatMap(c => 
-      val sources = AstNodeUtils.getName(c)
+      /* for layouting purposes, each edge must have one source and one target */
+      val source = AstNodeUtils.getName(c)
       val targets = AstNodeUtils.getAllEdges(c).map(AstNodeUtils.getName) 
-      val id =  sources + "" + targets.mkString("_") // we can change this later if needed
-      targets.isEmpty match {
-        case true => None
-        case _ => 
-          Option(
-            ElkExtendedEdge(id=id, sources=js.Array(sources), targets=targets.toJSArray)
-          )
-        }        
+      targets.map(target => {
+        ElkExtendedEdge(id=s"${source}->${target}", sources=js.Array(source), targets=js.Array(target))
+      })       
       )
 
 }

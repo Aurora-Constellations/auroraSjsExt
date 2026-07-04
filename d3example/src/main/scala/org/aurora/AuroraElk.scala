@@ -17,8 +17,14 @@ import org.aurora.AuroraElkUtils.*
 import org.aurora.sjsast.LHSet
 import org.aurora.sjsast.LHMap
 import org.scalablytyped.runtime.StringDictionary
+import typings.elkjs.mod.default as ELKConstructor
+import scala.concurrent.Future
+import scala.scalajs.js.Thenable.Implicits._
+import scala.concurrent.ExecutionContext
 
 object AuroraElk:
+
+    // SUNDAY TO DO: ADD NODE TYPES
 
     case class Node(node: ElkNode):
         val id: String = node.id_ElkNode
@@ -31,15 +37,21 @@ object AuroraElk:
             case array: js.Array[ElkExtendedEdge] => LHSet.from(array.iterator.map(Edge.apply))
             case _: Unit => LHSet.empty[Edge] 
         }
-        val layout: String = node.layoutOptions.toOption.flatMap(opts => opts.get("elk.algorithm")).getOrElse("FORCE") /* default */
+        val layout: String = node.layoutOptions.toOption.flatMap(opts => opts.get("elk.algorithm"))
+                                                        .getOrElse("org.eclipse.elk.layered") /* default */
+
+        val xCoord: Double = node.x.toOption.getOrElse(0)
+
+        val yCoord: Double = node.y.toOption.getOrElse(0)
+
 
         override def toString(): String = 
-            s"Node(id=${id}, children=${children.size})"
+            /* we can change this later if we want to expose different info */
+            s"Node(id=${id}, children=${children.size})" 
 
         override def equals(that: Any): Boolean = 
             that match {
-                case n: Node => 
-                    n.id == this.id && n.children == this.children && n.edges == this.edges
+                case n: Node => n.id == this.id && n.children == this.children && n.edges == this.edges
                 case _ => false
             }
 
@@ -51,18 +63,23 @@ object AuroraElk:
         val sources: LHSet[String] = LHSet.from(edge.sources)
         val targets: LHSet[String] = LHSet.from(edge.targets)
 
-    case class Graph(pcm: PCM, layoutOptions: LHMap[String, String]): 
-        val elkRoot: ElkNode = ElkNode(id="root")
-        val layoutOptionsDictionary = layoutOptions.toJSDictionary.asInstanceOf[LayoutOptions]
+    case class Graph(pcm: PCM, layoutOptions: LHMap[String, String]) :
+        implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+        private val elk = new ELKConstructor()
+        private val elkRoot: ElkNode = ElkNode(id="root")
+        private val layoutOptionsDictionary = layoutOptions.toJSDictionary.asInstanceOf[LayoutOptions]        
         
         elkRoot.setChildren(getDrawableDescendants(pcm).toJSArray)
         elkRoot.setEdges(getDrawableEdges(pcm).toJSArray)        
         elkRoot.setLayoutOptions(layoutOptionsDictionary)
-        
-        val graph = Node(elkRoot)
-        lazy val children = graph.children
-        lazy val edges = graph.edges
-        lazy val layout = graph.layout
+
+        lazy val graph = runLayout()
+
+        def runLayout() = for {
+            laidOutRoot <- elk.layout(elkRoot).toFuture
+        } yield Node(laidOutRoot)
+                        
+                    
 
 
 

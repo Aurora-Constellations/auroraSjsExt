@@ -46,8 +46,8 @@ object TestUtils {
   val drawableOrdersDescendants = List(oc1, oc2, oc3, nar1, nar2)
   val drawableOc1Descendants = List(nar1)
 
-  val allDrawableEdges = List((oc1, (nar1)), (oc2, (ic1, nar2)))
-  val drawableNgo1Edges = List((oc1, (nar1)), (oc2, (ic1, nar2)))
+  val allDrawableEdges = List((oc1, (nar1)), (oc2, (ic1)), (oc2, (nar2)))
+  val drawableNgo1Edges = List((oc1, (nar1)), (oc2, (ic1)), (oc2, (nar2)))
   val drawableOc1Edges = List((oc1, (nar1)))
 
   val allDescendantsAsAuroraNodes = List(AuroraElk.Node(nar1.transformToElkNode),

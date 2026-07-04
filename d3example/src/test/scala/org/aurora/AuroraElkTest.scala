@@ -13,9 +13,14 @@ import org.aurora.AuroraElk
 import org.aurora.AstNodeUtils.getAllDescendants
 import org.aurora.sjsast.LHMap
 import typings.langium.grammarMod
+import org.aurora.AstNodeUtils.getName
+import scala.scalajs.concurrent.JSExecutionContext
+import scala.concurrent.ExecutionContext
+
 
 
 class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
+  override implicit def executionContext: ExecutionContext = JSExecutionContext.queue
   "AuroraElk" should {
     "create a node with no children and no edges" in {
       val elkNode = ElkNode(id="OC1")
@@ -74,17 +79,29 @@ class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
       auroraElkNode.edges.flatMap(e => e.sources) should contain only (TestUtils.oc4.name)
       auroraElkNode.edges.flatMap(e => e.targets) should contain allElementsOf(List("nar1","nar2"))
     }
-    "create a fully-fledged graph" in {
-      val layoutOptions = LHMap("elk.algorithm" -> "FORCE", "elk.direction" -> "RIGHT")
-      val graph = AuroraElk.Graph(TestUtils.pcm, layoutOptions)
-      
-      println(graph.children.head)
-      println("***")
-      println(TestUtils.allDescendantsAsAuroraNodes(2))
-      
-      graph.pcm should be (TestUtils.pcm)
-      graph.children.head should be (TestUtils.allDescendantsAsAuroraNodes(2))
-      
+    "create a graph" in {
+      val layoutOptions = LHMap("elk.algorithm" -> "org.eclipse.elk.layered",
+                                "elk.direction" -> "left")
+      val elkRoot = AuroraElk.Graph(TestUtils.pcm, layoutOptions)
+      val elkRootNode = elkRoot.graph
+
+      for
+        descendants <- elkRootNode.map(n => n.children)
+      yield
+        val names = descendants.map(d => d.id).toList
+
+        names should contain allElementsOf {
+          TestUtils.allDrawableDescendants.map(getName)
+        }
+
+      for
+        nodes <- elkRootNode.map(n => n.children)
+      yield
+        val xCoords = nodes.map(n => n.xCoord).toList
+        xCoords should not contain (0)
+        val yCoords = nodes.map(n => n.yCoord).toList
+        yCoords should not contain (0)       
+
     }
   }
 
