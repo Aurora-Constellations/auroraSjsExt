@@ -75,21 +75,20 @@ object AuroraElk:
 
         lazy val graph = runLayout()
 
-        def runLayout(): Future[Node] =
-            elk.layout(elkRoot).toFuture
-                .map { laidOutRoot =>
-                println("Layout succeeded:")
-                println(laidOutRoot)
+        def runLayout(): Future[Node] = for {
+                                        laidOutRoot <- elk.layout(elkRoot).toFuture.recover { 
+                                            case e =>
+                                                println("ELK layout failed:")
+                                                println(e.getMessage)
+                                                e.printStackTrace()
 
-                Node(laidOutRoot)
-                }
-                .recover { case e =>
-                println("Layout failed:")
-                println(e.getMessage)
-                e.printStackTrace()
-
-                throw e
-                }
+                                                throw e
+                                            }
+                                        } yield {
+                                            println("ELK layout succeeded:")
+                                            println(laidOutRoot)
+                                            Node(laidOutRoot)
+                                        }
                         
                     
 
