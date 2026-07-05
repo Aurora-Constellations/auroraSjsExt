@@ -36,10 +36,10 @@ object AstNodeUtils {
     /* Later on, "name" should just be added as a property of AstNode */
   def getName(a: AstNode): String =
     a match {
-      case ic: IssueCoordinate => ic.name
-      case oc: OrderCoordinate => oc.name
-      case n: NL_STATEMENT => n.name
-      case q: QuReference => q.refName
+      case ic: IssueCoordinate => ic.name + "%%Reference"
+      case oc: OrderCoordinate => oc.name + "%%Coordinate"
+      case n: NL_STATEMENT => n.name + "%%Statement"
+      case q: QuReference => q.refName + "%%Reference"
       case _ => ""
     }
 }

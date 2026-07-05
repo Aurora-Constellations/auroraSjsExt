@@ -24,10 +24,11 @@ import scala.concurrent.ExecutionContext
 
 object AuroraElk:
 
-    // SUNDAY TO DO: ADD NODE TYPES
+    // SUNDAY TO DO: ADD NODE TYPES, idea: add to elk node name and filter by clean name later in auroraelk.node?
 
     case class Node(node: ElkNode):
-        val id: String = node.id_ElkNode
+        val id = node.id_ElkNode
+        lazy val nodeType = id.split("%%").lastOption.getOrElse("Unknown")
 
         val children: LHSet[Node] = node.children match {
             case array: js.Array[ElkNode] => LHSet.from(array.iterator.map(Node.apply))
@@ -43,7 +44,6 @@ object AuroraElk:
         val xCoord: Double = node.x.toOption.getOrElse(0)
 
         val yCoord: Double = node.y.toOption.getOrElse(0)
-
 
         override def toString(): String = 
             /* we can change this later if we want to expose different info */
@@ -67,7 +67,7 @@ object AuroraElk:
         implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
         private val elk = new ELKConstructor()
         private val elkRoot: ElkNode = ElkNode(id="root")
-        private val layoutOptionsDictionary = layoutOptions.toJSDictionary.asInstanceOf[LayoutOptions]        
+        private val layoutOptionsDictionary = layoutOptions.toJSDictionary.asInstanceOf[LayoutOptions]      
         
         elkRoot.setChildren(getDrawableDescendants(pcm).toJSArray)
         elkRoot.setEdges(getDrawableEdges(pcm).toJSArray)        
@@ -75,9 +75,21 @@ object AuroraElk:
 
         lazy val graph = runLayout()
 
-        def runLayout() = for {
-            laidOutRoot <- elk.layout(elkRoot).toFuture
-        } yield Node(laidOutRoot)
+        def runLayout(): Future[Node] =
+            elk.layout(elkRoot).toFuture
+                .map { laidOutRoot =>
+                println("Layout succeeded:")
+                println(laidOutRoot)
+
+                Node(laidOutRoot)
+                }
+                .recover { case e =>
+                println("Layout failed:")
+                println(e.getMessage)
+                e.printStackTrace()
+
+                throw e
+                }
                         
                     
 
