@@ -2,72 +2,56 @@ package org.aurora
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
-import org.aurora.sjsast.*
 
 // 1. Define the strictly typed Scala case class
-case class D3Node(name: String, nodeType: String, children: List[D3Node] = List.empty) {
+case class D3Node(
+  name: String, 
+  nodeType: String, 
+  x: Double, 
+  y: Double, 
+  width: Double, 
+  height: Double, 
+  children: List[D3Node] = List.empty,
+  edges: List[js.Any] = List.empty
+) {
   
   // 2. Helper to convert the Scala class into a plain JavaScript object for D3
   def toJS: js.Any = {
     js.Dictionary(
       "name" -> name,
       "nodeType" -> nodeType,
-      "children" -> children.map(_.toJS).toJSArray
+      "x" -> x,
+      "y" -> y,
+      "width" -> width,
+      "height" -> height,
+      "children" -> children.map(_.toJS).toJSArray,
+      "edges" -> edges.toJSArray
     )
   }
 }
-import typings.elkjs.libElkApiMod.{ElkNode, ElkEdge, ElkExtendedEdge}
-import typings.elkjs.elkjsStrings.children
 
-object AstTransformer:
+object AstTransformer {
   
-  // 3. Return the case class instead of js.Dynamic
-  def toD3Node(node: AstNode): D3Node =
-    node match
-      case p: PCM =>
-        D3Node(
-          name = "PCM",
-          nodeType = "Unknown",
-          children = p.cio.values.map(item => toD3Node(item)).toList
-        )
-      case o: Orders =>
-        D3Node(
-          name = "Orders",
-          nodeType = "Unknown",
-          children = o.ngo.map(item => toD3Node(item)).toList
-        )
-      case n: NGO =>
-        D3Node(
-          name = n.name,
-          nodeType = "Unknown",
-          children = n.ordercoord.map(item => toD3Node(item)).toList
-        )
-      case oc: OrderCoordinate =>
-        D3Node(
-          name = oc.name,
-          nodeType = "Coordinate",
-          children = (oc.narratives.map(item => toD3Node(item)) ++ oc.qurefs.map(item => toD3Node(item))).toList
-        )
-      case nl: NL_STATEMENT =>
-        D3Node(
-          name = nl.name,
-          nodeType = "Statement"
-        )
-      case qrs: QuReferences =>
-        D3Node(
-          name = "QuReferences",
-          nodeType = "Unknown",
-          children = qrs.qurc.map(item => toD3Node(item)).toList
-        )
-      case qr: QuReference =>
-        D3Node(
-          name = qr.refName,
-          nodeType = "Reference",
-        )
-      case other =>
-        D3Node(
-          name = other.toString,
-          nodeType = "Unknown"
-        )
-  
-  
+  def fromElkToD3Node(elkNode: AuroraElk.Node): D3Node = {
+    // In AuroraElk.scala, we see the ID often contains "%%"
+    // We can extract the raw name by taking the first part of that ID.
+    val nodeName = elkNode.id.split("%%").headOption.getOrElse("Unknown")
+    
+    D3Node(
+      name = nodeName,
+      nodeType = elkNode.nodeType,
+      // 2. Extract the coordinates ELK calculated
+      x = elkNode.node.x.getOrElse(0.0),
+      y = elkNode.node.y.getOrElse(0.0),
+      width = elkNode.node.width.getOrElse(0.0),
+      height = elkNode.node.height.getOrElse(0.0),
+      // Recursively map over all children provided by ELK and convert them to D3Nodes
+      children = elkNode.children.map(child => fromElkToD3Node(child)).toList,
+      // Extract the edges directly from the raw ELK node, NOT the Scala wrapper
+      edges = elkNode.node.edges.toOption match {
+        case Some(jsArray) => jsArray.toList.map(_.asInstanceOf[js.Any])
+        case None => List.empty[js.Any]
+      }
+    )
+  }
+}

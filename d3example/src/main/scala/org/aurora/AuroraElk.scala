@@ -67,9 +67,30 @@ object AuroraElk:
         implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
         private val elk = new ELKConstructor()
         private val elkRoot: ElkNode = ElkNode(id="root")
-        private val layoutOptionsDictionary = layoutOptions.toJSDictionary.asInstanceOf[LayoutOptions]      
+        private val layoutOptionsDictionary = layoutOptions.toJSDictionary.asInstanceOf[LayoutOptions]
+
+        //Create a helper to enforce width and height on every node
+        def applyDimensions(nodes: js.Array[ElkNode]): Unit = {
+            nodes.foreach { n =>
+                // Extract the clean name to measure its length
+                val nodeName = n.id.toOption.getOrElse("Unknown").split("%%").headOption.getOrElse("Unknown")
+                val calculatedWidth = (nodeName.length * 7) + 20.0
+
+                // Assign the true dynamic width to ELK
+                n.width = calculatedWidth
+                n.height = 40.0 // We can keep height fixed for standard text
+
+                n.children.toOption.foreach { childArray =>
+                applyDimensions(childArray)
+                }
+            }
+        }
         
-        elkRoot.setChildren(getDrawableDescendants(pcm).toJSArray)
+        // 2. Fetch the children, apply the sizes, and pass them to ELK
+        val rawChildren = getDrawableDescendants(pcm).toJSArray
+        applyDimensions(rawChildren)     
+        
+        elkRoot.setChildren(rawChildren)
         elkRoot.setEdges(getDrawableEdges(pcm).toJSArray)        
         elkRoot.setLayoutOptions(layoutOptionsDictionary)
 
