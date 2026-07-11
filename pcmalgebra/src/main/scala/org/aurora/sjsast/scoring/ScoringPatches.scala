@@ -3,15 +3,16 @@ package org.aurora.sjsast.scoring
 import org.aurora.sjsast.JoinMeet.*
 import org.aurora.sjsast.*
 import org.aurora.sjsast.scoring.af.AfScorer
+import org.aurora.sjsast.scoring.gcs.GcsScorer
 
 object ScoringPatches:
 
   def applyDerivedScores(pcm: PCM): PCM =
     val facts = ClinicalFacts.from(pcm)
-    val scorePatch = afScorePatch(facts)
+    val gcsPatch = gcsScorePatch(facts)
+    val afPatch = afScorePatch(facts)
 
-    pcm |+| scorePatch
-
+    pcm |+| gcsPatch |+| afPatch
 
   private def afScorePatch(facts: ClinicalFacts): PCM =
     AfScorer.compute(facts) match
@@ -61,8 +62,17 @@ object ScoringPatches:
 
 
   private def gcsScorePatch(facts: ClinicalFacts): PCM =
-    // todo: build the real GCS score patch here 
-    PCM()
+    GcsScorer.compute(facts) match
+      case Some(result) => scoresPcm(gcsValues(result))
+      case None => PCM()
 
+
+  private def gcsValues(result: GcsScorer.Result): List[ClinicalValue] =
+    List(
+      result.total.map(value => intScore("gcs_total", value)),
+      result.severity.map(value => stringScore("gcs_severity", value.outputValue)),
+      result.source.map(value => stringScore("gcs_total_source", value.outputValue)),
+      result.status.map(value => stringScore("gcs_status", value.outputValue))
+    ).flatten
   // todo: add AF score output here
   // todo: add GCS total/severity/source/status here
