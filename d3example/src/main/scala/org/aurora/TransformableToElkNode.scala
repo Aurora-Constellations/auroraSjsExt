@@ -19,4 +19,8 @@ given TransformableToElkNode[OrderCoordinate] with
 
 given TransformableToElkNode[NL_STATEMENT] with
   extension (n: NL_STATEMENT) def transformToElkNode: ElkNode =
-    ElkNode(id=n.name + "%%Statement")
+    // 1. Safely resolve the correct enum based on the prefix
+    val narrativeType = NarrativeType.fromStatement(n.name)
+    
+    // 2. Append the strongly typed elkType to the ID
+    ElkNode(id = s"${n.name}%%${narrativeType.elkType}")

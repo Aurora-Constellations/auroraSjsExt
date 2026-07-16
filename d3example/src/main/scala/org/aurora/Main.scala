@@ -119,8 +119,16 @@ def drawElkLayout(data: js.Any): Unit = {
 
   val colorPalette = js.Array("#d19a66", "#e06c75", "#98c379", "#61afef", "#c678dd", "#56b6c2")
   val getColor = (nodeType: String) => {
-    val index = Math.abs(nodeType.hashCode) % colorPalette.length
-    colorPalette(index)
+    nodeType match {
+      case "Reference"                => "#61afef" // Blue
+      case "Coordinate"               => "#98c379" // Green
+      case "NormalNarrative"          => "#abb2bf" // Grey
+      case "UrgentNarrative"          => "#e06c75" // Red
+      case "DraftNarrative"           => "#d19a66" // Orange/Yellow
+      case "UrgentCompletedNarrative" => "#c678dd" // Purple
+      case "DraftCompletedNarrative"  => "#56b6c2" // Cyan
+      case _                          => "#ffffff" // Default White
+    }
   }
 
   // 3. Draw curved Links between the calculated node positions

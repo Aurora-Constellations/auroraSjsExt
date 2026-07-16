@@ -38,7 +38,9 @@ object AstNodeUtils {
     a match {
       case ic: IssueCoordinate => ic.name + "%%Reference"
       case oc: OrderCoordinate => oc.name + "%%Coordinate"
-      case n: NL_STATEMENT => n.name + "%%Statement"
+      case n: NL_STATEMENT => 
+        val narrativeType = NarrativeType.fromStatement(n.name)
+        s"${n.name}%%${narrativeType.elkType}"
       case q: QuReference => q.refName + "%%Reference"
       case _ => ""
     }
