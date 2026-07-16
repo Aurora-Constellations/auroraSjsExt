@@ -18,7 +18,7 @@ import scala.scalajs.concurrent.JSExecutionContext
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
 import scala.util.Success
-
+import org.aurora.Show.*
 
 
 class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{

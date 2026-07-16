@@ -24,9 +24,9 @@ import scala.concurrent.ExecutionContext
 
 object AuroraElk:
 
-    // SUNDAY TO DO: ADD NODE TYPES, idea: add to elk node name and filter by clean name later in auroraelk.node?
+    // in the future for offsetting, keep it separate/decoupled from the IR, but we can use it as part of a composite type for offset info
 
-    case class Node(node: ElkNode):
+    case class Node(node: ElkNode): 
         val id = node.id_ElkNode
         lazy val nodeType = id.split("%%").lastOption.getOrElse("Unknown")
 
@@ -45,15 +45,12 @@ object AuroraElk:
 
         val yCoord: Double = node.y.toOption.getOrElse(0)
 
-        override def toString(): String = 
-            /* we can change this later if we want to expose different info */
-            s"Node(id=${id}, children=${children.size})" 
-
         override def equals(that: Any): Boolean = 
             that match {
                 case n: Node => n.id == this.id && n.children == this.children && n.edges == this.edges
                 case _ => false
-            }
+            }            
+            
 
     case class Edge(edge: ElkExtendedEdge):
         val id: String = edge.id match {
@@ -109,7 +106,7 @@ object AuroraElk:
                                             println("ELK layout succeeded:")
                                             println(laidOutRoot)
                                             Node(laidOutRoot)
-                                        }
+                                        } // to do: add this to a future logging infrastructure
                         
                     
 
