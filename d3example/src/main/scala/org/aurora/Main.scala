@@ -164,7 +164,7 @@ def drawElkLayout(data: js.Any): Unit = {
     // .style("stroke", "#555")
     // .style("stroke-width", "2px")
     .style("stroke", "red")
-    .style("stroke-width", "5px")
+    .style("stroke-width", "2px")
     .style("opacity", "1")
     .attr("d", (d: js.Dynamic) => {
       println(s"Drawing edge ${d.id}, sections = ${js.JSON.stringify(d.sections)}"
