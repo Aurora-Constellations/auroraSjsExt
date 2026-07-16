@@ -24,7 +24,7 @@ val _ = Stylesheet // force initialization to prevent DCE (Dead Code Elimination
 @main
 def main(): Unit = {
 
-  val fileUrl = "/TB00019445.aurora"
+  val fileUrl = "/TBSimple.aurora"
   println(s"Fetching file from $fileUrl...")
 
   dom
@@ -114,7 +114,7 @@ def drawElkLayout(data: js.Any): Unit = {
     }
   })
 
-  val nodes = root.descendants().asInstanceOf[js.Array[js.Dynamic]]
+  val nodes = root.descendants().asInstanceOf[js.Array[js.Dynamic]].filter(d => d.parent != null)
   val links = root.links().asInstanceOf[js.Array[js.Dynamic]]
 
   val colorPalette = js.Array("#d19a66", "#e06c75", "#98c379", "#61afef", "#c678dd", "#56b6c2")
@@ -137,8 +137,18 @@ def drawElkLayout(data: js.Any): Unit = {
     }
   })
 
-  // Debugging line to check the browser console
-  println(s"Extracted ${allEdges.length} explicitly routed edges from ELK.")
+  println(s"Number of edges: ${allEdges.length}")
+
+  allEdges.foreach { edge =>
+    println(
+      s"""
+        |Edge ID: ${edge.id}
+        |Sections undefined: ${js.isUndefined(edge.sections)}
+        |Sections null: ${edge.sections == null}
+        |Edge JSON: ${js.JSON.stringify(edge)}
+        |""".stripMargin
+    )
+  }
 
   val lineGenerator = d3.line().asInstanceOf[js.Dynamic]
     .x((p: js.Dynamic) => p.x.asInstanceOf[Double])
@@ -151,9 +161,14 @@ def drawElkLayout(data: js.Any): Unit = {
     .append("path")
     .attr("class", "link")
     .style("fill", "none")
-    .style("stroke", "#555")
-    .style("stroke-width", "2px")
+    // .style("stroke", "#555")
+    // .style("stroke-width", "2px")
+    .style("stroke", "red")
+    .style("stroke-width", "5px")
+    .style("opacity", "1")
     .attr("d", (d: js.Dynamic) => {
+      println(s"Drawing edge ${d.id}, sections = ${js.JSON.stringify(d.sections)}"
+)
        // Explicitly cast to js.Array before asking for length or index
        if (!js.isUndefined(d.sections) && d.sections.asInstanceOf[js.Array[js.Dynamic]].length > 0) {
           val sectionsArray = d.sections.asInstanceOf[js.Array[js.Dynamic]]
