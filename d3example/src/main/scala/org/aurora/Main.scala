@@ -5,6 +5,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import org.aurora.sjsast.*
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 @JSImport("@find/**/HelloWorld.less", JSImport.Namespace)
 @js.native
@@ -34,10 +35,10 @@ def main(): Unit = {
       response.text().toFuture
     }
     
-    _ = println("File loaded successfully! Parsing string...")
+    _ <- Future { println("File loaded successfully! Parsing string...") }
     parsedAst <- BrowserParser.parseString(textContent)
     
-    _ = println("Running ELK Layout...")
+    _ <- Future { println("Running ELK Layout...") }
     elkNode <- AuroraElk.Graph(PCM(parsedAst), layoutOptions).graph
 
   } yield {
