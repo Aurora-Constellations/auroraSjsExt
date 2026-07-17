@@ -28,9 +28,18 @@ object AuroraElkUtils {
     nodeAndChildren.flatMap(c => 
       /* for layouting purposes, each edge must have one source and one target */
       val source = AstNodeUtils.getName(c)
-      val targets = AstNodeUtils.getAllEdges(c).map(AstNodeUtils.getName) 
-      targets.map(target => {
-        ElkExtendedEdge(id=s"${source}->${target}", sources=js.Array(source), targets=js.Array(target))
+      val targetNodes = AstNodeUtils.getAllEdges(c)
+      
+      targetNodes.map(targetNode => {
+        val targetName = AstNodeUtils.getName(targetNode)
+        val qualifier = AstNodeUtils.getEdgeQualifier(targetNode)
+        
+        // Inject the strictly typed edge class into the ELK edge ID
+        ElkExtendedEdge(
+          id = s"${source}->${targetName}%%${qualifier.elkType}", // D3 will receive something like this OC1->IC1%%DraftEdge
+          sources = js.Array(source), 
+          targets = js.Array(targetName)
+        )
       })       
       )
 

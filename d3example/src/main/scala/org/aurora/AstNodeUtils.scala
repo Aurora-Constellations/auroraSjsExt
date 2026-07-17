@@ -44,4 +44,12 @@ object AstNodeUtils {
       case q: QuReference => q.refName + "%%Reference"
       case _ => ""
     }
+
+  def getEdgeQualifier(a: AstNode): EdgeQualifier =
+    a match {
+      // A QuReference contains a list of QU nodes (the ? ! ~ symbols)
+      case q: QuReference => EdgeQualifier.fromQu(q.qu)
+      // Narratives and default connections have no QU qualifiers
+      case _ => EdgeQualifier.Normal
+    }
 }
