@@ -8,9 +8,10 @@ import org.aurora.sjsast.*
 import typings.auroraLangium.distTypesSrcLanguageAuroraModuleMod.createAuroraServices
 import typings.langium.mod.EmptyFileSystem
 import scala.scalajs.js.JSConverters.*
+import scala.concurrent.Future
 
 object BrowserParser:
-  def parseString(content: String): js.Promise[GenAst.PCM] = {
+  def parseString(content: String): Future[GenAst.PCM] = {
     
     // 1. Create the exact context shape Langium expects: 
     // An object with a fileSystemProvider property that is a function returning EmptyFileSystem.
@@ -30,5 +31,5 @@ object BrowserParser:
     // 4. Build and return the parsed AST
     shared.workspace.DocumentBuilder.build(js.Array(document)).toFuture.map { _ =>
       document.parseResult.value.asInstanceOf[GenAst.PCM]
-    }.toJSPromise
+    }
   }

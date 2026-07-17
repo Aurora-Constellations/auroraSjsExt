@@ -26,26 +26,29 @@ def main(): Unit = {
     "elk.layered.spacing.nodeNodeBetweenLayers" -> "60"
   )
 
-  dom.fetch(fileUrl).toFuture
-    .flatMap { response =>
+  // Define the asynchronous pipeline using a for comprehension
+  val pipeline = for {
+    response <- dom.fetch(fileUrl).toFuture
+    textContent <- {
       if (!response.ok) throw new Exception(s"Failed to load file. Status: ${response.statusText}")
       response.text().toFuture
     }
-    .flatMap { textContent =>
-      println("File loaded successfully! Parsing string...")
-      BrowserParser.parseString(textContent).toFuture
-    }
-    .flatMap { parsedAst =>
-      println("Running ELK Layout...")
-      AuroraElk.Graph(PCM(parsedAst), layoutOptions).graph 
-    }
-    .map { elkNode =>
-      println("Transforming and Rendering D3 tree...")
-      val d3Tree = AstTransformer.fromElkToD3Node(elkNode)
-      renderer.render(d3Tree.toJS)
-    }
-    .recover { case e: Exception =>
-      println(s"Pipeline error: ${e.getMessage}")
-      e.printStackTrace()
-    }
+    
+    _ = println("File loaded successfully! Parsing string...")
+    parsedAst <- BrowserParser.parseString(textContent)
+    
+    _ = println("Running ELK Layout...")
+    elkNode <- AuroraElk.Graph(PCM(parsedAst), layoutOptions).graph
+
+  } yield {
+    println("Transforming and Rendering D3 tree...")
+    val d3Tree = AstTransformer.fromElkToD3Node(elkNode)
+    renderer.render(d3Tree.toJS)
+  }
+
+  // 3. Attach your recovery logic to the completed pipeline
+  pipeline.recover { case e: Exception =>
+    println(s"Pipeline error: ${e.getMessage}")
+    e.printStackTrace()
+  }
 }
