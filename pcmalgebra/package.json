@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "aurora-langium": "^0.4.1",
+    "aurora-langium": "^0.4.2",
     "fs-extra": "^11.3.1"
   },
   "devDependencies": {
