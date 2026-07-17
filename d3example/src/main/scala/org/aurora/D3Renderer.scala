@@ -257,21 +257,17 @@ class D3Renderer(containerSelector: String):
                 tooltip.style("visibility", "hidden")
             }
         )
-        .on(
-            "click",
-            (e: dom.MouseEvent, d: D3AugmentedNode) => {
-                // Click to center the camera on the node
-                val scale = 1.5 // Zoom in slightly
-                val targetX = (width / 2) - (d.absoluteX + (d.data.width.toSafeOption.getOrElse(0.0) / 2)) * scale
-                val targetY = (height / 2) - (d.absoluteY + (d.data.height.toSafeOption.getOrElse(0.0) / 2)) * scale
+        .on("click", (e: dom.MouseEvent, d: D3AugmentedNode) => {
+            // Click to center the camera on the node
+            val scale = 1.5 // Zoom in slightly
+            val targetX = (width / 2) - (d.absoluteX + (d.data.width.toSafeOption.getOrElse(0.0) / 2)) * scale
+            val targetY = (height / 2) - (d.absoluteY + (d.data.height.toSafeOption.getOrElse(0.0) / 2)) * scale
 
-                // Build the D3 zoom identity object dynamically to bypass Scala.js typing strictness
-                val d3ZoomIdentity = d3.asInstanceOf[js.Dynamic].zoomIdentity
-                val newTransform = d3ZoomIdentity.translate(targetX, targetY).scale(scale)
+            // FIX: Access zoomIdentity statically so Vite bundles it properly
+            val newTransform = d3.zoomIdentity.translate(targetX, targetY).scale(scale)
 
-                svg.transition().duration(750).call(zoom.transform, newTransform)
-            }
-        )
+            svg.transition().duration(750).call(zoom.transform, newTransform)
+        })
         // ------------------------------------------
 
         nodeSelection
