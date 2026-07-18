@@ -36,6 +36,7 @@ trait ElkEdgeWithAbs extends js.Object:
 trait D3RawData extends js.Object:
     val name: js.UndefOr[String]
     val nodeType: js.UndefOr[String]
+    val nodeQualifier: js.UndefOr[String]
     val x: js.UndefOr[Double]
     val y: js.UndefOr[Double]
     val width: js.UndefOr[Double]
@@ -56,25 +57,25 @@ trait D3AugmentedNode extends js.Object:
 class D3Renderer(containerSelector: String):
 
     private def getNodeColor(nodeType: String): String = nodeType match {
-        case "Reference"                => "#61afef"
-        case "Coordinate"               => "#98c379"
-        case "NormalNarrative"          => "#abb2bf"
-        case "UrgentNarrative"          => "#e06c75"
-        case "DraftNarrative"           => "#d19a66"
-        case "UrgentCompletedNarrative" => "#c678dd"
-        case "DraftCompletedNarrative"  => "#56b6c2"
-        case _                          => "#ffffff"
+        case "Reference"                           => "#61afef"
+        case "Coordinate"                          => "#98c379"
+        case NarrativeType.Normal.elkType          => "#abb2bf"
+        case NarrativeType.Urgent.elkType          => "#e06c75"
+        case NarrativeType.Draft.elkType           => "#d19a66"
+        case NarrativeType.UrgentCompleted.elkType => "#c678dd"
+        case NarrativeType.DraftCompleted.elkType  => "#56b6c2"
+        case _                                     => "#ffffff"
     }
 
-    private def getEdgeColor(edgeType: String): String = edgeType match {
-        case "DraftEdge"    => "#e5c07b"
-        case "UrgentEdge"   => "#e06c75"
-        case "NegativeEdge" => "#e06c75"
-        case _              => "#555555"
+    private def getQuColor(nodeQualifier: String): String = nodeQualifier match {
+        case Qualifier.Draft.elkType    => "#e5c07b"
+        case Qualifier.Urgent.elkType   => "#e06c75"
+        case Qualifier.Negative.elkType => "#e06c75"
+        case _                          => "#555555"
     }
 
     private def getEdgeDash(edgeType: String): String =
-        if (edgeType == "NegativeEdge") "6, 6" else "none"
+        if (edgeType == Qualifier.Negative.elkType) "6, 6" else "none"
 
     def render(data: js.Any): Unit = {
         val container = d3.select(containerSelector).asInstanceOf[js.Dynamic]
@@ -160,14 +161,14 @@ class D3Renderer(containerSelector: String):
         .style(
             "stroke",
             (d: ElkEdgeWithAbs) => {
-                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse("NormalEdge")
-                getEdgeColor(edgeType)
+                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse(Qualifier.Normal.elkType)
+                getQuColor(edgeType)
             }
         )
         .style(
             "stroke-dasharray",
             (d: ElkEdgeWithAbs) => {
-                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse("NormalEdge")
+                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse(Qualifier.Normal.elkType)
                 getEdgeDash(edgeType)
             }
         )
@@ -250,7 +251,7 @@ class D3Renderer(containerSelector: String):
                     .asInstanceOf[js.Dynamic]
                     .transition()
                     .duration(250)
-                    .style("stroke", "#333")
+                    .style("stroke", getQuColor(d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)))
                     .style("stroke-width", "2px")
 
                 // Hide tooltip
@@ -277,7 +278,11 @@ class D3Renderer(containerSelector: String):
         .attr("rx", 6)
         .attr("ry", 6)
         .style("fill", (d: D3AugmentedNode) => getNodeColor(d.data.nodeType.toSafeOption.getOrElse("Unknown")))
-        .style("stroke", "#333")
+        .style("stroke", (d: D3AugmentedNode) => getQuColor(d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)))
+        .style("stroke-dasharray", (d: D3AugmentedNode) => {
+            val qual = d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)
+            getEdgeDash(qual)
+        })
         .style("stroke-width", "2px")
 
         nodeSelection

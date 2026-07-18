@@ -43,7 +43,7 @@ def main(): Unit = {
 
   } yield {
     println("Transforming and Rendering D3 tree...")
-    val d3Tree = AstTransformer.fromElkToD3Node(elkNode)
+    val d3Tree = AstTransformer.fromElkToD3Node(elkNode, PCM(parsedAst))
     renderer.render(d3Tree.toJS)
   }
 

@@ -5,13 +5,15 @@ import org.aurora.sjsast.*
 import typings.elkjs.libElkApiMod.ElkNode
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
+import typings.elkjs.libElkApiMod.LayoutOptions
 
 trait TransformableToElkNode[A]:
     extension (a: A) def transformToElkNode: ElkNode
 
 given TransformableToElkNode[IssueCoordinate] with
   extension (ic: IssueCoordinate) def transformToElkNode: ElkNode =
-    ElkNode(id=ic.name + "%%Reference")
+    val qualifier = Qualifier.fromQu(ic.qu).elkType
+    ElkNode(id=ic.name + "%%Reference").setLayoutOptions(js.Dictionary("aurora.qualifier" -> qualifier).asInstanceOf[LayoutOptions])
 
 given TransformableToElkNode[OrderCoordinate] with
   extension (oc: OrderCoordinate) def transformToElkNode: ElkNode =

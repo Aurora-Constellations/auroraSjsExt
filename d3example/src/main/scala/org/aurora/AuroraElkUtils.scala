@@ -32,7 +32,7 @@ object AuroraElkUtils {
       
       targetNodes.map(targetNode => {
         val targetName = AstNodeUtils.getName(targetNode)
-        val qualifier = AstNodeUtils.getEdgeQualifier(targetNode)
+        val qualifier = AstNodeUtils.getQualifier(targetNode)
         
         // Inject the strictly typed edge class into the ELK edge ID
         ElkExtendedEdge(
