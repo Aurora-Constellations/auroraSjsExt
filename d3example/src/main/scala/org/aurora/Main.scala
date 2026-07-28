@@ -23,8 +23,8 @@ def main(): Unit = {
   val layoutOptions = LHMap(
     "elk.algorithm" -> "layered",
     "elk.direction" -> "TOP",
-    "elk.spacing.nodeNode" -> "50",
-    "elk.layered.spacing.nodeNodeBetweenLayers" -> "60"
+    "elk.spacing.nodeNode" -> "10",
+    "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
   )
 
   // Define the asynchronous pipeline using a for comprehension

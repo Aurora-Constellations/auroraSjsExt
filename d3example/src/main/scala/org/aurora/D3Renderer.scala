@@ -57,13 +57,13 @@ trait D3AugmentedNode extends js.Object:
 class D3Renderer(containerSelector: String):
 
     private def getNodeColor(nodeType: String): String = nodeType match {
-        case "Reference"                           => "#61afef"
-        case "Coordinate"                          => "#98c379"
+        case "Reference"                           => "#6fbbfa"
+        case "Coordinate"                          => "#a4f56a"
         case NarrativeType.Normal.elkType          => "#abb2bf"
-        case NarrativeType.Urgent.elkType          => "#e06c75"
-        case NarrativeType.Draft.elkType           => "#d19a66"
-        case NarrativeType.UrgentCompleted.elkType => "#c678dd"
-        case NarrativeType.DraftCompleted.elkType  => "#56b6c2"
+        case NarrativeType.Urgent.elkType          => "#fa2a3b"
+        case NarrativeType.Draft.elkType           => "#f8e17c"
+        case NarrativeType.UrgentCompleted.elkType => "#c678dd" // Different saturated green with red outline?
+        case NarrativeType.DraftCompleted.elkType  => "#56b6c2" // As green but no outline
         case _                                     => "#ffffff"
     }
 
@@ -107,7 +107,7 @@ class D3Renderer(containerSelector: String):
         .attr("width", "100%")
         .attr("height", "100vh")
         .attr("viewBox", s"0 0 $width $height")
-        .style("background-color", "#1e1e1e")
+        .style("background-color", "#f1f1f1")
         .style("font-family", "sans-serif")
         .asInstanceOf[js.Dynamic]
 
@@ -221,8 +221,8 @@ class D3Renderer(containerSelector: String):
                 .asInstanceOf[js.Dynamic]
                 .transition()
                 .duration(150)
-                .style("stroke", "#ffffff")
-                .style("stroke-width", "3px")
+                // .style("stroke", "#ffffff")
+                // .style("stroke-width", "3px")
 
             // Populate and show tooltip
             val nType = d.data.nodeType.toSafeOption.getOrElse("Unknown").replace("Narrative", " Narrative")
