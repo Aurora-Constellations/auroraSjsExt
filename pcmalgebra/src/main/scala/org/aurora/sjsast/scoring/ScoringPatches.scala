@@ -11,7 +11,6 @@ object ScoringPatches:
     val facts = ClinicalFacts.from(pcm)
     val gcsPatch = gcsScorePatch(facts)
     val afPatch = afScorePatch(facts)
-
     pcm |+| gcsPatch |+| afPatch
 
   private def afScorePatch(facts: ClinicalFacts): PCM =

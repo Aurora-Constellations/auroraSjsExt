@@ -1,6 +1,9 @@
 package org.aurora.sjsast.scoring
 
 import org.aurora.sjsast.*
+import org.aurora.sjsast.scoring.af.Cha2ds2VascRiskBand
+import org.aurora.sjsast.scoring.gcs.{GcsSeverity, GcsStatus, GcsTotalSource}
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
