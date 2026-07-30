@@ -1,14 +1,18 @@
 package org.aurora.sjsast.scoring
 
 import org.aurora.sjsast.*
+<<<<<<< HEAD
 import org.aurora.sjsast.scoring.af.Cha2ds2VascRiskBand
 import org.aurora.sjsast.scoring.gcs.{GcsSeverity, GcsStatus, GcsTotalSource}
+=======
+>>>>>>> d39bc1f313cd3cd8f8fe7d983fd266a0416bc3ea
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class ScoringPatchesTest extends AnyWordSpec with Matchers:
 
   "ScoringPatches" should {
+<<<<<<< HEAD
 
     "derive GCS total, severity and source when all components are resolvable" in {
       val pcm = pcmWithFacts(
@@ -59,6 +63,28 @@ class ScoringPatchesTest extends AnyWordSpec with Matchers:
     "derive AF total and high risk band when atrial fibrillation is confirmed" in {
       val pcm = pcmWithFactsAndIssues(
         values = Map(
+=======
+    "write derived GCS scores into the Scores group" in {
+      val pcm = pcmWithFacts(
+        Map(
+          "gcs_eye" -> textValue("to voice"),
+          "gcs_verbal" -> textValue("confused"),
+          "gcs_motor" -> textValue("withdraws")
+        )
+      )
+
+      val scores = extractScoreValues(ScoringPatches.applyDerivedScores(pcm))
+
+      scores.get("gcs_total").map(_.head.value).shouldBe(Some(IntValue(11)))
+      scores.get("gcs_severity").map(_.head.value).shouldBe(Some(StringValue("moderate")))
+      scores.get("gcs_total_source").map(_.head.value).shouldBe(Some(StringValue("derived")))
+      scores.contains("gcs_status").shouldBe(false)
+    }
+
+    "write derived CHA2DS2-VASc scores into the Scores group" in {
+      val pcm = pcmWithFacts(
+        Map(
+>>>>>>> d39bc1f313cd3cd8f8fe7d983fd266a0416bc3ea
           "age" -> textValue("76"),
           "sex" -> textValue("female"),
           "cha2ds2_vasc_diabetes" -> textValue("absent"),
@@ -68,6 +94,7 @@ class ScoringPatchesTest extends AnyWordSpec with Matchers:
         issueNames = Set("atrial_fibrillation", "heart_failure", "hypertension")
       )
 
+<<<<<<< HEAD
       val patched = ScoringPatches.applyDerivedScores(pcm)
       val scores = extractScoreValues(patched)
 
@@ -134,12 +161,20 @@ class ScoringPatchesTest extends AnyWordSpec with Matchers:
         patched.cio.get("Clinical").collect { case c: Clinical => c }
           .exists(_.ngc.exists(_.name != ScoringConstants.ScoreGroupName))
       originalFactsPreserved.shouldBe(true)
+=======
+      val scores = extractScoreValues(ScoringPatches.applyDerivedScores(pcm))
+
+      scores.get("cha2ds2_vasc_total").map(_.head.value).shouldBe(Some(IntValue(5)))
+      scores.get("cha2ds2_vasc_risk_band").map(_.head.value).shouldBe(Some(StringValue("high")))
+      scores.contains("cha2ds2_vasc_status").shouldBe(false)
+>>>>>>> d39bc1f313cd3cd8f8fe7d983fd266a0416bc3ea
     }
   }
 
   private def textValue(value: String): SingleValueUnit =
     SingleValueUnit(StringValue(value), ScoringConstants.PlaceholderUnit)
 
+<<<<<<< HEAD
   private def pcmWithFacts(values: Map[String, SingleValueUnit]): PCM =
     pcmWithFactsAndIssues(values, Set.empty)
 
@@ -172,3 +207,41 @@ class ScoringPatchesTest extends AnyWordSpec with Matchers:
           .flatMap(_.coordinates)
           .collect { case v: ClinicalValue => v.name -> v.values }
           .toMap
+=======
+  private def pcmWithFacts(
+      values: Map[String, SingleValueUnit],
+      issueNames: Set[String] = Set.empty
+  ): PCM =
+    val clinicalValues =
+      values.map { case (name, value) =>
+        ClinicalValue(name = name, values = List(value))
+      }
+
+    PCM(
+      cio = LHMap(
+        "Clinical" -> Clinical(
+          ngc = LHSet(
+            NGC(
+              name = "Facts:",
+              coordinates = LHSet.from(clinicalValues)
+            )
+          )
+        ),
+        "Issues" -> Issues(
+          ic = LHSet.from(issueNames.map(name => IssueCoordinate(name = name)))
+        )
+      )
+    )
+
+  private def extractScoreValues(pcm: PCM): Map[String, List[SingleValueUnit]] =
+    pcm.cio
+      .get("Clinical")
+      .collect { case clinical: Clinical => clinical }
+      .flatMap(_.ngc.find(_.name == ScoringConstants.ScoreGroupName))
+      .map { scoresGroup =>
+        scoresGroup.coordinates.collect {
+          case value: ClinicalValue => value.name -> value.values
+        }.toMap
+      }
+      .getOrElse(Map.empty)
+>>>>>>> d39bc1f313cd3cd8f8fe7d983fd266a0416bc3ea
