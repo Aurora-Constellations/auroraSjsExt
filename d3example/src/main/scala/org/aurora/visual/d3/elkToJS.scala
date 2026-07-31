@@ -1,9 +1,11 @@
-package org.aurora
+package org.aurora.visual.d3
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import org.aurora.sjsast.*
+import org.aurora.sjsast.utils.*
 import typings.vscodeLanguageserverProtocol.libCommonProtocolMod._InitializeParams
+import org.aurora.visual.elk.AuroraElk
 
 // 1. Define the strictly typed Scala case class
 case class D3Node(
@@ -37,7 +39,7 @@ case class D3Node(
 object AstTransformer {
   
   def fromElkToD3Node(elkNode: AuroraElk.Node, pcm: PCM): D3Node = {
-    val allAstNodes = AstNodeUtils.getAllDescendants(pcm).toList
+    val allAstNodes = AstNode.getAllDescendants(pcm).toList
     buildTree(elkNode, allAstNodes)
   }
 
@@ -51,7 +53,7 @@ object AstTransformer {
       case oc: OrderCoordinate => oc.name == nodeName
       case _ => false
     }
-    val qualifier = astNode.map(AstNodeUtils.getQualifier).getOrElse(Qualifier.Normal).elkType
+    val qualifier = astNode.map(AstNode.getQualifier).getOrElse(Qualifier.Normal).elkType
     
     D3Node(
       name = nodeName,

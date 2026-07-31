@@ -6,6 +6,9 @@ import scala.scalajs.js.annotation.JSImport
 import org.aurora.sjsast.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import org.aurora.visual.elk.AuroraElk
+import org.aurora.visual.d3.AstTransformer
+import org.aurora.visual.d3.D3Renderer
 
 @JSImport("@find/**/HelloWorld.less", JSImport.Namespace)
 @js.native

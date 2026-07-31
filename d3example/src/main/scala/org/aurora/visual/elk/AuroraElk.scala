@@ -1,4 +1,4 @@
-package org.aurora
+package org.aurora.visual.elk
 
 import org.aurora.sjsast.PCM
 import typings.elkjs.libElkApiMod.{ElkNode}
@@ -13,7 +13,7 @@ import typings.elkjs.libElkApiMod.LayoutOptions
 import org.aurora.sjsast.AstNode
 import org.aurora.sjsast.NL_STATEMENT
 import org.aurora.sjsast.QuReference
-import org.aurora.AuroraElkUtils.*
+import org.aurora.visual.elk.AuroraElkUtils.*
 import org.aurora.sjsast.LHSet
 import org.aurora.sjsast.LHMap
 import org.scalablytyped.runtime.StringDictionary

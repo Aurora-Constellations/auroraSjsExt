@@ -1,4 +1,4 @@
-package org.aurora
+package org.aurora.sjsast.utils
 
 import org.aurora.sjsast.PCM
 import org.aurora.sjsast.{Issues, IssueCoordinate, Clinical, OrderCoordinate, Orders, LHMap, NL_STATEMENT}
@@ -8,8 +8,9 @@ import org.aurora.sjsast.LHSet
 import org.aurora.sjsast.AstNode
 import org.aurora.sjsast.QuReference
 import org.aurora.sjsast.NGO
+import org.aurora.sjsast.utils.{NarrativeType, Qualifier}
 
-object AstNodeUtils {
+object AstNode {
 
   def getAllDescendants(node: AstNode): LHSet[AstNode] = 
     node match {

@@ -1,7 +1,8 @@
-package org.aurora
+package org.aurora.visual.elk
 
-import org.aurora.AuroraElk.Node
+import org.aurora.visual.elk.AuroraElk.Node
 import org.aurora.sjsast.*
+import org.aurora.sjsast.utils.{NarrativeType, Qualifier}
 import typings.elkjs.libElkApiMod.ElkNode
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*

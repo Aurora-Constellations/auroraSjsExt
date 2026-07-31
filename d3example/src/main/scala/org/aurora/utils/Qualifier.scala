@@ -1,4 +1,4 @@
-package org.aurora
+package org.aurora.sjsast.utils
 
 import org.aurora.sjsast.QU
 

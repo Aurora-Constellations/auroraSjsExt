@@ -47,9 +47,9 @@ export default defineConfig({
       external: ['web-worker'],
     },
   },
-  build: {
-    rollupOptions: {
-      external: ['web-worker'],
-    },
-  },
+  // build: {
+  //   rollupOptions: {
+  //     external: ['web-worker'],
+  //   },
+  // },
 })

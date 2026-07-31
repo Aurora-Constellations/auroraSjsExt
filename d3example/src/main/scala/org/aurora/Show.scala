@@ -1,5 +1,7 @@
 package org.aurora
 
+import org.aurora.visual.elk.AuroraElk
+
 trait Show[A]:
   def show(a: A): String
 

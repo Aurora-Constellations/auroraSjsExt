@@ -1,8 +1,9 @@
-package org.aurora
+package org.aurora.visual.d3
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import org.scalajs.dom
+import org.aurora.sjsast.utils.{NarrativeType, Qualifier}
 import typings.d3.mod as d3
 
 // --- THE FIX: Safe JS extraction extension ---

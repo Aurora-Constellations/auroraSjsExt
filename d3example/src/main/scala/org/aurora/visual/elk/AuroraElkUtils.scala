@@ -1,4 +1,4 @@
-package org.aurora
+package org.aurora.visual.elk
 
 import org.aurora.sjsast.PCM
 import scala.scalajs.js
@@ -10,11 +10,12 @@ import org.aurora.sjsast.NL_STATEMENT
 import typings.elkjs.libElkApiMod.ElkExtendedEdge
 import org.aurora.sjsast.AstNode
 import org.aurora.sjsast.LHSet
+import org.aurora.sjsast.utils.AstNode
 
 object AuroraElkUtils {  
 
   def getDrawableDescendants(node: AstNode): LHSet[ElkNode] =
-    val children = AstNodeUtils.getAllDescendants(node)
+    val children = AstNode.getAllDescendants(node)
     children.flatMap(c => {
       c match
         case ic: IssueCoordinate => Option(ic.transformToElkNode)
@@ -24,15 +25,15 @@ object AuroraElkUtils {
       })
 
   def getDrawableEdges(node: AstNode): LHSet[ElkExtendedEdge] =
-    val nodeAndChildren = AstNodeUtils.getAllDescendants(node).addOne(node)
+    val nodeAndChildren = AstNode.getAllDescendants(node).addOne(node)
     nodeAndChildren.flatMap(c => 
       /* for layouting purposes, each edge must have one source and one target */
-      val source = AstNodeUtils.getName(c)
-      val targetNodes = AstNodeUtils.getAllEdges(c)
+      val source = AstNode.getName(c)
+      val targetNodes = AstNode.getAllEdges(c)
       
       targetNodes.map(targetNode => {
-        val targetName = AstNodeUtils.getName(targetNode)
-        val qualifier = AstNodeUtils.getQualifier(targetNode)
+        val targetName = AstNode.getName(targetNode)
+        val qualifier = AstNode.getQualifier(targetNode)
         
         // Inject the strictly typed edge class into the ELK edge ID
         ElkExtendedEdge(

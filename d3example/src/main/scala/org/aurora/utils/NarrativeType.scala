@@ -1,4 +1,4 @@
-package org.aurora
+package org.aurora.sjsast.utils
 
 enum NarrativeType(val prefix: String, val elkType: String):
   case Normal extends NarrativeType("--", "NormalNarrative")
