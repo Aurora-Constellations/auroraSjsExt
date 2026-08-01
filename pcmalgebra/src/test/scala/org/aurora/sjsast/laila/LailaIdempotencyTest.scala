@@ -29,10 +29,12 @@ class LailaIdempotencyTest extends AnyWordSpec with Matchers:
             val narrative2 = NL_STATEMENT(name="narr2")
             // val qu = QU(query=LHSet('!'))
             // val quReference = QuReference(qu=qu, refName=???)
-            val clinicalCoord1 = ClinicalCoordinate(name="cc1", narratives=LHSet(narrative1), qu=QU(query=LHSet()), qurefs=LHSet())
-            val clinicalCoord2 = ClinicalCoordinate(name="cc2", narratives=LHSet(narrative2), qu=QU(query=LHSet()), qurefs=LHSet())
-            val namedGroupClinical1 = NGC(name="ngc1", narratives=LHSet(), coordinates=LHSet(clinicalCoord1), refs=LHSet())
-            val namedGroupClinical2 = NGC(name="ngc2", narratives=LHSet(), coordinates=LHSet(clinicalCoord2), refs=LHSet())
+            
+            // Replaced ClinicalCoordinate with ClinicalItem
+            val clinicalItem1 = ClinicalItem(name="cc1", narratives=LHSet(narrative1), qu=QU(query=LHSet()), qurefs=LHSet())
+            val clinicalItem2 = ClinicalItem(name="cc2", narratives=LHSet(narrative2), qu=QU(query=LHSet()), qurefs=LHSet())
+            val namedGroupClinical1 = NGC(name="ngc1", narratives=LHSet(), coordinates=LHSet(clinicalItem1), refs=LHSet())
+            val namedGroupClinical2 = NGC(name="ngc2", narratives=LHSet(), coordinates=LHSet(clinicalItem2), refs=LHSet())
 
             val clinical1 = Clinical(ngc=LHSet(namedGroupClinical1))
             val clinical2 = Clinical(ngc=LHSet(namedGroupClinical2))

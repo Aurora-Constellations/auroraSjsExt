@@ -1,6 +1,6 @@
 package org.aurora.sjsast.scoring
 
-import org.aurora.sjsast.{Clinical, ClinicalValue, Issues, PCM, SingleValueUnit}
+import org.aurora.sjsast.{Clinical, ClinicalItem, Issues, PCM, SingleValueUnit}
 
 import scala.collection.mutable
 
@@ -29,7 +29,8 @@ object ClinicalFacts:
         .filterNot(_.name == ScoringConstants.ScoreGroupName)
         .foreach { group =>
           group.coordinates.foreach {
-            case value: ClinicalValue =>
+            // Updated type match to ClinicalItem
+            case value: ClinicalItem =>
               val key = Parsing.normalizeName(value.name)
               if key.nonEmpty then
                 val existing = values.getOrElse(key, Nil)
