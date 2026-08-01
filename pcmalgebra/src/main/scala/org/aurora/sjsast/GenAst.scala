@@ -3,6 +3,7 @@ package org.aurora.sjsast
 object GenAst :
   import typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod as GenAstMod
   import typings.langium.libSyntaxTreeMod.Reference
+  import typings.langium.libSyntaxTreeMod.AstNode as LangiumAstNode
   
   type PCM                          = GenAstMod.PCM
   type Issues                       = GenAstMod.Issues
@@ -12,9 +13,7 @@ object GenAst :
   type NGO                          = GenAstMod.NamedGroupOrder
   type NGC                          = GenAstMod.NamedGroupClinical
   type OrderCoordinate              = GenAstMod.OrderCoordinate
-  type ClinicalCoordinate           = GenAstMod.ClinicalCoordinate
-  type ClinicalValue                = GenAstMod.ClinicalValue
-  type ClinicalCoordinateValue      = GenAstMod.ClinicalCoordinate | GenAstMod.ClinicalValue
+  type ClinicalItem                 = GenAstMod.ClinicalItem
   type QU                           = GenAstMod.QU
   type QuReference                  = GenAstMod.QuReference
   type QuReferences                 = GenAstMod.QuReferences
@@ -26,3 +25,5 @@ object GenAst :
   type ArithModule                  = GenAstMod.ArithModule
   type Evaluation                   = GenAstMod.Evaluation
   type Expression                   = GenAstMod.Expression
+  type OrderElement                 = GenAstMod.OrderElement
+  type AstNode                      = LangiumAstNode

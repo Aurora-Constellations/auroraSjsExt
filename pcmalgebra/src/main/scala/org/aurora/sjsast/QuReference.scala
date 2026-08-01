@@ -6,7 +6,7 @@ import scala.scalajs.js
 case class QuReference(
     qu: QU = QU(),
     refName: String
-)
+) extends AstNode
 
 object QuReference:
   def apply(qr: G.QuReference): QuReference =

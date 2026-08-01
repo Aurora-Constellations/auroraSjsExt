@@ -53,9 +53,9 @@ object Module:
            val c = element.asInstanceOf[G.Clinical]
            val groups = c.namedGroups.map { ng =>
              val coords = ng.coord.flatMap { item =>
-               if getType(item) == "ClinicalCoordinate" then
-                 val cc = item.asInstanceOf[G.ClinicalCoordinate]
-                 Some(ClinicalCoordinate(
+               if getType(item) == "ClinicalItem" then
+                 val cc = item.asInstanceOf[G.ClinicalItem]
+                 Some(ClinicalItem(
                    name = cc.name, 
                    narratives = NL_STATEMENT(cc.narrative.toSeq),
                    qurefs = extractQuRefs(cc.qurc),

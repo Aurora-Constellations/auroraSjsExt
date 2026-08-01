@@ -2,63 +2,40 @@ package org.aurora.sjsast
  
 import scala.scalajs.js
 
-sealed trait RefCoordinate{
+sealed trait RefCoordinate extends AstNode{
     def name: String
-}
+} 
 
 object RefCoordinate:
-  def apply(ast: GenAst.ReferenceCoordinate | GenAst.ClinicalValue): RefCoordinate =
+  def apply(ast: GenAst.ReferenceCoordinate): RefCoordinate =
     val node = ast.asInstanceOf[js.Dynamic]
     node.`$type`.asInstanceOf[String] match {
       case "ClinicalCoordinate" => 
-        ClinicalCoordinate(ast.asInstanceOf[GenAst.ClinicalCoordinate])
+        ClinicalItem(ast.asInstanceOf[GenAst.ClinicalItem])
       case "IssueCoordinate"    => 
         IssueCoordinate(ast.asInstanceOf[GenAst.IssueCoordinate])
       case "OrderCoordinate"    => 
         OrderCoordinate(ast.asInstanceOf[GenAst.OrderCoordinate])
-      case "ClinicalValue"      => 
-        ClinicalValue(ast.asInstanceOf[GenAst.ClinicalValue])
       case unknown => 
         throw new Exception(s"Unsupported coordinate type: $unknown")
     }
 
-case class ClinicalCoordinate(
+case class ClinicalItem(
   name: String,
   narratives: LHSet[NL_STATEMENT] = LHSet(),
   qurefs: LHSet[QuReferences] = LHSet(),
-  qu: QU = QU()
+  qu: QU = QU(),
+  values: List[SingleValueUnit] = List()
 ) extends RefCoordinate
 
-object ClinicalCoordinate:
-  def apply(cc: GenAst.ClinicalCoordinate): ClinicalCoordinate = 
+object ClinicalItem:
+  def apply(cc: GenAst.ClinicalItem): ClinicalItem = 
     val name = cc.name
     val narratives = LHSet(cc.narrative.toList.map(NL_STATEMENT(_))*)
     val qurefs = LHSet(cc.qurc.toList.map(QuReferences(_))*)
     val qu = QU(cc.qu)
-    ClinicalCoordinate(name, narratives, qurefs, qu)
-
-case class ClinicalValue(
-  name: String, 
-  values: List[SingleValueUnit] = List(), // Added to hold numeric data
-  narrative: LHSet[NL_STATEMENT] = LHSet(), 
-  qurefs: LHSet[QuReferences] = LHSet()
-) extends RefCoordinate
-
-object ClinicalValue:
-    def apply(ast: GenAst.ClinicalValue): ClinicalValue =
-      ClinicalValue(
-        name = ast.name,
-        // Convert js.Array to List and map using the SingleValueUnit companion
-        values = ast.values.toList.map(SingleValueUnit.apply),
-        
-        // Convert narrative using NL_STATEMENT IR (assuming its apply exists)
-        narrative = LHSet(ast.narrative.toList.map(NL_STATEMENT.apply)*),
-        
-        // Handle the optional QuReferences
-        qurefs = ast.qurc.toOption
-          .map(q => LHSet(QuReferences(q)))
-          .getOrElse(LHSet())
-      )
+    val values = cc.values.toList.map(SingleValueUnit.apply)
+    ClinicalItem(name, narratives, qurefs, qu, values)
 
 case class IssueCoordinate(
   name: String,

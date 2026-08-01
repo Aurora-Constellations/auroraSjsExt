@@ -5,7 +5,7 @@ import scala.scalajs.js
 
 case class QU(
     query: LHSet[Char] = LHSet()
-)
+) extends AstNode
 
 object QU:
   def apply(q: G.QU): QU =

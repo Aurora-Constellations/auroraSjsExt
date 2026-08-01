@@ -2,7 +2,7 @@ package org.aurora.sjsast
 
 case class QuReferences(
     qurc: LHSet[QuReference] = LHSet()
-)
+) extends AstNode
 
 object QuReferences:
   def apply(qrs: GenAst.QuReferences): QuReferences =

@@ -5,6 +5,28 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>d3example</title>
+    <script>
+    window.global = window;
+    
+    // Expanded process mock
+    window.process = { 
+      env: {}, 
+      argv: [], // Fixes the 'length' error in setupExitTimer
+      on: function() {}, // Mocks process event listeners
+      cwd: function() { return '/'; }, // Mocks current working directory
+      platform: 'browser'
+    };
+    
+    // Buffer mock
+    window.Buffer = window.Buffer || {
+      isBuffer: function() { return false; },
+      from: function() { return new Uint8Array(); },
+      alloc: function(size) { return new Uint8Array(size || 0); },
+      allocUnsafe: function(size) { return new Uint8Array(size || 0); },
+      byteLength: function() { return 0; },
+      concat: function() { return new Uint8Array(); }
+    };
+  </script>
   </head>
   <body>
     <div id="app"></div>

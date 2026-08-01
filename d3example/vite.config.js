@@ -41,5 +41,15 @@ export default defineConfig({
     port: 3333,
     strictPort: true,
     logLevel: "debug"
-  }
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      external: ['web-worker'],
+    },
+  },
+  // build: {
+  //   rollupOptions: {
+  //     external: ['web-worker'],
+  //   },
+  // },
 })

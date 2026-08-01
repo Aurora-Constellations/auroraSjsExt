@@ -73,18 +73,13 @@ object Show extends AutoDerivation[Show]:
     val narr = if (ic.narratives.isEmpty) "" else s" ${ic.narratives.map(_.show).mkString(" ")}"
     s"${ic.name}$fromPart$refs$narr"
 
-  given Show[ClinicalCoordinate] = cc =>
+  given Show[ClinicalItem] = cc =>
     val refs = if (cc.qurefs.isEmpty) "" else 
       val all = cc.qurefs.flatMap(_.qurc)
       s" (${all.map(_.show).mkString(", ")})"
     val narr = if (cc.narratives.isEmpty) "" else s" ${cc.narratives.map(_.show).mkString(" ")}"
-    s"${cc.name}$refs$narr"
-
-  given Show[ClinicalValue] = cv =>
-    val vals = if (cv.values.isEmpty) "" else s" [${cv.values.map(_.show).mkString(", ")}]"
-    val refs = if (cv.qurefs.isEmpty) "" else s" ${cv.qurefs.show}"
-    val narr = if (cv.narrative.isEmpty) "" else s" ${cv.narrative.map(_.show).mkString(" ")}"
-    s"${cv.name}$vals$refs$narr"
+    val vals = if (cc.values.isEmpty) "" else s" [${cc.values.map(_.show).mkString(", ")}]"
+    s"${cc.name}$vals$refs$narr"
 
   // --- 3. Groups ---
 

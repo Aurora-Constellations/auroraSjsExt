@@ -2,7 +2,7 @@ package org.aurora.sjsast
 
 case class NL_STATEMENT(
     name: String
-)
+) extends AstNode
 
 object NL_STATEMENT:
   def apply(n: GenAst.NL_STATEMENT): NL_STATEMENT = 
