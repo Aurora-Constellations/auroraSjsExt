@@ -1,0 +1,7 @@
+Issues:
+shared
+left
+
+Orders:
+Treatment:
+plan (~!shared, ?left)
