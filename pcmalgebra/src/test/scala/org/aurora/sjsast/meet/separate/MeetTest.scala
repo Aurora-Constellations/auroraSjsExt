@@ -18,22 +18,46 @@ class MeetTest extends AnyWordSpec with Matchers:
       summon[Meet[Option[Int]]].meet(Some(1), None) shouldBe None
     }
 
-    "intersect qualifier references by reference name" in {
-      val left = QuReferences(
-        LHSet(
-          QuReference(QU(LHSet('~', '!')), "shared"),
-          QuReference(QU(LHSet('?')), "left")
+    "intersect typed clinical coordinate collections by name" in {
+      val commonNote = NL_STATEMENT("shared note")
+      val commonValue = SingleValueUnit(IntValue(20), "years")
+
+      val leftCoordinates = LHSet(
+        ClinicalCoordinate(
+          name = "status",
+          narratives = LHSet(commonNote, NL_STATEMENT("left note"))
         )
       )
-      val right = QuReferences(
-        LHSet(
-          QuReference(QU(LHSet('!')), "shared"),
-          QuReference(QU(LHSet('?')), "right")
+      val rightCoordinates = LHSet(
+        ClinicalCoordinate(
+          name = "status",
+          narratives = LHSet(commonNote, NL_STATEMENT("right note"))
+        )
+      )
+      val leftValues = LHSet(
+        ClinicalValue(
+          name = "age",
+          values = List(commonValue, SingleValueUnit(IntValue(10), "years"))
+        )
+      )
+      val rightValues = LHSet(
+        ClinicalValue(
+          name = "age",
+          values = List(commonValue, SingleValueUnit(IntValue(30), "years"))
         )
       )
 
-      summon[Meet[QuReferences]].meet(left, right) shouldBe
-        QuReferences(LHSet(QuReference(QU(LHSet('!')), "shared")))
+      (leftCoordinates |&| rightCoordinates) shouldBe
+        LHSet(ClinicalCoordinate(name = "status", narratives = LHSet(commonNote)))
+      (leftValues |&| rightValues) shouldBe
+        LHSet(ClinicalValue(name = "age", values = List(commonValue)))
+    }
+
+    "omit a common map key when section variants disagree" in {
+      val left = PCM(LHMap("section" -> Clinical()))
+      val right = PCM(LHMap("section" -> Orders()))
+
+      summon[Meet[PCM]].meet(left, right).cio shouldBe empty
     }
 
     "reject direct meets of unrelated atomic values" in {

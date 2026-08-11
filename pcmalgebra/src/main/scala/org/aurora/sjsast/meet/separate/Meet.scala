@@ -1,5 +1,6 @@
 package org.aurora.sjsast.meet.separate
 
+import magnolia1.*
 import org.aurora.sjsast.*
 
 @FunctionalInterface
@@ -7,10 +8,9 @@ import org.aurora.sjsast.*
 trait Meet[T]:
   def meet(a: T, b: T): T
 
-object Meet:
+object Meet extends AutoDerivation[Meet]:
 
-  extension [T](a: T)(using instance: Meet[T])
-    def |&|(b: T): T = instance.meet(a, b)
+  extension [T](a: T)(using instance: Meet[T]) def |&|(b: T): T = instance.meet(a, b)
 
   // intersects values that share the same logical key
   private def intersectBy[T, K](
@@ -32,6 +32,24 @@ object Meet:
       }
     }
     LHSet.from(intersection.values)
+
+  // keeps coordinate variants separate when names match
+  private def refCoordinateKey(coordinate: RefCoordinate): (String, String) =
+    val coordinateType = coordinate match
+      case _: ClinicalCoordinate => "clinical coordinate"
+      case _: ClinicalValue      => "clinical value"
+      case _: IssueCoordinate    => "issue coordinate"
+      case _: OrderCoordinate    => "order coordinate"
+
+    coordinateType -> coordinate.name
+
+  // checks whether two sections have the same variant
+  private def sameCioVariant(a: CIO, b: CIO): Boolean =
+    (a, b) match
+      case (_: Clinical, _: Clinical) => true
+      case (_: Issues, _: Issues)     => true
+      case (_: Orders, _: Orders)     => true
+      case _                          => false
 
   // basic values
   given Meet[String] = (a, b) => if a == b then a else ""
@@ -89,7 +107,55 @@ object Meet:
 
   given meetQuReferences: Meet[QuReferences] = (a, b) => QuReferences(intersectBy(a.qurc, b.qurc, _.refName))
 
-  // Todo figure out sets of qu refs and QUs
-  // todo:    figure out named coordinates and groups
-  // Todo: figure out mixed coordinates and CIO maps
-  // Todo  : look into magnolia for the rest of the aurora model
+  // parsed reference fields contain one wrapper
+  given meetQuReferenceSets: Meet[LHSet[QuReferences]] = (a, b) =>
+    val left = QuReferences(LHSet.from(a.iterator.flatMap(_.qurc)))
+    val right = QuReferences(LHSet.from(b.iterator.flatMap(_.qurc)))
+    val intersection = summon[Meet[QuReferences]].meet(left, right)
+
+    if intersection.qurc.isEmpty then LHSet()
+    else LHSet(intersection)
+
+  given meetQUSets: Meet[LHSet[QU]] = (a, b) => LHSet.from(a.filter(b.contains))
+
+  // named coordinates
+  given meetOrderCoordinates: Meet[LHSet[OrderCoordinate]] = (a, b) => intersectBy(a, b, _.name)
+
+  given meetIssueCoordinates: Meet[LHSet[IssueCoordinate]] = (a, b) => intersectBy(a, b, _.name)
+
+  given meetClinicalCoordinates: Meet[LHSet[ClinicalCoordinate]] = (a, b) => intersectBy(a, b, _.name)
+
+  given meetClinicalValues: Meet[LHSet[ClinicalValue]] = (a, b) => intersectBy(a, b, _.name)
+
+  // named groups
+  given meetNGOs: Meet[LHSet[NGO]] = (a, b) => intersectBy(a, b, _.name)
+
+  given meetNGCs: Meet[LHSet[NGC]] = (a, b) => intersectBy(a, b, _.name)
+
+  // mixed coordinate collections
+  given meetRefCoordinates: Meet[LHSet[RefCoordinate]] = (a, b) => intersectBy(a, b, refCoordinateKey)
+
+  // section maps omit keys whose section variants disagree
+  given meetCioMaps: Meet[LHMap[String, CIO]] = (a, b) =>
+    val intersection = LHMap[String, CIO]()
+    val cioMeet = summon[Meet[CIO]]
+
+    a.foreach { (key, leftSection) =>
+      b.get(key).foreach { rightSection =>
+        if sameCioVariant(leftSection, rightSection) then intersection(key) = cioMeet.meet(leftSection, rightSection)
+      }
+    }
+    intersection
+
+  // magnolia calls this hook join for case class derivation
+  def join[T](ctx: CaseClass[Meet, T]): Meet[T] = (a, b) =>
+    ctx.construct { param =>
+      param.typeclass.meet(param.deref(a), param.deref(b))
+    }
+
+  // sealed values can only meet when their variants match
+  def split[T](ctx: SealedTrait[Meet, T]): Meet[T] = (a, b) =>
+    ctx.choose(a) { sub =>
+      if sub.cast.isDefinedAt(b) then sub.typeclass.meet(sub.value, sub.cast(b))
+      else throw IllegalArgumentException("meet requires values of the same variant")
+    }
