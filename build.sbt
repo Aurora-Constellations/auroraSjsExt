@@ -13,7 +13,11 @@ ThisBuild / scalaVersion := DependencyVersions.scala
 // Points all projects to the root node_modules and ignores problematic types
 val sharedStSettings = Seq(
   externalNpm := (ThisBuild / baseDirectory).value,
-  stIgnore ++= Seq("node", "typescript").toList
+  stIgnore ++= Seq(
+    "node", 
+    "typescript"
+  ).toList,
+  stMinimize := Selection.All
 )
 
 // --- Custom Task: Install Dependencies ---
@@ -68,14 +72,17 @@ lazy val copyToMedia = Def.task[Unit] {
   val mediaDir = base / "media"
   val outputDir_patienttracker = (axiompatienttracker / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
   val outputDir_billing = (axiombilling / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
+  val outputDir_d3 = (d3example / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
 
   val cssFile_patienttracker = base / "axiompatienttracker" / "src" / "styles.css"
   val cssFile_billing = base / "axiombilling" / "src" / "styles.css"
+  val cssFile_d3 = base / "d3example" / "styles.css"
 
   
 
   log.info(copyJSCSS(mediaDir, outputDir_patienttracker, cssFile_patienttracker, "main.js", "styles.css"))
   log.info(copyJSCSS(mediaDir, outputDir_billing, cssFile_billing, "ab_main.js", "ab_styles.css"))
+  log.info(copyJSCSS(mediaDir, outputDir_d3, cssFile_d3, "d3_main.js", "d3_styles.css"))
   
 }
 

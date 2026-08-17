@@ -8,7 +8,7 @@ import com.axiom.patienttracker.showPatients
 import com.axiom.billing.showBilling
 import org.aurora.sjsast.*
 import com.axiom.MergePCM.MergePCM.*
-import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
+// import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.vscode.mod.OutputChannel
@@ -26,12 +26,21 @@ import scala.scalajs.js.annotation.JSImport
 import scala.compiletime.uninitialized
 import scala.scalajs.js.timers.{SetIntervalHandle, setInterval, clearInterval}
 import org.aurora.sjsast.GenAst
+import com.axiom.visual.D3DiagramManager
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
   private var isRecording: Boolean = false
   private var startTime: Double = 0.0
   private var timerHandle: SetIntervalHandle | Null = null
+
+  def refreshDiagram(document: TextDocument, d3Manager: D3DiagramManager): Unit = {
+    if (document.languageId == "aurora" || document.fileName.endsWith(".aurora")) {
+      val content = document.getText()
+      d3Manager.updateDiagram(content)
+      println("Sent updated Aurora code to D3 webview.")
+    }
+  }
 
   def initRecordingStatusBar(context: vscode.ExtensionContext): Unit = {
     recordingItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
@@ -212,13 +221,13 @@ object PublishCommands:
     }
   }
 
-  def refreshDiagram(document: TextDocument, langConfig: LanguageClientConfigSingleton): Unit = {
-        val wvp = langConfig.webviewViewProvider.asInstanceOf[LspSprottyViewProvider]
-        wvp.openDiagram(document.uri).toFuture.onComplete {
-              case Success(_) => println("Diagram has been refreshed.")
-              case Failure(e) => println(s"Failed to refresh diagram: ${e}")
-        }
-  }
+  // def refreshDiagram(document: TextDocument, langConfig: LanguageClientConfigSingleton): Unit = {
+  //       val wvp = langConfig.webviewViewProvider.asInstanceOf[LspSprottyViewProvider]
+  //       wvp.openDiagram(document.uri).toFuture.onComplete {
+  //             case Success(_) => println("Diagram has been refreshed.")
+  //             case Failure(e) => println(s"Failed to refresh diagram: ${e}")
+  //       }
+  // }
 
   def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
     (args) => {

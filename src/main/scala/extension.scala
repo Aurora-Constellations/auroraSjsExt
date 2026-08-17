@@ -7,14 +7,17 @@ import scala.scalajs.js.annotation._
 import vscode.{ExtensionContext}
 import PublishCommands.{publishCommands, initRecordingStatusBar}
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
-import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
+// import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import PublishCommands.{refreshDiagram}
 import com.axiom.patienttracker.sendMessageToPatientTracker
 import com.axiom.Narratives.ManageNarratives.getParseNarratives
+import com.axiom.visual.D3DiagramManager
+import scala.compiletime.uninitialized
 
 object AuroraSjsExt {
   val langConfig = LanguageClientConfigSingleton.getInstance()
+  var d3Manager: D3DiagramManager = uninitialized
 
   @JSExportTopLevel("activate")
   def activate(context: vscode.ExtensionContext): Unit = {
@@ -29,25 +32,28 @@ object AuroraSjsExt {
       due to VS Code's security and UX model. But here is an acceptable approach
     */
     vscode.commands.executeCommand("vscode.openFolder", folderUri, false) 
+
+    d3Manager = new D3DiagramManager(context)
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider("aurora", d3Manager.provider).asInstanceOf[Dispose]
+    )
      
     vscode.workspace.onDidSaveTextDocument(
       (doc: TextDocument) => {
-        refreshDiagram(doc, langConfig)
+        refreshDiagram(doc, d3Manager) // Pass our manager instead of langConfig
+        
         getParseNarratives(context).onComplete {
-          case Success(categories) =>
-            sendMessageToPatientTracker(categories)
-          case Failure(e) =>
-            println(s"Failed with error: ${e.getMessage}")
+          case Success(categories) => sendMessageToPatientTracker(categories)
+          case Failure(e) => println(s"Failed with error: ${e.getMessage}")
         }
-        }, 
+      }, 
       js.undefined,
       js.undefined
     )
+    val serverPath = context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs")
     
-    langConfig.setServerModule(context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs"))
-    println(langConfig.getServerModule())
-    langConfig.initialize(context)
-    langConfig.registerWebviewViewProvider()
+    langConfig.asInstanceOf[js.Dynamic].initialize(context, serverPath)
+    // langConfig.registerWebviewViewProvider()
     val outputChannel = vscode.window.createOutputChannel("My Extension")  
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
     outputChannel.show(preserveFocus = true)
