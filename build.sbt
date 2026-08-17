@@ -370,3 +370,24 @@ cleanStCache := {
 
   log.info("Cleanup completed successfully.")
 }
+
+lazy val auroratodot = project
+  .in(file("auroratodot"))
+  .dependsOn(pcmalgebra) // Gives instant access to PCM, CIO, NGC, etc.
+  .enablePlugins(ScalaJSPlugin)
+  .settings(
+    name := "auroratodot",
+    scalaVersion := DependencyVersions.scala, // Match this to your pcmalgebra scala version
+    scalaJSUseMainModuleInitializer := true,
+    // Tells Scala.js to emit Node.js compatible module imports (require)
+    scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
+    
+    // Dependencies for testing
+    libraryDependencies ++= Dependencies.scalatest.value,
+    
+    // This tells sbt-assembly what the main entry point is when you share the JAR
+    assembly / mainClass := Some("org.aurora.dot.Main"),
+    
+    // Name of the sharable file it generates
+    assembly / assemblyJarName := "aurora-to-dot-converter.jar"
+  )
