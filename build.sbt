@@ -373,7 +373,7 @@ cleanStCache := {
 
 lazy val auroratodot = project
   .in(file("auroratodot"))
-  .dependsOn(pcmalgebra) // Gives instant access to PCM, CIO, NGC, etc.
+  .dependsOn(pcmalgebra, d3example) // Gives instant access to PCM, CIO, NGC, etc.
   .enablePlugins(ScalaJSPlugin)
   .settings(
     name := "auroratodot",
