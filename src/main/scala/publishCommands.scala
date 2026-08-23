@@ -37,7 +37,8 @@ object PublishCommands:
   def refreshDiagram(document: TextDocument, d3Manager: D3DiagramManager): Unit = {
     if (document.languageId == "aurora" || document.fileName.endsWith(".aurora")) {
       val content = document.getText()
-      d3Manager.updateDiagram(content)
+      vscode.commands.executeCommand("updateDiagram", content)
+      // d3Manager.updateDiagram(content)
       println("Sent updated Aurora code to D3 webview.")
     }
   }

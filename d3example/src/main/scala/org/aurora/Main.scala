@@ -30,40 +30,14 @@ def main(): Unit = {
   )
 
   // Listen for the file content pushed from VS Code
-  dom.window.addEventListener("message", (event: dom.MessageEvent) => {
-    val message = event.data.asInstanceOf[js.Dynamic]
-    if (message.command.asInstanceOf[String] == "updateDiagram") {
-      val textContent = message.data.asInstanceOf[String]
-      println("Message received to D3")
-      renderDiagram(textContent, renderer, layoutOptions)
-    }
-  })
+  // dom.window.addEventListener("message", (event: dom.MessageEvent) => {
+  //   val message = event.data.asInstanceOf[js.Dynamic]
+  //   if (message.command.asInstanceOf[String] == "updateDiagram") {
+  //     val textContent = message.data.asInstanceOf[String]
+  //     println("Message received to D3")
+  //     renderDiagram(textContent, renderer, layoutOptions)
+  //   }
+  // })
 }
 
 // Extracted for clean high-level reading
-private def renderDiagram(textContent: String, renderer: D3Renderer, layoutOptions: LHMap[String, String]): Unit = {
-  // Clear the previous render safely
-  val container = dom.document.getElementById("d3-container")
-  if (container != null) container.innerHTML = ""
-
-  val pipeline = for {
-    _ <- Future { println("String received! Parsing...") }
-    parsedAst <- BrowserParser.parseString(textContent)
-    
-    _ <- Future { println("Running ELK Layout...") }
-    elkNode <- AuroraElk.Graph(PCM(parsedAst), layoutOptions).graph
-
-  } yield {
-    println("Transforming and Rendering D3 tree...")
-    val d3Tree = AstTransformer.fromElkToD3Node(elkNode, PCM(parsedAst))
-    renderer.render(d3Tree.toJS)
-  }
-
-  pipeline.recover { case e: Exception =>
-    println(s"Pipeline error: ${e.getMessage}")
-    if (container != null) {
-      container.innerHTML = s"""<div style="color:red; padding:10px;">Error rendering diagram: ${e.getMessage}</div>"""
-    }
-    e.printStackTrace()
-  }
-}

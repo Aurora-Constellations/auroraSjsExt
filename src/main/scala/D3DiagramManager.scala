@@ -3,6 +3,11 @@ package com.axiom.visual
 import typings.vscode.mod as vscode
 import typings.std.PromiseLike // Import the exact ST type
 import scala.scalajs.js
+import org.aurora.sjsast.scoring.af.Cha2ds2VascRiskFactor
+import org.aurora.utils.Diagram
+import org.aurora.visual.d3.D3Renderer
+import org.aurora.sjsast.LHMap
+import concurrent.ExecutionContext.Implicits.global
 
 class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extContext to avoid shadowing
 	private var view: Option[vscode.WebviewView] = None

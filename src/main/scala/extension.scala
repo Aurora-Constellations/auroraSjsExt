@@ -19,6 +19,16 @@ object AuroraSjsExt {
   val langConfig = LanguageClientConfigSingleton.getInstance()
   var d3Manager: D3DiagramManager = uninitialized
 
+  def addUpdateDiagramCommand(context: vscode.ExtensionContext) = 
+    val command = vscode.commands.registerCommand("updateDiagram", (content: Any) => { /* type signature requires that the input have type "Any" */
+      content match {
+        case pcm: String => println(pcm)
+        case _ => vscode.window.showInformationMessage("You need to pass in the PCM as a string to update the diagram.")
+      }
+    })
+    context.subscriptions.push(command.asInstanceOf[Dispose])
+    
+
   @JSExportTopLevel("activate")
   def activate(context: vscode.ExtensionContext): Unit = {
 
@@ -27,6 +37,8 @@ object AuroraSjsExt {
     val defaultPath = path.join(context.extensionPath, "auroraFiles").toString
     // Create URI and ask to open it as workspace
     val folderUri = vscode.Uri.file(defaultPath)
+
+    addUpdateDiagramCommand(context)
     /* Note:
       extensions cannot directly change or open a workspace folder programmatically on activation 
       due to VS Code's security and UX model. But here is an acceptable approach
