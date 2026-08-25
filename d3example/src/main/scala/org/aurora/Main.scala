@@ -9,15 +9,17 @@ import scala.concurrent.Future
 import org.aurora.visual.elk.AuroraElk
 import org.aurora.visual.d3.AstTransformer
 import org.aurora.visual.d3.D3Renderer
+import org.aurora.utils.Diagram
 
 @JSImport("@find/**/HelloWorld.less", JSImport.Namespace)
 @js.native
 private object Stylesheet extends js.Object
 val _ = Stylesheet
 
-@main
-def main(): Unit = {
-  println("Aurora D3 Visualization ready. Listening for updates...")
+object D3MainObject {
+
+  def main(args: Array[String]): Unit = {
+  println("D3 MAIN STARTED")
   
   // Attach specifically to the container created in the HTML template
   val renderer = new D3Renderer("#d3-container")
@@ -30,14 +32,19 @@ def main(): Unit = {
   )
 
   // Listen for the file content pushed from VS Code
-  // dom.window.addEventListener("message", (event: dom.MessageEvent) => {
-  //   val message = event.data.asInstanceOf[js.Dynamic]
-  //   if (message.command.asInstanceOf[String] == "updateDiagram") {
-  //     val textContent = message.data.asInstanceOf[String]
-  //     println("Message received to D3")
-  //     renderDiagram(textContent, renderer, layoutOptions)
-  //   }
-  // })
+  dom.window.addEventListener("message", (event: dom.MessageEvent) => {
+    println("Message received by D3")
+    val message = event.data.asInstanceOf[js.Dynamic]
+    if (message.command.asInstanceOf[String] == "updateDiagram") {
+      val textContent = message.data.asInstanceOf[String]
+      Diagram.renderDiagram(textContent, renderer, layoutOptions)
+    }
+  })
 }
 
 // Extracted for clean high-level reading
+
+
+}
+
+

@@ -80,7 +80,7 @@ class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extC
 		|</head>
 		|<body>
 		|    <div id="d3-container"></div>
-		|    <script src="$scriptUri"></script>
+ 		|    <script type="module" src="$scriptUri"></script>
 		|</body>
 		|</html>""".stripMargin
 	}

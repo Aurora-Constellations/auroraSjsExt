@@ -14,6 +14,11 @@ import com.axiom.patienttracker.sendMessageToPatientTracker
 import com.axiom.Narratives.ManageNarratives.getParseNarratives
 import com.axiom.visual.D3DiagramManager
 import scala.compiletime.uninitialized
+import org.aurora.visual.d3.D3Renderer
+import org.aurora.sjsast.LHMap
+import org.aurora.utils.Diagram
+import org.scalajs.dom
+import org.scalajs.dom.Element
 
 object AuroraSjsExt {
   val langConfig = LanguageClientConfigSingleton.getInstance()
@@ -22,8 +27,8 @@ object AuroraSjsExt {
   def addUpdateDiagramCommand(context: vscode.ExtensionContext) = 
     val command = vscode.commands.registerCommand("updateDiagram", (content: Any) => { /* type signature requires that the input have type "Any" */
       content match {
-        case pcm: String => println(pcm)
-        case _ => vscode.window.showInformationMessage("You need to pass in the PCM as a string to update the diagram.")
+        case pcmText: String => d3Manager.updateDiagram(pcmText)
+        case _ => vscode.window.showInformationMessage("You need to pass the PCM in as a string to update the diagram.")
       }
     })
     context.subscriptions.push(command.asInstanceOf[Dispose])

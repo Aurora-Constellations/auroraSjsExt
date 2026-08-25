@@ -9,9 +9,12 @@ import org.aurora.BrowserParser
 import org.aurora.visual.elk.AuroraElk
 import org.aurora.sjsast.PCM
 import org.aurora.visual.d3.AstTransformer
+import org.scalajs.dom.Element
+
 
 object Diagram {
-  def renderDiagram(textContent: String, renderer: D3Renderer, layoutOptions: LHMap[String, String])(implicit ec: ExecutionContext): Unit = {
+  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+  def renderDiagram(textContent: String, renderer: D3Renderer, layoutOptions: LHMap[String, String]): Unit = {
   // Clear the previous render safely
   val container = dom.document.getElementById("d3-container")
   if (container != null) container.innerHTML = ""

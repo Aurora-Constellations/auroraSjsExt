@@ -66,7 +66,11 @@ def copyJSCSS(mediaDir:File, outputDir: File, cssFile:File, jsFileName: String, 
 
 
 // --- Custom Task: Copy Scala.js output to media ---
-lazy val copyToMedia = Def.task[Unit] {
+
+lazy val copyToMedia =
+  taskKey[Unit]("Copy Scala.js output files to media")
+
+copyToMedia := {
   val log = streams.value.log
   val base = baseDirectory.value
   val mediaDir = base / "media"
@@ -277,6 +281,7 @@ lazy val d3example = project
   .settings(
     name := "d3example",
     scalaJSUseMainModuleInitializer := true,
+    Compile / mainClass := Some("org.aurora.D3MainObject"),
     scalacOptions ++= Seq("-encoding", "utf-8", "-deprecation", "-feature"),
     scalaJSLinkerConfig ~= {
       _.withModuleKind(ModuleKind.ESModule)
@@ -290,6 +295,7 @@ lazy val d3example = project
     )
   )
   .settings(sharedStSettings)
+
 
 // ---- Custom Command to Clean build directories and StCache ----
 
