@@ -6,15 +6,15 @@ import org.aurora.sjsast.utils.{NarrativeType, Qualifier}
 
 object DotGenerator:
 
-  def generate(pcm: PCM): String = 
-    given sb: StringBuilder = new StringBuilder()
-    
-    // Graph Header and default styling
-    append("digraph AuroraModel {")
-    append("  rankdir=TB;")
-    append("  node [shape=box, style=\"rounded,filled\", fillcolor=white, fontname=\"Helvetica\"];")
-    append("  edge [fontname=\"Helvetica\", color=gray50];\n")
+  // --- 1. State Management Context ---
+  // Segregates edges and nodes into separate buffers during a single traversal pass
+  private class DotContext:
+    val edges = new StringBuilder()
+    val nodes = new StringBuilder()
 
+  def generate(pcm: PCM): String = 
+    given ctx: DotContext = new DotContext()
+    
     val rootId = "PCM_Root"
     appendNode(rootId, "PCM Model", "ellipse", "lightblue")
 
@@ -24,16 +24,44 @@ object DotGenerator:
       appendNode(cioId, cioName, "box", "lightgrey")
       appendEdge(rootId, cioId)
 
-      // 2. Start recursive traversal passing the implicit StringBuilder
+      // 2. Start recursive traversal passing the implicit context
       traverseAst(cioNode, cioId)
     }
 
-    append("}")
-    sb.toString()
+    // 3. Assemble the final DOT file using the requested skeleton
+    val finalSb = new StringBuilder()
+    
+    finalSb.append("digraph AuroraModel {\n")
+    finalSb.append("  // Attributes at top level apply to the graph itself.\n")
+    finalSb.append("  rankdir=TB;\n")
+    finalSb.append("  outputorder=edgesfirst;\n")
+    finalSb.append("  pad=\"0.25\";\n")
+    finalSb.append("  layout=dot;\n\n")
+    
+    finalSb.append("  // Default node attributes\n")
+    finalSb.append("  node [\n")
+    finalSb.append("    shape = circle\n")
+    finalSb.append("    style = \"filled\"\n")
+    finalSb.append("    color = black\n")
+    finalSb.append("    fillcolor = \"#F2F2F2\"\n")
+    finalSb.append("    fontname = \"Helvetica\"\n")
+    finalSb.append("  ];\n\n")
 
-  // --- 1. AST Traversal Engine ---
+    finalSb.append("  // Default edge attributes\n")
+    finalSb.append("  edge [fontname=\"Helvetica\", color=gray50];\n\n")
 
-  private def traverseAst(node: AstNode, parentId: String)(using sb: StringBuilder): Unit =
+    finalSb.append("  // --- Edges ---\n")
+    finalSb.append(ctx.edges.toString())
+    
+    finalSb.append("\n  // --- Node attributes ---\n")
+    finalSb.append(ctx.nodes.toString())
+    
+    finalSb.append("}\n")
+    finalSb.toString()
+
+  // --- 2. AST Traversal Engine ---
+
+  private def traverseAst(node: AstNode, parentId: String)(using ctx: DotContext): Unit =
     node match
       case clinical: Clinical =>
         clinical.narratives.foreach(traverseAst(_, parentId))
@@ -108,9 +136,9 @@ object DotGenerator:
       case _ => 
         // Safely ignore unhandled nodes
 
-  // --- 2. Cross-Reference Mapper ---
+  // --- 3. Cross-Reference Mapper ---
 
-  private def processCrossReferences(qurefs: Iterable[QuReferences], sourceId: String)(using sb: StringBuilder): Unit =
+  private def processCrossReferences(qurefs: Iterable[QuReferences], sourceId: String)(using ctx: DotContext): Unit =
     if qurefs != null then
       qurefs.foreach { refsNode =>
         if refsNode.qurc != null then
@@ -122,12 +150,12 @@ object DotGenerator:
           }
       }
 
-  // --- 3. Semantic Styling Engine ---
+  // --- 4. Semantic Styling Engine ---
 
   private def getBorderAttrs(qual: Qualifier): String =
     qual match
       case Qualifier.Urgent   => "color=red, penwidth=2.0"
-      case Qualifier.Negative => "color=red, penwidth=2.0, style=\"rounded,filled,dashed\""
+      case Qualifier.Negative => "color=red, penwidth=2.0, style=\"filled,bold,dashed\"" // Updated style to respect top-level defaults
       case Qualifier.Draft    => "color=gold, penwidth=2.0"
       case _                  => ""
 
@@ -142,18 +170,16 @@ object DotGenerator:
     val constraint = if isCrossReference then "constraint=false" else ""
     List(baseStyle, constraint).filter(_.nonEmpty).mkString(", ")
 
-  // --- 4. DOT Sub-Builders ---
+  // --- 5. DOT Sub-Builders ---
 
-  private def append(str: String)(using sb: StringBuilder): Unit =
-    sb.append(str).append("\n")
-
-  private def appendNode(id: String, label: String, shape: String, fillcolor: String, extraAttrs: String = "")(using sb: StringBuilder): Unit =
+  private def appendNode(id: String, label: String, shape: String, fillcolor: String, extraAttrs: String = "")(using ctx: DotContext): Unit =
     val attrs = if extraAttrs.isEmpty then "" else s", $extraAttrs"
-    append(s"  $id [label=\"${escapeLabel(label)}\", shape=$shape, fillcolor=$fillcolor$attrs];")
+    // Using quotes around fillcolor ensures hex codes (e.g. "#FBB5AE") are handled safely
+    ctx.nodes.append(s"  $id [label=\"${escapeLabel(label)}\", shape=$shape, fillcolor=\"$fillcolor\"$attrs];\n")
 
-  private def appendEdge(from: String, to: String, attrs: String = "")(using sb: StringBuilder): Unit =
+  private def appendEdge(from: String, to: String, attrs: String = "")(using ctx: DotContext): Unit =
     val attrStr = if attrs.isEmpty then "" else s" [$attrs]"
-    append(s"  $from -> $to$attrStr;")
+    ctx.edges.append(s"  $from -> $to$attrStr;\n")
 
   private def getCoordId(name: String): String = sanitizeId(s"Coord_$name")
   private def sanitizeId(str: String): String = str.replaceAll("[^a-zA-Z0-9_]", "_")
