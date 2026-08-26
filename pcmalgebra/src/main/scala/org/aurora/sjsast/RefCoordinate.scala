@@ -10,7 +10,7 @@ object RefCoordinate:
   def apply(ast: GenAst.ReferenceCoordinate): RefCoordinate =
     val node = ast.asInstanceOf[js.Dynamic]
     node.`$type`.asInstanceOf[String] match {
-      case "ClinicalCoordinate" => 
+      case "ClinicalItem" =>
         ClinicalItem(ast.asInstanceOf[GenAst.ClinicalItem])
       case "IssueCoordinate"    => 
         IssueCoordinate(ast.asInstanceOf[GenAst.IssueCoordinate])
@@ -34,7 +34,9 @@ object ClinicalItem:
     val narratives = LHSet(cc.narrative.toList.map(NL_STATEMENT(_))*)
     val qurefs = LHSet(cc.qurc.toList.map(QuReferences(_))*)
     val qu = QU(cc.qu)
-    val values = cc.values.toList.map(SingleValueUnit.apply)
+    val values =
+      if js.isUndefined(cc.values) then List()
+      else cc.values.toList.map(SingleValueUnit.apply)
     ClinicalItem(name, narratives, qurefs, qu, values)
 
 case class IssueCoordinate(

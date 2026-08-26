@@ -16,8 +16,8 @@ class ArnoldJoinMeetAsyncTest extends BaseAsyncTest :
 
 
       for{
-        pcm1 <- ir(0).map{_.get}
-        pcm2  <- ir(0).map{_.get}
+        pcm1 <- ir(0)
+        pcm2 <- ir(0)
         _     <- finfo(s"$pcm1")
         result <- pcm1 |+| pcm2 should be( pcm1)
       }

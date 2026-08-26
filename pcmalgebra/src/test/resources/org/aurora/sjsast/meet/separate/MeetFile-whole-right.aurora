@@ -1,0 +1,22 @@
+Clinical:
+shared:
+age [20 years, 30 years]
+
+right_only:
+
+Issues:
+condition
+-- shared issue note;
+-- right issue note;
+
+right_only
+
+Orders:
+Treatment:
+diet
+-- shared order note;
+-- right order note;
+
+right_only
+
+RightOnly:

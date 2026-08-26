@@ -1,0 +1,12 @@
+Clinical:
+shared:
+age [20 years]
+
+Issues:
+condition
+-- shared issue note;
+
+Orders:
+Treatment:
+diet
+-- shared order note;
