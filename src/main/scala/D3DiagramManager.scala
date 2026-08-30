@@ -31,13 +31,15 @@ class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extC
 		}
 	}
 
-	def updateDiagram(content: String): Unit = {
-		view.foreach { v =>
-		v.webview.postMessage(js.Dynamic.literal(
+	def updateDiagram(data: js.Any): Unit = {
+	view.foreach { v =>
+		v.webview.postMessage(
+		js.Dynamic.literal(
 			command = "updateDiagram",
-			data = content
-		))
-		}
+			data = data
+		)
+		)
+	}
 	}
 
 	private def getHtmlForWebview(webview: vscode.Webview): String = {

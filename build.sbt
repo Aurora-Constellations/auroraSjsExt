@@ -46,21 +46,43 @@ lazy val installDependencies = Def.task[Unit] {
   copyDir(auroraLangiumDir / "syntaxes", base / "syntaxes")
 }
 
-def copyJSCSS(mediaDir:File, outputDir: File, cssFile:File, jsFileName: String, cssFileName: String): String = {
+def copyJSCSS(
+    mediaDir: File,
+    outputDir: File,
+    cssFile: File,
+    jsFileName: String,
+    cssFileName: String
+): String = {
+
   IO.createDirectory(mediaDir)
-  // Copy JS files
+
   val jsFiles = (outputDir ** "*.js").get
-  jsFiles.foreach { file =>
-    val target = mediaDir / jsFileName
-    IO.copyFile(file, target, preserveLastModified = true)
+
+  println("========== JS FILES FOUND ==========")
+  jsFiles.foreach(f => println(f.getAbsolutePath))
+  println("====================================")
+
+  val mainFile = jsFiles.find(_.getName == "main.js")
+
+  mainFile match {
+    case Some(file) =>
+      val target = mediaDir / jsFileName
+      IO.copyFile(file, target, preserveLastModified = true)
+
+      println(
+        s"COPIED MAIN FILE:\n${file.getAbsolutePath}\nTO:\n${target.getAbsolutePath}"
+      )
+
+    case None =>
+      println("ERROR: main.js WAS NOT FOUND")
   }
-  // Copy styles.css
+
   if (cssFile.exists()) {
     val cssTarget = mediaDir / cssFileName
     IO.copyFile(cssFile, cssTarget, preserveLastModified = true)
-    return s"Copied ${cssFileName} & ${jsFileName} to media/"
+    s"Copied $cssFileName & $jsFileName to media/"
   } else {
-    return s"${cssFileName} not found"
+    s"$cssFileName not found"
   }
 }
 
@@ -124,7 +146,7 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
       s"$command --extensionDevelopmentPath=$path" ! log
       ()
     }
-    .dependsOn(copyToMedia)
+    //.dependsOn(copyToMedia)
 
 // --- Root Project ---
 lazy val root = project
@@ -133,7 +155,7 @@ lazy val root = project
   .dependsOn(axiompatienttracker, pcmalgebra, d3example)
   .settings(
     name := "auroraSjsExt",
-    open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,
+    open := openVSCodeTask.value,
     scalacOptions ++= Seq("-Xmax-inlines", "100"),
     Compile / fastOptJS := (Compile / fastOptJS)
       .dependsOn(audioToText / Compile/ compile)

@@ -55,7 +55,7 @@ trait D3AugmentedNode extends js.Object:
     def each(callback: js.Function1[D3AugmentedNode, Unit]): Unit
 
 // 2. The Reusable Renderer Class
-class D3Renderer(containerSelector: String):
+class D3Renderer(val containerSelector: String):
 
     private def getNodeColor(nodeType: String): String = nodeType match {
         case "Reference"                           => "#6fbbfa"
@@ -79,11 +79,29 @@ class D3Renderer(containerSelector: String):
         if (edgeType == Qualifier.Negative.elkType) "6, 6" else "none"
 
     def render(data: js.Any): Unit = {
-        val container = d3.select(containerSelector).asInstanceOf[js.Dynamic]
-        container.selectAll("*").remove()
 
-        // --- NEW: 1. Initialize a hidden tooltip div ---
-        val tooltip = d3
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>1. RENDER FUNCTION ENTERED</h2>"
+    )
+
+    val container =
+        d3.select(containerSelector).asInstanceOf[js.Dynamic]
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>2. D3 SELECT WORKED</h2>"
+    )
+
+    container.selectAll("*").remove()
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>3. CLEAR WORKED</h2>"
+    )
+
+    // --- Tooltip ---
+    val tooltip = d3
         .select("body")
         .append("div")
         .style("position", "absolute")
@@ -95,15 +113,19 @@ class D3Renderer(containerSelector: String):
         .style("border", "1px solid #555")
         .style("font-size", "12px")
         .style("font-family", "sans-serif")
-        .style("pointer-events", "none") // Prevents the tooltip from blocking mouse events
+        .style("pointer-events", "none")
         .style("z-index", "1000")
         .style("box-shadow", "0px 4px 6px rgba(0,0,0,0.3)")
-        // -----------------------------------------------
 
-        val width = dom.window.innerWidth.toDouble
-        val height = dom.window.innerHeight.toDouble
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>4. TOOLTIP CREATED</h2>"
+    )
 
-        val svg = container
+    val width = dom.window.innerWidth.toDouble
+    val height = dom.window.innerHeight.toDouble
+
+    val svg = container
         .append("svg")
         .attr("width", "100%")
         .attr("height", "100vh")
@@ -112,47 +134,117 @@ class D3Renderer(containerSelector: String):
         .style("font-family", "sans-serif")
         .asInstanceOf[js.Dynamic]
 
-        val g = svg.append("g").asInstanceOf[js.Dynamic]
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>5. SVG CREATED</h2>"
+    )
 
-        val zoom = d3
+    val g =
+        svg.append("g").asInstanceOf[js.Dynamic]
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>6. GROUP CREATED</h2>"
+    )
+
+    val zoom = d3
         .zoom()
         .asInstanceOf[js.Dynamic]
         .on(
-            "zoom",
-            (e: dom.Event) => {
-                g.attr("transform", e.asInstanceOf[js.Dynamic].transform)
-            }
+        "zoom",
+        (e: dom.Event) => {
+            g.attr(
+            "transform",
+            e.asInstanceOf[js.Dynamic].transform
+            )
+        }
         )
-        svg.call(zoom)
 
-        val root = d3.hierarchy[js.Any](data).asInstanceOf[D3AugmentedNode]
+    svg.call(zoom)
 
-        root.each { (d: D3AugmentedNode) =>
-            val parentX = d.parent.toSafeOption.map(_.absoluteX).getOrElse(0.0)
-            val parentY = d.parent.toSafeOption.map(_.absoluteY).getOrElse(0.0)
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>7. ZOOM SETUP WORKED</h2>"
+    )
 
-            d.absoluteX = parentX + d.data.x.toSafeOption.getOrElse(0.0)
-            d.absoluteY = parentY + d.data.y.toSafeOption.getOrElse(0.0)
+    val root =
+        d3.hierarchy[js.Any](data)
+        .asInstanceOf[D3AugmentedNode]
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>8. HIERARCHY CREATED</h2>"
+    )
+
+    root.each { (d: D3AugmentedNode) =>
+
+        val parentX =
+        d.parent.toSafeOption
+            .map(_.absoluteX)
+            .getOrElse(0.0)
+
+        val parentY =
+        d.parent.toSafeOption
+            .map(_.absoluteY)
+            .getOrElse(0.0)
+
+        d.absoluteX =
+        parentX +
+            d.data.x.toSafeOption.getOrElse(0.0)
+
+        d.absoluteY =
+        parentY +
+            d.data.y.toSafeOption.getOrElse(0.0)
+    }
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>9. ABSOLUTE POSITIONS WORKED</h2>"
+    )
+
+    val nodes =
+        root.descendants()
+        .toList
+        .filter(d => d.parent.toSafeOption.isDefined)
+
+    val allEdges =
+        js.Array[ElkEdgeWithAbs]()
+
+    root.each { (d: D3AugmentedNode) =>
+
+        d.data.edges.toSafeOption
+        .map(_.toList)
+        .getOrElse(List.empty)
+        .foreach { (e: ElkEdgeWithAbs) =>
+
+            e.parentAbsX = d.absoluteX
+            e.parentAbsY = d.absoluteY
+
+            allEdges.push(e)
         }
+    }
 
-        val nodes = root.descendants().toList.filter(d => d.parent.toSafeOption.isDefined)
-        val allEdges = js.Array[ElkEdgeWithAbs]()
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        s"""
+        |<h2>10. NODE/EDGE PREP WORKED</h2>
+        |<p>Nodes = ${nodes.size}</p>
+        |<p>Edges = ${allEdges.length}</p>
+        |""".stripMargin
+    )
 
-        root.each { (d: D3AugmentedNode) =>
-            d.data.edges.toSafeOption.map(_.toList).getOrElse(List.empty).foreach { (e: ElkEdgeWithAbs) =>
-                e.parentAbsX = d.absoluteX
-                e.parentAbsY = d.absoluteY
-                allEdges.push(e)
-            }
-        }
-
-        val lineGenerator = d3
+    val lineGenerator = d3
         .line()
         .asInstanceOf[js.Dynamic]
         .x((p: ElkPoint) => p.x)
         .y((p: ElkPoint) => p.y)
 
-        g.selectAll(".link")
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>11. LINE GENERATOR CREATED</h2>"
+    )
+
+    g.selectAll(".link")
         .data(allEdges)
         .enter()
         .append("path")
@@ -160,140 +252,336 @@ class D3Renderer(containerSelector: String):
         .style("fill", "none")
         .style("stroke-width", "2px")
         .style(
-            "stroke",
-            (d: ElkEdgeWithAbs) => {
-                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse(Qualifier.Normal.elkType)
-                getQuColor(edgeType)
-            }
+        "stroke",
+        (d: ElkEdgeWithAbs) => {
+
+            val edgeType =
+            d.id.toSafeOption
+                .getOrElse("")
+                .split("%%")
+                .lastOption
+                .getOrElse(Qualifier.Normal.elkType)
+
+            getQuColor(edgeType)
+        }
         )
         .style(
-            "stroke-dasharray",
-            (d: ElkEdgeWithAbs) => {
-                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse(Qualifier.Normal.elkType)
-                getEdgeDash(edgeType)
-            }
+        "stroke-dasharray",
+        (d: ElkEdgeWithAbs) => {
+
+            val edgeType =
+            d.id.toSafeOption
+                .getOrElse("")
+                .split("%%")
+                .lastOption
+                .getOrElse(Qualifier.Normal.elkType)
+
+            getEdgeDash(edgeType)
+        }
         )
         .attr(
-            "d",
-            (d: ElkEdgeWithAbs) => {
+        "d",
+        (d: ElkEdgeWithAbs) => {
+
             d.sections.toSafeOption
-                .map(_.toList)
-                .getOrElse(List.empty)
-                .headOption
-                .map { section =>
+            .map(_.toList)
+            .getOrElse(List.empty)
+            .headOption
+            .map { section =>
+
                 val pX = d.parentAbsX
                 val pY = d.parentAbsY
 
-                val points = js.Array[ElkPoint]()
+                val points =
+                js.Array[ElkPoint]()
+
                 points.push(
-                    js.Dictionary("x" -> (section.startPoint.x + pX), "y" -> (section.startPoint.y + pY))
-                    .asInstanceOf[ElkPoint]
+                js.Dictionary(
+                    "x" -> (section.startPoint.x + pX),
+                    "y" -> (section.startPoint.y + pY)
+                ).asInstanceOf[ElkPoint]
                 )
 
-                section.bendPoints.toSafeOption.map(_.toList).getOrElse(List.empty).foreach { bp =>
-                    points.push(js.Dictionary("x" -> (bp.x + pX), "y" -> (bp.y + pY)).asInstanceOf[ElkPoint])
+                section.bendPoints.toSafeOption
+                .map(_.toList)
+                .getOrElse(List.empty)
+                .foreach { bp =>
+
+                    points.push(
+                    js.Dictionary(
+                        "x" -> (bp.x + pX),
+                        "y" -> (bp.y + pY)
+                    ).asInstanceOf[ElkPoint]
+                    )
                 }
 
                 points.push(
-                    js.Dictionary("x" -> (section.endPoint.x + pX), "y" -> (section.endPoint.y + pY)).asInstanceOf[ElkPoint]
+                js.Dictionary(
+                    "x" -> (section.endPoint.x + pX),
+                    "y" -> (section.endPoint.y + pY)
+                ).asInstanceOf[ElkPoint]
                 )
 
-                val pathString = lineGenerator(points).asInstanceOf[String]
-                if (pathString != null) pathString else ""
-                }
-                .getOrElse("")
+                val pathString =
+                lineGenerator(points)
+                    .asInstanceOf[String]
+
+                if (pathString != null)
+                pathString
+                else
+                ""
             }
+            .getOrElse("")
+        }
         )
 
-        // --- NEW: 2. Interactive Node Selection ---
-        val nodeSelection = g
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>12. EDGES RENDERED</h2>"
+    )
+
+    val nodeSelection = g
         .selectAll(".node")
         .data(nodes.toJSArray)
         .enter()
         .append("g")
-        .attr("transform", (d: D3AugmentedNode) => s"translate(${d.absoluteX}, ${d.absoluteY})")
-        .style("cursor", "pointer") // Show hand cursor on hover
+        .attr(
+        "transform",
+        (d: D3AugmentedNode) =>
+            s"translate(${d.absoluteX}, ${d.absoluteY})"
+        )
+        .style("cursor", "pointer")
         .on(
-            "mouseover",
-            (e: dom.MouseEvent, d: D3AugmentedNode) => {
-            // Highlight the border
-            d3.select(e.currentTarget.asInstanceOf[dom.Element])
-                .select("rect")
-                .asInstanceOf[js.Dynamic]
-                .transition()
-                .duration(150)
-                // .style("stroke", "#ffffff")
-                // .style("stroke-width", "3px")
+        "mouseover",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
 
-            // Populate and show tooltip
-            val nType = d.data.nodeType.toSafeOption.getOrElse("Unknown").replace("Narrative", " Narrative")
-            val nName = d.data.name.toSafeOption.getOrElse("Unknown")
+            d3.select(
+            e.currentTarget.asInstanceOf[dom.Element]
+            )
+            .select("rect")
+            .asInstanceOf[js.Dynamic]
+            .transition()
+            .duration(150)
+
+            val nType =
+            d.data.nodeType.toSafeOption
+                .getOrElse("Unknown")
+                .replace(
+                "Narrative",
+                " Narrative"
+                )
+
+            val nName =
+            d.data.name.toSafeOption
+                .getOrElse("Unknown")
 
             tooltip
-                .html(s"<strong>Type:</strong> $nType <br/> <strong>Name:</strong> $nName")
-                .style("visibility", "visible")
-            }
+            .html(
+                s"""
+                |<strong>Type:</strong> $nType
+                |<br/>
+                |<strong>Name:</strong> $nName
+                |""".stripMargin
+            )
+            .style(
+                "visibility",
+                "visible"
+            )
+        }
         )
         .on(
-            "mousemove",
-            (e: dom.MouseEvent, d: D3AugmentedNode) => {
-            // Make tooltip follow the mouse smoothly
+        "mousemove",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
+
             tooltip
-                .style("top", s"${e.pageY + 15}px")
-                .style("left", s"${e.pageX + 15}px")
-            }
+            .style(
+                "top",
+                s"${e.pageY + 15}px"
+            )
+            .style(
+                "left",
+                s"${e.pageX + 15}px"
+            )
+        }
         )
         .on(
-            "mouseout",
-            (e: dom.MouseEvent, d: D3AugmentedNode) => {
-                // Revert border to normal
-                d3.select(e.currentTarget.asInstanceOf[dom.Element])
-                    .select("rect")
-                    .asInstanceOf[js.Dynamic]
-                    .transition()
-                    .duration(250)
-                    .style("stroke", getQuColor(d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)))
-                    .style("stroke-width", "2px")
+        "mouseout",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
 
-                // Hide tooltip
-                tooltip.style("visibility", "hidden")
-            }
+            d3.select(
+            e.currentTarget.asInstanceOf[dom.Element]
+            )
+            .select("rect")
+            .asInstanceOf[js.Dynamic]
+            .transition()
+            .duration(250)
+            .style(
+                "stroke",
+                getQuColor(
+                d.data.nodeQualifier.toSafeOption
+                    .getOrElse(
+                    Qualifier.Normal.elkType
+                    )
+                )
+            )
+            .style(
+                "stroke-width",
+                "2px"
+            )
+
+            tooltip.style(
+            "visibility",
+            "hidden"
+            )
+        }
         )
-        .on("click", (e: dom.MouseEvent, d: D3AugmentedNode) => {
-            // Click to center the camera on the node
-            val scale = 1.5 // Zoom in slightly
-            val targetX = (width / 2) - (d.absoluteX + (d.data.width.toSafeOption.getOrElse(0.0) / 2)) * scale
-            val targetY = (height / 2) - (d.absoluteY + (d.data.height.toSafeOption.getOrElse(0.0) / 2)) * scale
+        .on(
+        "click",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
 
-            // FIX: Access zoomIdentity statically so Vite bundles it properly
-            val newTransform = d3.zoomIdentity.translate(targetX, targetY).scale(scale)
+            val scale = 1.5
 
-            svg.transition().duration(750).call(zoom.transform, newTransform)
-        })
-        // ------------------------------------------
+            val targetX =
+            (width / 2) -
+                (
+                d.absoluteX +
+                    (
+                    d.data.width.toSafeOption
+                        .getOrElse(0.0) / 2
+                    )
+                ) * scale
 
-        nodeSelection
+            val targetY =
+            (height / 2) -
+                (
+                d.absoluteY +
+                    (
+                    d.data.height.toSafeOption
+                        .getOrElse(0.0) / 2
+                    )
+                ) * scale
+
+            val newTransform =
+            d3.zoomIdentity
+                .translate(
+                targetX,
+                targetY
+                )
+                .scale(scale)
+
+            svg.transition()
+            .duration(750)
+            .call(
+                zoom.transform,
+                newTransform
+            )
+        }
+        )
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>13. NODE SELECTION CREATED</h2>"
+    )
+
+    nodeSelection
         .append("rect")
-        .attr("width", (d: D3AugmentedNode) => d.data.width.toSafeOption.getOrElse(0.0))
-        .attr("height", (d: D3AugmentedNode) => d.data.height.toSafeOption.getOrElse(0.0))
+        .attr(
+        "width",
+        (d: D3AugmentedNode) =>
+            d.data.width.toSafeOption
+            .getOrElse(0.0)
+        )
+        .attr(
+        "height",
+        (d: D3AugmentedNode) =>
+            d.data.height.toSafeOption
+            .getOrElse(0.0)
+        )
         .attr("rx", 6)
         .attr("ry", 6)
-        .style("fill", (d: D3AugmentedNode) => getNodeColor(d.data.nodeType.toSafeOption.getOrElse("Unknown")))
-        .style("stroke", (d: D3AugmentedNode) => getQuColor(d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)))
-        .style("stroke-dasharray", (d: D3AugmentedNode) => {
-            val qual = d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)
-            getEdgeDash(qual)
-        })
-        .style("stroke-width", "2px")
+        .style(
+        "fill",
+        (d: D3AugmentedNode) =>
+            getNodeColor(
+            d.data.nodeType.toSafeOption
+                .getOrElse("Unknown")
+            )
+        )
+        .style(
+        "stroke",
+        (d: D3AugmentedNode) =>
+            getQuColor(
+            d.data.nodeQualifier.toSafeOption
+                .getOrElse(
+                Qualifier.Normal.elkType
+                )
+            )
+        )
+        .style(
+        "stroke-dasharray",
+        (d: D3AugmentedNode) => {
 
-        nodeSelection
+            val qual =
+            d.data.nodeQualifier.toSafeOption
+                .getOrElse(
+                Qualifier.Normal.elkType
+                )
+
+            getEdgeDash(qual)
+        }
+        )
+        .style(
+        "stroke-width",
+        "2px"
+        )
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2>14. RECTANGLES RENDERED</h2>"
+    )
+
+    nodeSelection
         .append("text")
-        .attr("x", (d: D3AugmentedNode) => d.data.width.toSafeOption.getOrElse(0.0) / 2)
-        .attr("y", (d: D3AugmentedNode) => d.data.height.toSafeOption.getOrElse(0.0) / 2)
-        .attr("dy", "4px")
-        .attr("text-anchor", "middle")
-        .style("fill", "#1e1e1e")
-        .style("font-size", "12px")
-        .style("font-weight", "bold")
-        .text((d: D3AugmentedNode) => d.data.name.toSafeOption.getOrElse("Unknown"))
+        .attr(
+        "x",
+        (d: D3AugmentedNode) =>
+            d.data.width.toSafeOption
+            .getOrElse(0.0) / 2
+        )
+        .attr(
+        "y",
+        (d: D3AugmentedNode) =>
+            d.data.height.toSafeOption
+            .getOrElse(0.0) / 2
+        )
+        .attr(
+        "dy",
+        "4px"
+        )
+        .attr(
+        "text-anchor",
+        "middle"
+        )
+        .style(
+        "fill",
+        "#1e1e1e"
+        )
+        .style(
+        "font-size",
+        "12px"
+        )
+        .style(
+        "font-weight",
+        "bold"
+        )
+        .text(
+        (d: D3AugmentedNode) =>
+            d.data.name.toSafeOption
+            .getOrElse("Unknown")
+        )
+
+    dom.document.body.insertAdjacentHTML(
+        "beforeend",
+        "<h2 style='color:green'>15. RENDER COMPLETE</h2>"
+    )
     }

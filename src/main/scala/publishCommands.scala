@@ -27,6 +27,8 @@ import scala.compiletime.uninitialized
 import scala.scalajs.js.timers.{SetIntervalHandle, setInterval, clearInterval}
 import org.aurora.sjsast.GenAst
 import com.axiom.visual.D3DiagramManager
+import org.aurora.visual.elk.AuroraElk
+import org.aurora.visual.d3.AstTransformer
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -34,15 +36,98 @@ object PublishCommands:
   private var startTime: Double = 0.0
   private var timerHandle: SetIntervalHandle | Null = null
 
-  def refreshDiagram(document: TextDocument, d3Manager: D3DiagramManager): Unit = {
-    if (document.languageId == "aurora" || document.fileName.endsWith(".aurora")) {
-      val content = document.getText()
-      vscode.commands.executeCommand("updateDiagram", content)
-      // d3Manager.updateDiagram(content)
-      println("Sent updated Aurora code to D3 webview.")
+  def refreshDiagram(
+    document: TextDocument,
+    d3Manager: D3DiagramManager
+): Unit = {
+
+  if (
+    document.languageId == "aurora" ||
+    document.fileName.endsWith(".aurora")
+  ) {
+
+    val currentFilePath = document.fileName
+
+    println("Parsing Aurora file for D3...")
+
+    parse(currentFilePath).toFuture.onComplete {
+
+      case Success(parsed) =>
+
+        try {
+
+          val currentPCM =
+            parsed.asInstanceOf[GenAst.PCM]
+
+          println("Aurora parsing successful.")
+
+          val layoutOptions = LHMap(
+            "elk.algorithm" -> "layered",
+            "elk.direction" -> "TOP",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+
+          AuroraElk
+            .Graph(
+              PCM(currentPCM),
+              layoutOptions
+            )
+            .graph
+            .onComplete {
+
+              case Success(elkNode) =>
+
+                try {
+
+                  println("ELK layout successful.")
+
+                  val d3Tree =
+                    AstTransformer.fromElkToD3Node(
+                      elkNode,
+                      PCM(currentPCM)
+                    )
+
+                  println("D3 transform successful.")
+
+                  d3Manager.updateDiagram(d3Tree.toJS)
+
+                } catch {
+
+                  case e: Exception =>
+                    println(
+                      s"D3 transformation failed: ${e.getMessage}"
+                    )
+                    e.printStackTrace()
+                }
+
+              case Failure(e) =>
+
+                println(
+                  s"ELK layout failed: ${e.getMessage}"
+                )
+                e.printStackTrace()
+            }
+
+        } catch {
+
+          case e: Exception =>
+
+            println(
+              s"Error converting parsed result to PCM: ${e.getMessage}"
+            )
+            e.printStackTrace()
+        }
+
+      case Failure(e) =>
+
+        println(
+          s"Aurora parsing failed: ${e.getMessage}"
+        )
+        e.printStackTrace()
     }
   }
-
+}
   def initRecordingStatusBar(context: vscode.ExtensionContext): Unit = {
     recordingItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
     context.subscriptions.push(recordingItem.asInstanceOf[Dispose])

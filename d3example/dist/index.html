@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>d3example</title>
+    <script>
+    window.global = window;
+    
+    // Expanded process mock
+    window.process = { 
+      env: {}, 
+      argv: [], // Fixes the 'length' error in setupExitTimer
+      on: function() {}, // Mocks process event listeners
+      cwd: function() { return '/'; }, // Mocks current working directory
+      platform: 'browser'
+    };
+    
+    // Buffer mock
+    window.Buffer = window.Buffer || {
+      isBuffer: function() { return false; },
+      from: function() { return new Uint8Array(); },
+      alloc: function(size) { return new Uint8Array(size || 0); },
+      allocUnsafe: function(size) { return new Uint8Array(size || 0); },
+      byteLength: function() { return 0; },
+      concat: function() { return new Uint8Array(); }
+    };
+  </script>
+    <script type="module" crossorigin src="/assets/index-764a8b7d.js"></script>
+    <link rel="stylesheet" href="/assets/style-ab64c317.css">
+  </head>
+  <body>
+    <div id="app"></div>
+    <svg id="d3svgaxis" width="400" height="400"></svg>
+    <svg id="d3svgforcelink" width="400" height="400"></svg> <!-- NEED TO COMPETE-->
+    <svg id="d3svgcircles" width="400" height="400"></svg>
+    <svg id="d3svgpath" width="400" height="400"></svg>
+    <svg id="d3svgbarchart" width="400" height="400"></svg>
+    <canvas id="d3canvas" width="400" height="400"></canvas>
+    
+  </body>
+</html>
