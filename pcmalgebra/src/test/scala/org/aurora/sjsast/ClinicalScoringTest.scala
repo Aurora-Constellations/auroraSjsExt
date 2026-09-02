@@ -56,6 +56,35 @@ class ClinicalScoringTest extends AnyWordSpec with Matchers:
         Map("af_stroke_risk_high" -> "score_af_stroke_risk_high")
     }
 
+    "prefer explicit negative AF risk factors over issue-derived positives" in {
+      val pcm = pcmWithGroupsAndIssues(
+        Seq(
+          NGC(
+            name = "Demographics:",
+            coordinates = LHSet(
+              intItem("age", 70, "yr"),
+              textItem("sex", "male"),
+              textItem("cha2ds2_vasc_heart_failure", "absent"),
+              textItem("cha2ds2_vasc_hypertension", "absent"),
+              textItem("cha2ds2_vasc_diabetes", "absent"),
+              textItem("prior_stroke_tia_te", "absent"),
+              textItem("vascular_disease", "absent")
+            )
+          )
+        ),
+        List("atrial_fibrillation", "hypertension")
+      )
+
+      val update = ClinicalScoring(pcm)
+
+      scoreValue(update.pcm, "cha2ds2_vasc_total") shouldBe Some(IntValue(1))
+      scoreValue(update.pcm, "cha2ds2_vasc_risk_band") shouldBe
+        Some(StringValue("intermediate"))
+      derivedIssue(update.pcm, "score_af_stroke_risk_high") shouldBe None
+      derivedIssue(update.pcm, "score_af_stroke_risk_intermediate").map(_.fromMods) shouldBe
+        Some(List("af_stroke_risk_intermediate"))
+    }
+
     "replace stale GCS values and issues when source facts change" in {
       val source = NGC(
         name = "Neurologic:",

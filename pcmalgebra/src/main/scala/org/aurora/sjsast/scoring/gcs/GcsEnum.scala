@@ -51,9 +51,10 @@ object Eye:
 
   def parse(input: String): Option[Eye] =
     normalizeGcsParserInput(input) match
-      case "spontaneous" => Some(Eye.Spontaneous)
-      case "to_voice" | "voice" => Some(Eye.ToVoice)
-      case "to_pain" | "pain" => Some(Eye.ToPain)
+      case "spontaneous" | "opens_spontaneously" => Some(Eye.Spontaneous)
+      case "to_sound" | "to_voice" | "to_verbal_command" | "verbal_command" | "voice" =>
+        Some(Eye.ToVoice)
+      case "to_pain" | "to_pressure" | "pain" => Some(Eye.ToPain)
       case "none" | "no_eye_opening" => Some(Eye.None)
       case _ => Option.empty
 
@@ -73,7 +74,7 @@ object Verbal:
 
   def parse(input: String): Option[Verbal] =
     normalizeGcsParserInput(input) match
-      case "oriented" => Some(Verbal.Oriented)
+      case "orientated" | "oriented" => Some(Verbal.Oriented)
       case "confused" => Some(Verbal.Confused)
       case "words" | "inappropriate_words" => Some(Verbal.Words)
       case "sounds" | "incomprehensible_sounds" => Some(Verbal.Sounds)
@@ -99,8 +100,10 @@ object Motor:
   def parse(input: String): Option[Motor] =
     normalizeGcsParserInput(input) match
       case "obeys_commands" | "obeys" => Some(Motor.ObeysCommands)
-      case "localizes_pain" | "localizes" => Some(Motor.LocalizesPain)
-      case "withdraws_from_pain" | "withdraws" => Some(Motor.WithdrawsFromPain)
+      case "localises" | "localising" | "localizes" | "localizes_pain" | "localizing" =>
+        Some(Motor.LocalizesPain)
+      case "normal_flexion" | "withdrawal_from_pain" | "withdraws_from_pain" | "withdraws" =>
+        Some(Motor.WithdrawsFromPain)
       case "abnormal_flexion" | "flexion" => Some(Motor.AbnormalFlexion)
       case "extension" => Some(Motor.Extension)
       case "none" | "no_motor_response" => Some(Motor.None)

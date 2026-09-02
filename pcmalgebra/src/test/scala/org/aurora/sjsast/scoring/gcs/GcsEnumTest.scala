@@ -45,6 +45,16 @@ class GcsEnumTest extends AnyWordSpec with Matchers:
       Eye.parse("unknown").shouldBe(None)
     }
 
+    "retain legacy Eye component aliases" in {
+      List("opens spontaneously").foreach { input =>
+        Eye.parse(input).shouldBe(Some(Eye.Spontaneous))
+      }
+      List("to sound", "to verbal command", "verbal command").foreach { input =>
+        Eye.parse(input).shouldBe(Some(Eye.ToVoice))
+      }
+      Eye.parse("to pressure").shouldBe(Some(Eye.ToPain))
+    }
+
     "resolve Eye component inputs as typed component resolution" in {
       Eye.resolveInput("2").shouldBe(ComponentResolution.Resolved(Eye.ToPain))
       Eye.resolveInput("to voice").shouldBe(ComponentResolution.Resolved(Eye.ToVoice))
@@ -66,6 +76,10 @@ class GcsEnumTest extends AnyWordSpec with Matchers:
       Verbal.parse("incomprehensible-sounds").shouldBe(Some(Verbal.Sounds))
       Verbal.parse("no_verbal_response").shouldBe(Some(Verbal.None))
       Verbal.parse("unknown").shouldBe(None)
+    }
+
+    "retain the legacy British-English Verbal alias" in {
+      Verbal.parse("orientated").shouldBe(Some(Verbal.Oriented))
     }
 
     "resolve Verbal component inputs as typed component resolution" in {
@@ -90,6 +104,15 @@ class GcsEnumTest extends AnyWordSpec with Matchers:
       Motor.parse("extension").shouldBe(Some(Motor.Extension))
       Motor.parse("no_motor_response").shouldBe(Some(Motor.None))
       Motor.parse("unknown").shouldBe(None)
+    }
+
+    "retain legacy Motor component aliases" in {
+      List("localising", "localizing", "localises").foreach { input =>
+        Motor.parse(input).shouldBe(Some(Motor.LocalizesPain))
+      }
+      List("normal flexion", "withdrawal from pain").foreach { input =>
+        Motor.parse(input).shouldBe(Some(Motor.WithdrawsFromPain))
+      }
     }
 
     "resolve Motor component inputs as typed component resolution" in {
