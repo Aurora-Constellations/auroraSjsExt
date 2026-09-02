@@ -7,6 +7,7 @@ import concurrent.ExecutionContext.Implicits.global
 import com.axiom.patienttracker.showPatients
 import com.axiom.billing.showBilling
 import org.aurora.sjsast.*
+import org.aurora.sjsast.scoring.ScoreModuleResolver
 import com.axiom.MergePCM.MergePCM.*
 import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
@@ -177,7 +178,10 @@ object PublishCommands:
           try {
             val currentPCM = parsed.asInstanceOf[GenAst.PCM]
             
-            generateOrdersDSL(currentPCM).onComplete {
+            val scoreModuleOptions =
+              ScoreModuleResolver.Options.forExtensionRoot(context.extensionPath)
+
+            generateOrdersDSL(currentPCM, scoreModuleOptions).onComplete {
               case Success(fullContent) if fullContent.nonEmpty =>
                 // Replace the entire editor content with the modeled/merged result
                 replaceFileContent(fullContent)

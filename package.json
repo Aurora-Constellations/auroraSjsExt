@@ -20,7 +20,9 @@
 	"main": "./out/extension",
 	"scripts": {
 		"build": "lerna run build",
-		"watch": "lerna run dev --parallel"
+		"watch": "lerna run dev --parallel",
+		"score-pcm": "sbt \"scorepcmcli/fastOptJS\" && node pcmalgebra/cli/score-pcm.cjs",
+		"test:score-pcm": "sbt \"scorepcmcli/test\""
 	},
 	"contributes": {
 		"languages": [

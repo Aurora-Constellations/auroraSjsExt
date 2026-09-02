@@ -1,0 +1,9 @@
+module: af_stroke_risk_high
+
+Issues:
+af_stroke_risk_high : High_AF_stroke_risk
+
+Orders:
+Clinical_Scoring_Notes:
+  review_documented_stroke_risk_factors (af_stroke_risk_high) ?? derived high CHA2DS2_VASc stroke risk from the currently explicit AF risk factors;
+  review_local_antithrombotic_pathway (af_stroke_risk_high) ?? correlate this derived score with bleeding risk contraindications and local guidance before acting;

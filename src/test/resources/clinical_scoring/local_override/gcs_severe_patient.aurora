@@ -1,0 +1,11 @@
+Clinical:
+Neurologic:
+gcs_eye [2 _]
+gcs_verbal [2 _]
+gcs_motor [3 _]
+
+Issues:
+
+Orders:
+General:
+baseline_note ?? preserve the source order;

@@ -1,5 +1,6 @@
 import scala.sys.process._
 import org.scalajs.linker.interface.{ModuleSplitStyle, ModuleKind}
+import org.scalajs.jsenv.nodejs.NodeJSEnv
 import java.nio.file.{Files, Path, LinkOption}
 import java.nio.file.attribute.BasicFileAttributes
 import java.io.IOException
@@ -124,6 +125,18 @@ lazy val root = project
     name := "auroraSjsExt",
     open := openVSCodeTask.dependsOn(Compile / fastOptJS).value,
     scalacOptions ++= Seq("-Xmax-inlines", "100"),
+    Test / jsEnv := {
+      val localNodePaths = Seq(
+        baseDirectory.value / "node_modules",
+        baseDirectory.value / "test-support"
+      ).map(_.getAbsolutePath)
+      val nodePaths = localNodePaths ++ sys.env.get("NODE_PATH").toSeq
+      new NodeJSEnv(
+        NodeJSEnv.Config().withEnv(
+          Map("NODE_PATH" -> nodePaths.mkString(java.io.File.pathSeparator))
+        )
+      )
+    },
     Compile / fastOptJS := (Compile / fastOptJS)
       .dependsOn(audioToText / Compile/ compile)
       .dependsOn(audioToText / Compile / pack)
@@ -259,6 +272,27 @@ lazy val pcmalgebra = project
     libraryDependencies +="org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
     libraryDependencies ++= Dependencies.cats.value,
     libraryDependencies ++= Dependencies.magnolia.value,
+  )
+  .settings(sharedStSettings)
+
+// --- PCM Scoring CLI ---
+lazy val scorepcmcli = project
+  .in(file("pcmalgebra/cli"))
+  .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
+  .dependsOn(pcmalgebra)
+  .settings(
+    name := "scorepcmcli",
+    scalaVersion := DependencyVersions.scala,
+    scalaJSUseMainModuleInitializer := true,
+    scalacOptions ++= Seq("-Yretain-trees", "-Xmax-inlines", "60", "-explain"),
+    resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
+    scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.CommonJSModule)
+        .withModuleSplitStyle(ModuleSplitStyle.FewestModules)
+    },
+    Compile / fastOptJS / artifactPath := baseDirectory.value / "score-pcm.cjs",
+    libraryDependencies ++= Dependencies.scalatest.value,
+    libraryDependencies ++= Dependencies.upickle.value
   )
   .settings(sharedStSettings)
 

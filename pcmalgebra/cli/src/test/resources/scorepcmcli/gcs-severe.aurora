@@ -1,0 +1,14 @@
+Clinical:
+Demographics:
+age [52 yr]
+
+Neurologic:
+gcs_eye [2 _]
+gcs_verbal [2 _]
+gcs_motor [3 _]
+
+Issues:
+
+Orders:
+General:
+baseline_note ?? GCS score CLI fixture;

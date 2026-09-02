@@ -1,0 +1,9 @@
+module: gcs_moderate
+
+Issues:
+gcs_moderate : Moderate_glasgow_coma_scale
+
+Orders:
+Clinical_Scoring_Notes:
+  document_score_basis (gcs_moderate) ?? derived moderate adult GCS from the currently documented eye verbal and motor findings;
+  trend_neurologic_assessment (gcs_moderate) ?? continue serial reassessment and correlate score changes with the broader clinical context;

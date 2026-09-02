@@ -1,0 +1,12 @@
+Clinical:
+Demographics:
+age [76 yr]
+sex [female _]
+
+Issues:
+atrial_fibrillation
+heart_failure
+
+Orders:
+General:
+baseline_note ?? insufficient AF score CLI fixture;

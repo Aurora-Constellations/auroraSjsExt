@@ -1,0 +1,16 @@
+Clinical:
+Demographics:
+age [76 yr]
+sex [female _]
+cha2ds2_vasc_diabetes [absent _]
+prior_stroke_tia_te [absent _]
+vascular_disease [absent _]
+
+Issues:
+atrial_fibrillation
+heart_failure
+hypertension
+
+Orders:
+General:
+baseline_note ?? preserve the source order;

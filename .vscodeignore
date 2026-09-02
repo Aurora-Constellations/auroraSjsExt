@@ -29,6 +29,9 @@ package-lock.json
 axiompatienttracker/**
 axiombilling/**
 pcmalgebra/**
+!pcmalgebra/
+!pcmalgebra/score-modules/
+!pcmalgebra/score-modules/**
 shared/**
 src/**
 native/**

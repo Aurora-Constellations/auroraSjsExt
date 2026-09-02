@@ -55,12 +55,7 @@ object Module:
              val coords = ng.coord.flatMap { item =>
                if getType(item) == "ClinicalItem" then
                  val cc = item.asInstanceOf[G.ClinicalItem]
-                 Some(ClinicalItem(
-                   name = cc.name, 
-                   narratives = NL_STATEMENT(cc.narrative.toSeq),
-                   qurefs = extractQuRefs(cc.qurc),
-                   qu = extractQU(cc.qu)
-                 ))
+                 Some(ClinicalItem(cc))
                else None
              }
              

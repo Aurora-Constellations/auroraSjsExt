@@ -1,0 +1,9 @@
+module: af_stroke_risk_intermediate
+
+Issues:
+af_stroke_risk_intermediate : Intermediate_AF_stroke_risk
+
+Orders:
+Clinical_Scoring_Notes:
+  review_documented_stroke_risk_factors (af_stroke_risk_intermediate) ?? derived intermediate CHA2DS2_VASc stroke risk from the currently explicit AF risk factors;
+  review_local_antithrombotic_pathway (af_stroke_risk_intermediate) ?? correlate this derived score with patient context and local guidance before acting;

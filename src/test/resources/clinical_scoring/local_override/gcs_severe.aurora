@@ -1,0 +1,8 @@
+module: gcs_severe
+
+Issues:
+gcs_severe : Severe_glasgow_coma_scale
+
+Orders:
+Clinical_Scoring_Notes:
+  local_override_neuro_escalation (gcs_severe) ?? local score guidance wins;
