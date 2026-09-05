@@ -58,10 +58,6 @@ def copyJSCSS(
 
   val jsFiles = (outputDir ** "*.js").get
 
-  println("========== JS FILES FOUND ==========")
-  jsFiles.foreach(f => println(f.getAbsolutePath))
-  println("====================================")
-
   val mainFile = jsFiles.find(_.getName == "main.js")
 
   mainFile match {
@@ -93,23 +89,102 @@ lazy val copyToMedia =
   taskKey[Unit]("Copy Scala.js output files to media")
 
 copyToMedia := {
+
   val log = streams.value.log
   val base = baseDirectory.value
   val mediaDir = base / "media"
-  val outputDir_patienttracker = (axiompatienttracker / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
-  val outputDir_billing = (axiombilling / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
-  val outputDir_d3 = (d3example / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
 
-  val cssFile_patienttracker = base / "axiompatienttracker" / "src" / "styles.css"
-  val cssFile_billing = base / "axiombilling" / "src" / "styles.css"
-  val cssFile_d3 = base / "d3example" / "styles.css"
+  val outputDir_patienttracker =
+    (axiompatienttracker / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
 
-  
+  val outputDir_billing =
+    (axiombilling / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
 
-  log.info(copyJSCSS(mediaDir, outputDir_patienttracker, cssFile_patienttracker, "main.js", "styles.css"))
-  log.info(copyJSCSS(mediaDir, outputDir_billing, cssFile_billing, "ab_main.js", "ab_styles.css"))
-  log.info(copyJSCSS(mediaDir, outputDir_d3, cssFile_d3, "d3_main.js", "d3_styles.css"))
-  
+  val cssFile_patienttracker =
+    base / "axiompatienttracker" / "src" / "styles.css"
+
+  val cssFile_billing =
+    base / "axiombilling" / "src" / "styles.css"
+
+  log.info(
+    copyJSCSS(
+      mediaDir,
+      outputDir_patienttracker,
+      cssFile_patienttracker,
+      "main.js",
+      "styles.css"
+    )
+  )
+
+  log.info(
+    copyJSCSS(
+      mediaDir,
+      outputDir_billing,
+      cssFile_billing,
+      "ab_main.js",
+      "ab_styles.css"
+    )
+  )
+}
+lazy val bundleD3 =
+  taskKey[Unit]("Build D3 with Vite and copy bundled JS to media/d3_main.js")
+
+bundleD3 := {
+
+  val log = streams.value.log
+
+  val rootDir = baseDirectory.value
+  val d3Dir = rootDir / "d3example"
+  val assetsDir = d3Dir / "dist" / "assets"
+  val mediaDir = rootDir / "media"
+
+  val isWindows =
+    System.getProperty("os.name").toLowerCase.contains("win")
+
+  val npm =
+    if (isWindows) "npm.cmd"
+    else "npm"
+
+  log.info("Building d3example with Vite...")
+
+  val result =
+    Process(
+      Seq(npm, "run", "build"),
+      d3Dir
+    ) ! log
+
+  if (result != 0) {
+    sys.error("Vite build failed.")
+  }
+
+  val jsFiles =
+    (assetsDir * "index-*.js")
+      .get
+      .filterNot(_.getName.endsWith(".js.map"))
+
+  if (jsFiles.isEmpty) {
+    sys.error(
+      s"No Vite index-*.js bundle found in ${assetsDir.getAbsolutePath}"
+    )
+  }
+
+  val bundledJs =
+    jsFiles.maxBy(_.lastModified())
+
+  IO.createDirectory(mediaDir)
+
+  val destination =
+    mediaDir / "d3_main.js"
+
+  IO.copyFile(
+    bundledJs,
+    destination,
+    preserveLastModified = true
+  )
+
+  log.info(
+    s"Copied ${bundledJs.getName} -> media/d3_main.js"
+  )
 }
 
 lazy val createDirectories = Def.task[Unit] {
@@ -155,7 +230,11 @@ lazy val root = project
   .dependsOn(axiompatienttracker, pcmalgebra, d3example)
   .settings(
     name := "auroraSjsExt",
-    open := openVSCodeTask.value,
+    open := openVSCodeTask
+  .dependsOn(Compile / fastOptJS)
+  .dependsOn(copyToMedia)
+  .dependsOn(bundleD3)
+  .value,
     scalacOptions ++= Seq("-Xmax-inlines", "100"),
     Compile / fastOptJS := (Compile / fastOptJS)
       .dependsOn(audioToText / Compile/ compile)
@@ -163,8 +242,6 @@ lazy val root = project
       .dependsOn(axiompatienttracker / Compile / fastLinkJS)
       .dependsOn(axiombilling / Compile / fastLinkJS)
       .dependsOn(pcmalgebra / Compile / fastLinkJS)
-      .dependsOn(d3example / Compile / fastLinkJS)
-      .dependsOn(copyToMedia)
       .dependsOn(installDependencies)
       .dependsOn(createDirectories)
       .value,

@@ -80,25 +80,12 @@ class D3Renderer(val containerSelector: String):
 
     def render(data: js.Any): Unit = {
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>1. RENDER FUNCTION ENTERED</h2>"
-    )
-
     val container =
         d3.select(containerSelector).asInstanceOf[js.Dynamic]
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>2. D3 SELECT WORKED</h2>"
-    )
-
     container.selectAll("*").remove()
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>3. CLEAR WORKED</h2>"
-    )
+
 
     // --- Tooltip ---
     val tooltip = d3
@@ -117,10 +104,7 @@ class D3Renderer(val containerSelector: String):
         .style("z-index", "1000")
         .style("box-shadow", "0px 4px 6px rgba(0,0,0,0.3)")
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>4. TOOLTIP CREATED</h2>"
-    )
+
 
     val width = dom.window.innerWidth.toDouble
     val height = dom.window.innerHeight.toDouble
@@ -134,18 +118,10 @@ class D3Renderer(val containerSelector: String):
         .style("font-family", "sans-serif")
         .asInstanceOf[js.Dynamic]
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>5. SVG CREATED</h2>"
-    )
 
     val g =
         svg.append("g").asInstanceOf[js.Dynamic]
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>6. GROUP CREATED</h2>"
-    )
 
     val zoom = d3
         .zoom()
@@ -162,19 +138,9 @@ class D3Renderer(val containerSelector: String):
 
     svg.call(zoom)
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>7. ZOOM SETUP WORKED</h2>"
-    )
-
     val root =
         d3.hierarchy[js.Any](data)
         .asInstanceOf[D3AugmentedNode]
-
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>8. HIERARCHY CREATED</h2>"
-    )
 
     root.each { (d: D3AugmentedNode) =>
 
@@ -196,11 +162,6 @@ class D3Renderer(val containerSelector: String):
         parentY +
             d.data.y.toSafeOption.getOrElse(0.0)
     }
-
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>9. ABSOLUTE POSITIONS WORKED</h2>"
-    )
 
     val nodes =
         root.descendants()
@@ -224,14 +185,6 @@ class D3Renderer(val containerSelector: String):
         }
     }
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        s"""
-        |<h2>10. NODE/EDGE PREP WORKED</h2>
-        |<p>Nodes = ${nodes.size}</p>
-        |<p>Edges = ${allEdges.length}</p>
-        |""".stripMargin
-    )
 
     val lineGenerator = d3
         .line()
@@ -239,10 +192,7 @@ class D3Renderer(val containerSelector: String):
         .x((p: ElkPoint) => p.x)
         .y((p: ElkPoint) => p.y)
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>11. LINE GENERATOR CREATED</h2>"
-    )
+
 
     g.selectAll(".link")
         .data(allEdges)
@@ -334,11 +284,6 @@ class D3Renderer(val containerSelector: String):
             .getOrElse("")
         }
         )
-
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>12. EDGES RENDERED</h2>"
-    )
 
     val nodeSelection = g
         .selectAll(".node")
@@ -478,11 +423,6 @@ class D3Renderer(val containerSelector: String):
         }
         )
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>13. NODE SELECTION CREATED</h2>"
-    )
-
     nodeSelection
         .append("rect")
         .attr(
@@ -535,11 +475,6 @@ class D3Renderer(val containerSelector: String):
         "2px"
         )
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2>14. RECTANGLES RENDERED</h2>"
-    )
-
     nodeSelection
         .append("text")
         .attr(
@@ -580,8 +515,4 @@ class D3Renderer(val containerSelector: String):
             .getOrElse("Unknown")
         )
 
-    dom.document.body.insertAdjacentHTML(
-        "beforeend",
-        "<h2 style='color:green'>15. RENDER COMPLETE</h2>"
-    )
     }
