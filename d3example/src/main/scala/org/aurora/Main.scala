@@ -5,7 +5,6 @@ import scala.scalajs.js
 
 import org.aurora.visual.d3.D3Renderer
 import org.aurora.sjsast.LHMap
-import org.aurora.utils.Diagram
 
 object D3MainObject {
 

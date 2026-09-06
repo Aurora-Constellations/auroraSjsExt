@@ -3,6 +3,7 @@ import vscode.{ExtensionContext}
 import scala.scalajs.js
 import typings.vscode.anon.Dispose
 import scala.util.*
+import scala.scalajs.js
 import concurrent.ExecutionContext.Implicits.global
 import com.axiom.patienttracker.showPatients
 import com.axiom.billing.showBilling
@@ -29,6 +30,8 @@ import org.aurora.sjsast.GenAst
 import com.axiom.visual.D3DiagramManager
 import org.aurora.visual.elk.AuroraElk
 import org.aurora.visual.d3.AstTransformer
+import typings.vscode.mod.QuickPickItem
+import PublishCommands.refreshDiagram
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -38,7 +41,13 @@ object PublishCommands:
 
   def refreshDiagram(
     document: TextDocument,
-    d3Manager: D3DiagramManager
+    d3Manager: D3DiagramManager,
+    layoutOptions: LHMap[String,String] = LHMap(
+            "elk.algorithm" -> "layered",
+            "elk.direction" -> "TOP",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
 ): Unit = {
 
   if (
@@ -61,12 +70,12 @@ object PublishCommands:
 
           println("Aurora parsing successful.")
 
-          val layoutOptions = LHMap(
-            "elk.algorithm" -> "layered",
-            "elk.direction" -> "TOP",
-            "elk.spacing.nodeNode" -> "10",
-            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
-          )
+          // val layoutOptions = LHMap(
+          //   "elk.algorithm" -> "layered",
+          //   "elk.direction" -> "TOP",
+          //   "elk.spacing.nodeNode" -> "10",
+          //   "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          // )
 
           AuroraElk
             .Graph(
@@ -134,13 +143,13 @@ object PublishCommands:
     updateRecordingStatusBar()
   }
 
-  def publishCommands(context: ExtensionContext, langConfig: LanguageClientConfigSingleton): Unit = {
+  def publishCommands(context: ExtensionContext, langConfig: LanguageClientConfigSingleton, d3Manager: D3DiagramManager): Unit = {
       val commands = List(
           ("AuroraSjsExt.aurora", showHello()),
           ("AuroraSjsExt.patients", showPatients(context)),
           ("AuroraSjsExt.billing", showBilling(context)),
           ("AuroraSjsExt.processDSL", processDSL(context)),
-          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
+          ("AuroraSjsExt.toggleDiagramLayout", toggleDiagramLayout(d3Manager)),
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
           ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
           ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
@@ -301,11 +310,11 @@ object PublishCommands:
       }
   }
 
-  def toggleLayout(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-    (args) => {
-      toggleDiagramLayout(langConfig)
-    }
-  }
+  // def toggleLayout(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+  //   (args) => {
+  //     toggleDiagramLayout(langConfig)
+  //   }
+  // }
 
   // def refreshDiagram(document: TextDocument, langConfig: LanguageClientConfigSingleton): Unit = {
   //       val wvp = langConfig.webviewViewProvider.asInstanceOf[LspSprottyViewProvider]
@@ -340,6 +349,63 @@ object PublishCommands:
     }  
     
   }
+
+def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
+  (_: Any) => {
+    println("HEY WE ARE IN PUBLISH COMMAND")
+    val quickPick =
+      vscode.window.createQuickPick[QuickPickItem]()
+
+    quickPick.placeholder = "Choose a layout for your diagram..."
+
+    val layoutOptions = js.Array("stress", "layered")
+    quickPick.items = layoutOptions.map(x => QuickPickItem(label = x))
+
+    var layout = ""
+
+    quickPick.onDidChangeSelection { selection =>
+      if (selection.nonEmpty) {
+        layout = selection.head.label.toLowerCase
+      }
+    }
+
+    quickPick.onDidAccept { (_: Unit) =>
+      val textDocument =
+        vscode.window.activeTextEditor.toOption.map(_.document)
+
+      val options = layout match {
+        case "stress" =>
+          LHMap(
+            "elk.algorithm" -> "stress",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+
+        case "layered" =>
+          LHMap(
+            "elk.algorithm" -> "layered",
+            "elk.direction" -> "TOP",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+      }
+
+      textDocument match {
+        case None =>
+          vscode.window.showErrorMessage("There is no active editor.")
+
+        case Some(doc) =>
+          refreshDiagram(doc, d3Manager, options)
+      }
+
+      quickPick.dispose()
+    }
+
+    quickPick.show()
+  }
+}
+
+
 
   // Node.js filesystem module
   @js.native
