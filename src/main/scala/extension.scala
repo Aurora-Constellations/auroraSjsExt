@@ -35,8 +35,6 @@ object AuroraSjsExt {
     val defaultPath = path.join(context.extensionPath, "auroraFiles").toString
     // Create URI and ask to open it as workspace
     val folderUri = vscode.Uri.file(defaultPath)
-
-    // addUpdateDiagramCommand(context)
     /* Note:
       extensions cannot directly change or open a workspace folder programmatically on activation 
       due to VS Code's security and UX model. But here is an acceptable approach
@@ -47,6 +45,12 @@ object AuroraSjsExt {
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider("aurora", d3Manager.provider).asInstanceOf[Dispose]
     )
+
+    // on start up
+    vscode.window.activeTextEditor.toOption match {
+      case None => /* do nothig */
+      case Some(editor) => refreshDiagram(editor.document, d3Manager) 
+    }
 
      
     vscode.workspace.onDidSaveTextDocument(
