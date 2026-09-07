@@ -39,6 +39,7 @@ object PublishCommands:
   private var startTime: Double = 0.0
   private var timerHandle: SetIntervalHandle | Null = null
 
+  // to do: work out state management so that the diagram does not go back to original alyout every time it saves
   def refreshDiagram(
     document: TextDocument,
     d3Manager: D3DiagramManager,
@@ -310,19 +311,6 @@ object PublishCommands:
       }
   }
 
-  // def toggleLayout(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-  //   (args) => {
-  //     toggleDiagramLayout(langConfig)
-  //   }
-  // }
-
-  // def refreshDiagram(document: TextDocument, langConfig: LanguageClientConfigSingleton): Unit = {
-  //       val wvp = langConfig.webviewViewProvider.asInstanceOf[LspSprottyViewProvider]
-  //       wvp.openDiagram(document.uri).toFuture.onComplete {
-  //             case Success(_) => println("Diagram has been refreshed.")
-  //             case Failure(e) => println(s"Failed to refresh diagram: ${e}")
-  //       }
-  // }
 
   def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
     (args) => {
@@ -352,13 +340,12 @@ object PublishCommands:
 
 def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
   (_: Any) => {
-    println("HEY WE ARE IN PUBLISH COMMAND")
     val quickPick =
       vscode.window.createQuickPick[QuickPickItem]()
 
     quickPick.placeholder = "Choose a layout for your diagram..."
 
-    val layoutOptions = js.Array("stress", "layered")
+    val layoutOptions = js.Array("stress", "layered", "mrtree", "disco", "force", "radial", "sporeCompaction", "graphviz.circo")
     quickPick.items = layoutOptions.map(x => QuickPickItem(label = x))
 
     var layout = ""
@@ -372,7 +359,7 @@ def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
     quickPick.onDidAccept { (_: Unit) =>
       val textDocument =
         vscode.window.activeTextEditor.toOption.map(_.document)
-
+      // to do: check if applying enums here would be better than just having strings
       val options = layout match {
         case "stress" =>
           LHMap(
@@ -385,6 +372,34 @@ def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
           LHMap(
             "elk.algorithm" -> "layered",
             "elk.direction" -> "TOP",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+        case "mrtree" => 
+          LHMap(
+            "elk.algorithm" -> "mrtree",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+        case "disco" =>
+          LHMap(
+            "elk.algorithm" -> "disco"
+          )
+        case "force" =>
+          LHMap(
+            "elk.algorithm" -> "force",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+        case "radial" =>
+          LHMap(
+            "elk.algorithm" -> "radial",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+        case "sporecompaction" => 
+          LHMap(
+            "elk.algorithm" -> "sporeCompaction",
             "elk.spacing.nodeNode" -> "10",
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
