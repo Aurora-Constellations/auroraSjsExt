@@ -1,0 +1,49 @@
+Clinical:
+Demographics:
+  age [43 _]
+
+Issues:
+congestive_HF from CHF
+hypko from HYPOK
+mi from NSTEMI
+
+Orders:
+Diet:
+  NAS(congestive_HF, !mi)
+  low_k(hypko)
+
+Activity:
+  semifowlers(congestive_HF)
+
+Vitals:
+  vitals(congestive_HF) ??q4h;
+
+AlliedHealthConsults:
+  chf_navigator(congestive_HF)
+
+Investigations:
+  echocardiogram(congestive_HF) ?? suspected chf ;
+  cxr(congestive_HF) ?? pa/lat ;
+  weights(congestive_HF) ?? daily;
+
+Daily_Labs: ?? for 3 days;
+  bnp(congestive_HF)
+  lytes(congestive_HF, hypko)
+  bun(congestive_HF, hypko)
+  creatinine(congestive_HF, hypko)
+  foley_catheter(congestive_HF) ?? accurate fluid ins/outs;
+
+Treatment:
+  iv(!congestive_HF, hypko, mi) ?? saline lock; ??20 meq iv bolus voer 1 hour; ??NS @ 75cc/hr;
+  furosemide(congestive_HF) ?? 40 mg iv now;  ??40 mg iv od (on top of home lasix dose);
+  nitroglycerine(congestive_HF) ?? i puffs q1h prn until systolic <= 140;
+  o2(congestive_HF) ?? to keep sats > 95%;
+  consult(mi) !!cardiology stat;
+  asa(~mi) !! 160 mg po stat and 80 mg po od ;
+  enoxaparin(mi) ?? 1mg/kg bid ;
+  plavix(mi) ?? 300mg po now and 75 mg po od ;
+  rosuvastatin(mi) ??5 mg po od ;
+
+Symptom_Control:
+  morphine(mi) ?? 2-5 mg iv q4h prn ;
+  gravol(mi) ?? 25-50 mg iv q4h prn ;
