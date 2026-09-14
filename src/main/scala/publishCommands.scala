@@ -9,7 +9,6 @@ import com.axiom.patienttracker.showPatients
 import com.axiom.billing.showBilling
 import org.aurora.sjsast.*
 import com.axiom.MergePCM.MergePCM.*
-// import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.vscode.mod.OutputChannel

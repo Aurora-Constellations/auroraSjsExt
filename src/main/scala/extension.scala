@@ -7,7 +7,6 @@ import scala.scalajs.js.annotation._
 import vscode.{ExtensionContext}
 import PublishCommands.{publishCommands, initRecordingStatusBar}
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
-// import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import PublishCommands.{refreshDiagram}
 import com.axiom.patienttracker.sendMessageToPatientTracker
