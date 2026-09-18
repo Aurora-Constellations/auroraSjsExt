@@ -275,27 +275,6 @@ lazy val pcmalgebra = project
   )
   .settings(sharedStSettings)
 
-// --- PCM Scoring CLI ---
-lazy val scorepcmcli = project
-  .in(file("pcmalgebra/cli"))
-  .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
-  .dependsOn(pcmalgebra)
-  .settings(
-    name := "scorepcmcli",
-    scalaVersion := DependencyVersions.scala,
-    scalaJSUseMainModuleInitializer := true,
-    scalacOptions ++= Seq("-Yretain-trees", "-Xmax-inlines", "60", "-explain"),
-    resolvers += "Artima Maven Repository" at "https://repo.artima.com/releases",
-    scalaJSLinkerConfig ~= {
-      _.withModuleKind(ModuleKind.CommonJSModule)
-        .withModuleSplitStyle(ModuleSplitStyle.FewestModules)
-    },
-    Compile / fastOptJS / artifactPath := baseDirectory.value / "score-pcm.cjs",
-    libraryDependencies ++= Dependencies.scalatest.value,
-    libraryDependencies ++= Dependencies.upickle.value
-  )
-  .settings(sharedStSettings)
-
 // --- D3 Example ---
 lazy val d3example = project
   .in(file("d3example"))
