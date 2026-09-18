@@ -31,6 +31,8 @@ import org.aurora.visual.elk.AuroraElk
 import org.aurora.visual.d3.AstTransformer
 import typings.vscode.mod.QuickPickItem
 import PublishCommands.refreshDiagram
+import com.axiom.diagram.Configurations.Layout
+import scala.scalajs.js.JSConverters.*
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -344,14 +346,14 @@ def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
 
     quickPick.placeholder = "Choose a layout for your diagram..."
 
-    val layoutOptions = js.Array("stress", "layered", "mrtree", "disco", "force", "radial", "sporeCompaction", "graphviz.circo")
+    val layoutOptions = Layout.values.map(layout => layout.toString()).toJSArray
     quickPick.items = layoutOptions.map(x => QuickPickItem(label = x))
 
     var layout = ""
 
     quickPick.onDidChangeSelection { selection =>
       if (selection.nonEmpty) {
-        layout = selection.head.label.toLowerCase
+        layout = selection.head.label
       }
     }
 
@@ -359,46 +361,36 @@ def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
       val textDocument =
         vscode.window.activeTextEditor.toOption.map(_.document)
       // to do: check if applying enums here would be better than just having strings
-      val options = layout match {
-        case "stress" =>
+      val options = Layout.valueOf(layout) match {
+        case Layout.Stress =>
           LHMap(
             "elk.algorithm" -> "stress",
             "elk.spacing.nodeNode" -> "10",
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
 
-        case "layered" =>
+        case Layout.Layered =>
           LHMap(
             "elk.algorithm" -> "layered",
             "elk.direction" -> "TOP",
             "elk.spacing.nodeNode" -> "10",
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
-        case "mrtree" => 
+        case Layout.MrTree => 
           LHMap(
             "elk.algorithm" -> "mrtree",
             "elk.spacing.nodeNode" -> "10",
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
-        case "disco" =>
-          LHMap(
-            "elk.algorithm" -> "disco"
-          )
-        case "force" =>
+        case Layout.Force =>
           LHMap(
             "elk.algorithm" -> "force",
             "elk.spacing.nodeNode" -> "10",
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
-        case "radial" =>
+        case Layout.Radial =>
           LHMap(
             "elk.algorithm" -> "radial",
-            "elk.spacing.nodeNode" -> "10",
-            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
-          )
-        case "sporecompaction" => 
-          LHMap(
-            "elk.algorithm" -> "sporeCompaction",
             "elk.spacing.nodeNode" -> "10",
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
