@@ -1,0 +1,6 @@
+Clinical:
+Neurologic:
+gcs_eye [4 _]
+gcs_motor [6 _]
+gcs_verbal [2_]
+pupil_response [brisk _]
