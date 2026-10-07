@@ -104,7 +104,8 @@ object Module:
                   Some(OrderCoordinate(
                     name = oc.name,
                     narratives = NL_STATEMENT(oc.narrative.toSeq),
-                    qurefs = extractQuRefs(oc.qurc)
+                    qurefs = extractQuRefs(oc.qurc),
+                    qu = QU(oc.qu)
                   ))
                 else None
               }

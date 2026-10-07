@@ -49,8 +49,8 @@ object AstTransformer {
     // We can extract the raw name by taking the first part of that ID.
     val nodeName = elkNode.id.split("%%").headOption.getOrElse("Unknown")
     val astNode = allAstNodes.find {
-      case ic: IssueCoordinate => ic.name == nodeName
-      case oc: OrderCoordinate => oc.name == nodeName
+      case ic: IssueCoordinate => elkNode.nodeType == "Reference" && ic.name == nodeName
+      case oc: OrderCoordinate => elkNode.nodeType == "Coordinate" && oc.name == nodeName
       case _ => false
     }
     val qualifier = astNode.map(AstNode.getQualifier).getOrElse(Qualifier.Normal).elkType

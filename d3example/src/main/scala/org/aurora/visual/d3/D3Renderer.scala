@@ -75,6 +75,11 @@ class D3Renderer(val containerSelector: String):
         case _                          => "#555555"
     }
 
+    // Nodes only get a border when the source carries a ?, ! or ~ qualifier
+    private def getNodeStroke(nodeQualifier: String): String =
+        if (nodeQualifier == Qualifier.Normal.elkType) "none"
+        else getQuColor(nodeQualifier)
+
     private def getEdgeDash(edgeType: String): String =
         if (edgeType == Qualifier.Negative.elkType) "6, 6" else "none"
 
@@ -362,7 +367,7 @@ class D3Renderer(val containerSelector: String):
             .duration(250)
             .style(
                 "stroke",
-                getQuColor(
+                getNodeStroke(
                 d.data.nodeQualifier.toSafeOption
                     .getOrElse(
                     Qualifier.Normal.elkType
@@ -450,7 +455,7 @@ class D3Renderer(val containerSelector: String):
         .style(
         "stroke",
         (d: D3AugmentedNode) =>
-            getQuColor(
+            getNodeStroke(
             d.data.nodeQualifier.toSafeOption
                 .getOrElse(
                 Qualifier.Normal.elkType

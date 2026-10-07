@@ -60,7 +60,8 @@ object IssueCoordinate:
 case class OrderCoordinate(
   name: String,
   narratives: LHSet[NL_STATEMENT] = LHSet(),
-  qurefs: LHSet[QuReferences] = LHSet()
+  qurefs: LHSet[QuReferences] = LHSet(),
+  qu: QU = QU()
 ) extends RefCoordinate
 
 object OrderCoordinate:
@@ -75,5 +76,6 @@ object OrderCoordinate:
     OrderCoordinate(
       name = name, 
       narratives = narratives, 
-      qurefs = refs
+      qurefs = refs,
+      qu = QU(oc.qu)
     )

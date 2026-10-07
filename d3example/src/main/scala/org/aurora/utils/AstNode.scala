@@ -51,6 +51,7 @@ object AstNode {
       // A QuReference contains a list of QU nodes (the ? ! ~ symbols)
       case q: QuReference => Qualifier.fromQu(q.qu)
       case ic: IssueCoordinate => Qualifier.fromQu(ic.qu)
+      case oc: OrderCoordinate => Qualifier.fromQu(oc.qu)
       // Narratives and default connections have no QU qualifiers
       case _ => Qualifier.Normal
     }
