@@ -52,6 +52,23 @@ object AuroraSjsExt {
     }
 
      
+    // Cursor in the editor -> highlight the matching node in the diagram
+    context.subscriptions.push(
+      vscode.window.onDidChangeTextEditorSelection(
+        (e: vscode.TextEditorSelectionChangeEvent) => {
+          e.selections.headOption.foreach { selection =>
+            d3Manager.highlightPosition(
+              e.textEditor.document.uri,
+              selection.active.line.toInt,
+              selection.active.character.toInt
+            )
+          }
+        },
+        js.undefined,
+        js.undefined
+      ).asInstanceOf[Dispose]
+    )
+
     vscode.workspace.onDidSaveTextDocument(
   (doc: TextDocument) => {
 

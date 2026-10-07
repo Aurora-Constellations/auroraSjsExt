@@ -34,7 +34,16 @@ trait ElkEdgeWithAbs extends js.Object:
     val sections: js.UndefOr[js.Array[ElkSection]]
 
 @js.native
+trait D3SourceRange extends js.Object:
+    val startLine: Int
+    val startChar: Int
+    val endLine: Int
+    val endChar: Int
+
+@js.native
 trait D3RawData extends js.Object:
+    val id: js.UndefOr[String]
+    val range: js.UndefOr[D3SourceRange]
     val name: js.UndefOr[String]
     val nodeType: js.UndefOr[String]
     val nodeQualifier: js.UndefOr[String]
@@ -56,6 +65,52 @@ trait D3AugmentedNode extends js.Object:
 
 // 2. The Reusable Renderer Class
 class D3Renderer(val containerSelector: String):
+
+    // Node currently linked to the editor cursor / last click; survives re-renders
+    private var highlightedId: Option[String] = None
+    private var highlightRings: Option[js.Dynamic] = None
+    private var drawnNodes: List[D3AugmentedNode] = Nil
+    private var focusOnNode: Option[D3AugmentedNode => Unit] = None
+
+    // Only available inside a VS Code webview; absent when opened in a plain browser (e.g. the Vite dev server)
+    private lazy val vscodeApi: Option[js.Dynamic] =
+        if (js.typeOf(js.Dynamic.global.acquireVsCodeApi) == "function")
+            Some(js.Dynamic.global.acquireVsCodeApi())
+        else None
+
+    private val HighlightColor = "#0078d4"
+
+    private def applyHighlight(): Unit =
+        highlightRings.foreach { rings =>
+            rings.style(
+                "opacity",
+                (d: D3AugmentedNode) =>
+                    if (d.data.id.toSafeOption.exists(highlightedId.contains)) "1" else "0"
+            )
+        }
+
+    // Highlights the node whose source text contains the given editor position (zero-based line/character)
+    def highlightAt(line: Int, character: Int): Unit = {
+        def atOrAfter(l: Int, c: Int, refLine: Int, refChar: Int) = l > refLine || (l == refLine && c >= refChar)
+
+        val matchingNode = drawnNodes.find { n =>
+            n.data.range.toSafeOption.exists { r =>
+                atOrAfter(line, character, r.startLine, r.startChar) &&
+                atOrAfter(r.endLine, r.endChar, line, character)
+            }
+        }
+        val matchingId = matchingNode.flatMap(_.data.id.toSafeOption)
+
+        // Only re-centre when the cursor enters a different node; this also skips the echo of a node click
+        val enteredNewNode = matchingId.isDefined && matchingId != highlightedId
+
+        highlightedId = matchingId
+        applyHighlight()
+
+        if (enteredNewNode) {
+            for (node <- matchingNode; focus <- focusOnNode) focus(node)
+        }
+    }
 
     private def getNodeColor(nodeType: String): String = nodeType match {
         case "Reference"                           => "#6fbbfa"
@@ -307,6 +362,48 @@ class D3Renderer(val containerSelector: String):
         }
         )
 
+    // Pans and zooms the diagram so the given node sits in the centre of the view
+    def focusNode(d: D3AugmentedNode): Unit = {
+
+        val scale = 1.5
+
+        val targetX =
+        (width / 2) -
+            (
+            d.absoluteX +
+                (
+                d.data.width.toSafeOption
+                    .getOrElse(0.0) / 2
+                )
+            ) * scale
+
+        val targetY =
+        (height / 2) -
+            (
+            d.absoluteY +
+                (
+                d.data.height.toSafeOption
+                    .getOrElse(0.0) / 2
+                )
+            ) * scale
+
+        val newTransform =
+        d3.zoomIdentity
+            .translate(
+            targetX,
+            targetY
+            )
+            .scale(scale)
+
+        svg.transition()
+        .duration(750)
+        .call(
+            zoom.transform,
+            newTransform
+        )
+    }
+    focusOnNode = Some(focusNode)
+
     val nodeSelection = g
         .selectAll(".node")
         .data(nodes.toJSArray)
@@ -420,42 +517,20 @@ class D3Renderer(val containerSelector: String):
         "click",
         (e: dom.MouseEvent, d: D3AugmentedNode) => {
 
-            val scale = 1.5
-
-            val targetX =
-            (width / 2) -
-                (
-                d.absoluteX +
-                    (
-                    d.data.width.toSafeOption
-                        .getOrElse(0.0) / 2
-                    )
-                ) * scale
-
-            val targetY =
-            (height / 2) -
-                (
-                d.absoluteY +
-                    (
-                    d.data.height.toSafeOption
-                        .getOrElse(0.0) / 2
-                    )
-                ) * scale
-
-            val newTransform =
-            d3.zoomIdentity
-                .translate(
-                targetX,
-                targetY
+            // Select the matching text in the editor and highlight this node straight away
+            highlightedId = d.data.id.toSafeOption
+            applyHighlight()
+            vscodeApi.foreach(
+            _.postMessage(
+                js.Dynamic.literal(
+                command = "nodeClicked",
+                id = d.data.id,
+                range = d.data.range
                 )
-                .scale(scale)
-
-            svg.transition()
-            .duration(750)
-            .call(
-                zoom.transform,
-                newTransform
             )
+            )
+
+            focusNode(d)
         }
         )
 
@@ -510,6 +585,36 @@ class D3Renderer(val containerSelector: String):
         "stroke-width",
         "2px"
         )
+
+    // Outline drawn just outside the node, separate from the qualifier border so both can show at once
+    val ringPadding = 5.0
+    highlightRings = Some(
+        nodeSelection
+        .append("rect")
+        .attr("class", "highlight-ring")
+        .attr("x", -ringPadding)
+        .attr("y", -ringPadding)
+        .attr(
+            "width",
+            (d: D3AugmentedNode) =>
+            d.data.width.toSafeOption.getOrElse(0.0) + ringPadding * 2
+        )
+        .attr(
+            "height",
+            (d: D3AugmentedNode) =>
+            d.data.height.toSafeOption.getOrElse(0.0) + ringPadding * 2
+        )
+        .attr("rx", 9)
+        .attr("ry", 9)
+        .style("fill", "none")
+        .style("stroke", HighlightColor)
+        .style("stroke-width", "3px")
+        .style("pointer-events", "none")
+        .style("opacity", "0")
+        .asInstanceOf[js.Dynamic]
+    )
+    drawnNodes = nodes
+    applyHighlight()
 
     nodeSelection
         .append("text")

@@ -10,6 +10,8 @@ import concurrent.ExecutionContext.Implicits.global
 
 class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extContext to avoid shadowing
 	private var view: Option[vscode.WebviewView] = None
+	// The document the diagram was last drawn from; node clicks and cursor moves are synced against it
+	private var currentUri: Option[vscode.Uri] = None
 
 	val provider: vscode.WebviewViewProvider = new vscode.WebviewViewProvider {
 		
@@ -27,10 +29,63 @@ class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extC
 			.setLocalResourceRoots(js.Array(extContext.extensionUri)) // Use extContext
 
 		webviewView.webview.html = getHtmlForWebview(webviewView.webview)
+
+		webviewView.webview.onDidReceiveMessage { (message: Any) =>
+			handleWebviewMessage(message.asInstanceOf[js.Dynamic])
+		}
+		()
 		}
 	}
 
-	def updateDiagram(data: js.Any): Unit = {
+	private def handleWebviewMessage(message: js.Dynamic): Unit = {
+		if (message.command.asInstanceOf[String] == "nodeClicked" && !js.isUndefined(message.range)) {
+			val range = message.range
+			selectInEditor(
+				range.startLine.asInstanceOf[Int],
+				range.startChar.asInstanceOf[Int],
+				range.endLine.asInstanceOf[Int],
+				range.endChar.asInstanceOf[Int]
+			)
+		}
+	}
+
+	// Selects and reveals the text behind a clicked node, moving focus to the editor
+	private def selectInEditor(startLine: Int, startChar: Int, endLine: Int, endChar: Int): Unit = {
+		currentUri.foreach { uri =>
+			val options = js.Dynamic.literal(
+				"preserveFocus" -> false,
+				"preview" -> false,
+				"selection" -> new vscode.Selection(startLine, startChar, endLine, endChar)
+			)
+			// Reuse the column the file is already open in instead of opening it a second time
+			vscode.window.visibleTextEditors
+				.find(_.document.uri.toString() == uri.toString())
+				.flatMap(_.viewColumn.toOption)
+				.foreach(column => options.updateDynamic("viewColumn")(column.asInstanceOf[js.Any]))
+
+			vscode.workspace.openTextDocument(uri).`then` { doc =>
+				vscode.window.showTextDocument(doc, options.asInstanceOf[vscode.TextDocumentShowOptions])
+			}
+		}
+	}
+
+	// Called when the cursor moves in an editor; the webview highlights the node at that position
+	def highlightPosition(uri: vscode.Uri, line: Int, character: Int): Unit = {
+		if (currentUri.exists(_.toString() == uri.toString())) {
+			view.foreach { v =>
+				v.webview.postMessage(
+					js.Dynamic.literal(
+						command = "highlightPosition",
+						line = line,
+						character = character
+					)
+				)
+			}
+		}
+	}
+
+	def updateDiagram(data: js.Any, uri: vscode.Uri): Unit = {
+	currentUri = Some(uri)
 	view.foreach { v =>
 		v.webview.postMessage(
 		js.Dynamic.literal(

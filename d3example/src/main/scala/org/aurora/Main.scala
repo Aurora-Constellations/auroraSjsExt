@@ -31,6 +31,12 @@ object D3MainObject {
       val d3Tree = message.data
 
       renderer.render(d3Tree)
+    } else if (message.command.asInstanceOf[String] == "highlightPosition") {
+
+      renderer.highlightAt(
+        message.line.asInstanceOf[Int],
+        message.character.asInstanceOf[Int]
+      )
     }
   }
 )

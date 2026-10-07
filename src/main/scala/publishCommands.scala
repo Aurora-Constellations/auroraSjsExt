@@ -28,7 +28,7 @@ import scala.scalajs.js.timers.{SetIntervalHandle, setInterval, clearInterval}
 import org.aurora.sjsast.GenAst
 import com.axiom.visual.D3DiagramManager
 import org.aurora.visual.elk.AuroraElk
-import org.aurora.visual.d3.AstTransformer
+import org.aurora.visual.d3.{AstTransformer, SourceRanges}
 import typings.vscode.mod.QuickPickItem
 import PublishCommands.refreshDiagram
 import com.axiom.diagram.Configurations.Layout
@@ -96,12 +96,13 @@ object PublishCommands:
                   val d3Tree =
                     AstTransformer.fromElkToD3Node(
                       elkNode,
-                      PCM(currentPCM)
+                      PCM(currentPCM),
+                      SourceRanges.fromGenAst(currentPCM)
                     )
 
                   println("D3 transform successful.")
 
-                  d3Manager.updateDiagram(d3Tree.toJS)
+                  d3Manager.updateDiagram(d3Tree.toJS, document.uri)
 
                 } catch {
 
