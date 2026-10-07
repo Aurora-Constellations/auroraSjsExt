@@ -80,6 +80,23 @@ class D3Renderer(val containerSelector: String):
         if (nodeQualifier == Qualifier.Normal.elkType) "none"
         else getQuColor(nodeQualifier)
 
+    // Deeper shade of a node's fill, shown while the node is hovered
+    private val HoverDarkenFactor = 0.6
+
+    private def getHoverColor(baseColor: String): String = {
+        // Same maths as d3-color's darker(): scale each RGB channel by 0.7^k
+        val isHex = baseColor.matches("#[0-9a-fA-F]{6}")
+        if (!isHex) baseColor
+        else {
+            val scale = math.pow(0.7, HoverDarkenFactor)
+            val channels = (0 until 3).map { i =>
+                val v = Integer.parseInt(baseColor.substring(1 + i * 2, 3 + i * 2), 16)
+                math.round(v * scale).toInt
+            }
+            "#" + channels.map(c => f"$c%02x").mkString
+        }
+    }
+
     private def getEdgeDash(edgeType: String): String =
         if (edgeType == Qualifier.Negative.elkType) "6, 6" else "none"
 
@@ -312,6 +329,14 @@ class D3Renderer(val containerSelector: String):
             .asInstanceOf[js.Dynamic]
             .transition()
             .duration(150)
+            .style(
+                "fill",
+                getHoverColor(
+                getNodeColor(
+                    d.data.nodeType.toSafeOption.getOrElse("Unknown")
+                )
+                )
+            )
 
             val nType =
             d.data.nodeType.toSafeOption
@@ -365,6 +390,12 @@ class D3Renderer(val containerSelector: String):
             .asInstanceOf[js.Dynamic]
             .transition()
             .duration(250)
+            .style(
+                "fill",
+                getNodeColor(
+                d.data.nodeType.toSafeOption.getOrElse("Unknown")
+                )
+            )
             .style(
                 "stroke",
                 getNodeStroke(
