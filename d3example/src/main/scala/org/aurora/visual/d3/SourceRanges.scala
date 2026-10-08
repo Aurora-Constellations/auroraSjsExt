@@ -4,15 +4,7 @@ import scala.collection.mutable
 import scala.scalajs.js
 import org.aurora.sjsast.GenAst
 import org.aurora.sjsast.utils.NarrativeType
-
-/** A zero-based range in the .aurora source text (same convention as VS Code positions). */
-case class SourceRange(startLine: Int, startChar: Int, endLine: Int, endChar: Int):
-  def toJS: js.Any = js.Dictionary[Int](
-    "startLine" -> startLine,
-    "startChar" -> startChar,
-    "endLine" -> endLine,
-    "endChar" -> endChar
-  )
+import com.axiom.protocol.SourceRange
 
 /** Maps drawable diagram nodes back to the text in the editor that declares them. */
 object SourceRanges:

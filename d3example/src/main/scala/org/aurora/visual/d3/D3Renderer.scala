@@ -5,6 +5,7 @@ import scala.scalajs.js.JSConverters.*
 import org.scalajs.dom
 import org.aurora.sjsast.utils.{NarrativeType, Qualifier}
 import typings.d3.mod as d3
+import com.axiom.protocol.{SourceRange, ToExtension}
 
 // --- THE FIX: Safe JS extraction extension ---
 // This safely filters out BOTH JS undefined and JS null
@@ -64,19 +65,15 @@ trait D3AugmentedNode extends js.Object:
     def each(callback: js.Function1[D3AugmentedNode, Unit]): Unit
 
 // 2. The Reusable Renderer Class
-class D3Renderer(val containerSelector: String):
+// `outbound` is where the renderer reports user interaction (e.g. node clicks); the default drops them, which is what
+// we want when the page is opened outside VS Code.
+class D3Renderer(val containerSelector: String, outbound: ToExtension => Unit = _ => ()):
 
     // Node currently linked to the editor cursor / last click; survives re-renders
     private var highlightedId: Option[String] = None
     private var highlightRings: Option[js.Dynamic] = None
     private var drawnNodes: List[D3AugmentedNode] = Nil
     private var focusOnNode: Option[D3AugmentedNode => Unit] = None
-
-    // Only available inside a VS Code webview; absent when opened in a plain browser (e.g. the Vite dev server)
-    private lazy val vscodeApi: Option[js.Dynamic] =
-        if (js.typeOf(js.Dynamic.global.acquireVsCodeApi) == "function")
-            Some(js.Dynamic.global.acquireVsCodeApi())
-        else None
 
     private val HighlightColor = "#0078d4"
 
@@ -520,15 +517,9 @@ class D3Renderer(val containerSelector: String):
             // Select the matching text in the editor and highlight this node straight away
             highlightedId = d.data.id.toSafeOption
             applyHighlight()
-            vscodeApi.foreach(
-            _.postMessage(
-                js.Dynamic.literal(
-                command = "nodeClicked",
-                id = d.data.id,
-                range = d.data.range
-                )
-            )
-            )
+            // Only nodes that map back to source text can be selected in the editor
+            for (id <- d.data.id.toSafeOption; r <- d.data.range.toSafeOption)
+                outbound(ToExtension.NodeClicked(id, SourceRange(r.startLine, r.startChar, r.endLine, r.endChar)))
 
             focusNode(d)
         }

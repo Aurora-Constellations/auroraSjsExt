@@ -3,6 +3,7 @@ package com.axiom.visual
 import typings.vscode.mod as vscode
 import typings.std.PromiseLike // Import the exact ST type
 import scala.scalajs.js
+import com.axiom.protocol.{DiagramNode, Protocol, SourceRange, ToExtension, ToWebview}
 import org.aurora.sjsast.scoring.af.Cha2ds2VascRiskFactor
 import org.aurora.visual.d3.D3Renderer
 import org.aurora.sjsast.LHMap
@@ -12,6 +13,8 @@ class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extC
 	private var view: Option[vscode.WebviewView] = None
 	// The document the diagram was last drawn from; node clicks and cursor moves are synced against it
 	private var currentUri: Option[vscode.Uri] = None
+	// The latest diagram, so a webview that (re)loads after it was drawn can be brought up to date
+	private var lastDiagram: Option[ToWebview.UpdateDiagram] = None
 
 	val provider: vscode.WebviewViewProvider = new vscode.WebviewViewProvider {
 		
@@ -31,23 +34,29 @@ class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extC
 		webviewView.webview.html = getHtmlForWebview(webviewView.webview)
 
 		webviewView.webview.onDidReceiveMessage { (message: Any) =>
-			handleWebviewMessage(message.asInstanceOf[js.Dynamic])
+			DiagramChannel.decode(message) match {
+				case Right(msg) => handleWebviewMessage(msg)
+				case Left(error) => println(s"Ignoring unrecognised message from the D3 webview: $error")
+			}
 		}
 		()
 		}
 	}
 
-	private def handleWebviewMessage(message: js.Dynamic): Unit = {
-		if (message.command.asInstanceOf[String] == "nodeClicked" && !js.isUndefined(message.range)) {
-			val range = message.range
-			selectInEditor(
-				range.startLine.asInstanceOf[Int],
-				range.startChar.asInstanceOf[Int],
-				range.endLine.asInstanceOf[Int],
-				range.endChar.asInstanceOf[Int]
-			)
-		}
+	private def handleWebviewMessage(message: ToExtension): Unit = message match {
+		case ToExtension.Ready(version) =>
+			if (version != Protocol.Version)
+				vscode.window.showErrorMessage(
+					s"Aurora diagram is out of date (webview protocol v$version, extension v${Protocol.Version}). Rebuild the D3 bundle."
+				)
+			else lastDiagram.foreach(send)
+
+		case ToExtension.NodeClicked(_, SourceRange(startLine, startChar, endLine, endChar)) =>
+			selectInEditor(startLine, startChar, endLine, endChar)
 	}
+
+	private def send(msg: ToWebview): Unit =
+		view.foreach(v => DiagramChannel.post(v.webview, msg))
 
 	// Selects and reveals the text behind a clicked node, moving focus to the editor
 	private def selectInEditor(startLine: Int, startChar: Int, endLine: Int, endChar: Int): Unit = {
@@ -72,28 +81,15 @@ class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extC
 	// Called when the cursor moves in an editor; the webview highlights the node at that position
 	def highlightPosition(uri: vscode.Uri, line: Int, character: Int): Unit = {
 		if (currentUri.exists(_.toString() == uri.toString())) {
-			view.foreach { v =>
-				v.webview.postMessage(
-					js.Dynamic.literal(
-						command = "highlightPosition",
-						line = line,
-						character = character
-					)
-				)
-			}
+			send(ToWebview.HighlightPosition(line, character))
 		}
 	}
 
-	def updateDiagram(data: js.Any, uri: vscode.Uri): Unit = {
-	currentUri = Some(uri)
-	view.foreach { v =>
-		v.webview.postMessage(
-		js.Dynamic.literal(
-			command = "updateDiagram",
-			data = data
-		)
-		)
-	}
+	def updateDiagram(tree: DiagramNode, uri: vscode.Uri): Unit = {
+		currentUri = Some(uri)
+		val msg = ToWebview.UpdateDiagram(tree)
+		lastDiagram = Some(msg)
+		send(msg)
 	}
 
 	private def getHtmlForWebview(webview: vscode.Webview): String = {

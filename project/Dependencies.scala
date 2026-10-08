@@ -99,6 +99,14 @@ object Dependencies {
     )
   }
 
+  // Codecs are generated per type by a macro, so only the codecs actually used end up in a Scala.js bundle
+  val jsoniter: Def.Initialize[Seq[ModuleID]] = Def.setting {
+    Seq(
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % DependencyVersions.jsoniter,
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % DependencyVersions.jsoniter % Provided
+    )
+  }
+
   val magnolia : Def.Initialize[Seq[ModuleID]] = Def.setting {
     Seq(
       // https://mvnrepository.com/artifact/com.softwaremill.magnolia1_3/magnolia

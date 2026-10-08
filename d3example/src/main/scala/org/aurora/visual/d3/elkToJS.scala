@@ -6,39 +6,7 @@ import org.aurora.sjsast.*
 import org.aurora.sjsast.utils.*
 import typings.vscodeLanguageserverProtocol.libCommonProtocolMod._InitializeParams
 import org.aurora.visual.elk.AuroraElk
-
-// 1. Define the strictly typed Scala case class
-case class D3Node(
-  name: String, 
-  nodeType: String, 
-  nodeQualifier: String,
-  x: Double, 
-  y: Double, 
-  width: Double, 
-  height: Double, 
-  children: List[D3Node] = List.empty,
-  edges: List[js.Any] = List.empty,
-  id: String = "",
-  range: Option[SourceRange] = None
-) {
-  
-  // 2. Helper to convert the Scala class into a plain JavaScript object for D3
-  def toJS: js.Any = {
-    js.Dictionary(
-      "name" -> name,
-      "nodeType" -> nodeType,
-      "nodeQualifier" -> nodeQualifier,
-      "x" -> x,
-      "y" -> y,
-      "width" -> width,
-      "height" -> height,
-      "children" -> children.map(_.toJS).toJSArray,
-      "edges" -> edges.toJSArray,
-      "id" -> id,
-      "range" -> range.map(_.toJS).getOrElse(js.undefined)
-    )
-  }
-}
+import com.axiom.protocol.{DiagramEdge, DiagramNode, EdgeSection, Point, SourceRange}
 
 object AstTransformer {
   
@@ -46,7 +14,7 @@ object AstTransformer {
     elkNode: AuroraElk.Node,
     pcm: PCM,
     ranges: Map[String, SourceRange] = Map.empty
-  ): D3Node = {
+  ): DiagramNode = {
     val allAstNodes = AstNode.getAllDescendants(pcm).toList
     buildTree(elkNode, allAstNodes, ranges)
   }
@@ -55,7 +23,7 @@ object AstTransformer {
     elkNode: AuroraElk.Node,
     allAstNodes: List[AstNode],
     ranges: Map[String, SourceRange]
-  ): D3Node = {
+  ): DiagramNode = {
     
     // In AuroraElk.scala, we see the ID often contains "%%"
     // We can extract the raw name by taking the first part of that ID.
@@ -67,7 +35,7 @@ object AstTransformer {
     }
     val qualifier = astNode.map(AstNode.getQualifier).getOrElse(Qualifier.Normal).elkType
     
-    D3Node(
+    DiagramNode(
       name = nodeName,
       nodeType = elkNode.nodeType,
       nodeQualifier = qualifier,
@@ -76,15 +44,30 @@ object AstTransformer {
       y = elkNode.node.y.getOrElse(0.0),
       width = elkNode.node.width.getOrElse(0.0),
       height = elkNode.node.height.getOrElse(0.0),
-      // Recursively map over all children provided by ELK and convert them to D3Nodes
+      // Recursively map over all children provided by ELK and convert them to DiagramNodes
       children = elkNode.children.map(buildTree(_, allAstNodes, ranges)).toList,
       // Extract the edges directly from the raw ELK node, NOT the Scala wrapper
       edges = elkNode.node.edges.toOption match {
-        case Some(jsArray) => jsArray.toList.map(_.asInstanceOf[js.Any])
-        case None => List.empty[js.Any]
+        case Some(jsArray) => jsArray.toList.map(e => toDiagramEdge(e.asInstanceOf[ElkEdgeWithAbs]))
+        case None => List.empty[DiagramEdge]
       },
       id = elkNode.id,
       range = ranges.get(elkNode.id)
     )
   }
+
+  // The renderer only reads an edge's id and its routed sections, so that is all the wire carries
+  private def toDiagramEdge(edge: ElkEdgeWithAbs): DiagramEdge =
+    DiagramEdge(
+      id = edge.id.toOption.getOrElse(""),
+      sections = edge.sections.toOption.map(_.toList).getOrElse(Nil).map { section =>
+        EdgeSection(
+          startPoint = toPoint(section.startPoint),
+          endPoint = toPoint(section.endPoint),
+          bendPoints = section.bendPoints.toOption.map(_.toList).getOrElse(Nil).map(toPoint)
+        )
+      }
+    )
+
+  private def toPoint(p: ElkPoint): Point = Point(p.x, p.y)
 }

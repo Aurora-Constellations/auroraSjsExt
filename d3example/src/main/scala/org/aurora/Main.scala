@@ -1,45 +1,24 @@
 package org.aurora
 
-import org.scalajs.dom
-import scala.scalajs.js
-
-import org.aurora.visual.d3.D3Renderer
-import org.aurora.sjsast.LHMap
+import com.axiom.protocol.{Protocol, ToExtension, ToWebview}
+import org.aurora.messaging.VsCodeBridge
+import org.aurora.visual.d3.{D3Renderer, toJS}
 
 object D3MainObject {
 
   def main(args: Array[String]): Unit = {
 
-    val renderer = new D3Renderer("#d3-container")
+    val renderer = new D3Renderer("#d3-container", VsCodeBridge.send)
 
-    val layoutOptions = LHMap(
-      "elk.algorithm" -> "layered",
-      "elk.direction" -> "TOP",
-      "elk.spacing.nodeNode" -> "10",
-      "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
-    )
+    VsCodeBridge.listen {
+      case ToWebview.UpdateDiagram(tree) =>
+        renderer.render(tree.toJS)
 
-    dom.window.addEventListener(
-  "message",
-  (event: dom.MessageEvent) => {
-
-    val message =
-      event.data.asInstanceOf[js.Dynamic]
-
-    if (message.command.asInstanceOf[String] == "updateDiagram") {
-
-      val d3Tree = message.data
-
-      renderer.render(d3Tree)
-    } else if (message.command.asInstanceOf[String] == "highlightPosition") {
-
-      renderer.highlightAt(
-        message.line.asInstanceOf[Int],
-        message.character.asInstanceOf[Int]
-      )
+      case ToWebview.HighlightPosition(line, character) =>
+        renderer.highlightAt(line, character)
     }
-  }
-)
 
+    // Tell the host we are listening so it can send the current diagram (it may have been drawn before this webview existed)
+    VsCodeBridge.send(ToExtension.Ready(Protocol.Version))
   }
 }

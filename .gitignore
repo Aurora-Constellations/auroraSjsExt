@@ -25,3 +25,6 @@ package-lock.json
 package-lock.json
 
 d3example/dist
+# hidden cross project folders (protocol, CrossType.Pure)
+protocol/.js
+protocol/.jvm

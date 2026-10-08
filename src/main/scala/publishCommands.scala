@@ -102,7 +102,7 @@ object PublishCommands:
 
                   println("D3 transform successful.")
 
-                  d3Manager.updateDiagram(d3Tree.toJS, document.uri)
+                  d3Manager.updateDiagram(d3Tree, document.uri)
 
                 } catch {
 

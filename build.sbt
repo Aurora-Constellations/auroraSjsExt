@@ -227,7 +227,7 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
 lazy val root = project
   .in(file("."))
   .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
-  .dependsOn(axiompatienttracker, pcmalgebra, d3example)
+  .dependsOn(axiompatienttracker, pcmalgebra, d3example, protocol.js)
   .settings(
     name := "auroraSjsExt",
     open := openVSCodeTask
@@ -301,6 +301,21 @@ lazy val axiombilling = project
     libraryDependencies ++= Dependencies.shapeless3.value
   )
   .settings(sharedStSettings)
+
+// --- Protocol: the wire contract between the extension host and the webviews ---
+// Only message types, wire DTOs and their JSON codecs live here. It must stay free of
+// scalajs-dom, ScalablyTyped, Laminar and domain modules so both sides (and JVM tests) can use it.
+lazy val protocol = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("protocol"))
+  .settings(
+    name := "protocol",
+    // jsoniter-scala rather than zio-json or upickle: both link far more code into the webview bundle
+    // (zio-json: ZIO core + java.time/locale polyfills; upickle: BigDecimal/BigInt/charset support for every built-in
+    // reader), making d3_main.js 5-7x larger. Macro-generated codecs only link what the protocol uses.
+    libraryDependencies ++= Dependencies.jsoniter.value,
+    libraryDependencies += "org.scalatest" %%% "scalatest" % DependencyVersions.scalatest % Test
+  )
 
 // --- Shared Cross-Project ---
 lazy val shared = crossProject(JSPlatform)
@@ -376,7 +391,7 @@ lazy val pcmalgebra = project
 lazy val d3example = project
   .in(file("d3example"))
   .enablePlugins(ScalaJSPlugin, ScalablyTypedConverterExternalNpmPlugin)
-  .dependsOn(pcmalgebra)
+  .dependsOn(pcmalgebra, protocol.js)
   .settings(
     name := "d3example",
     scalaJSUseMainModuleInitializer := true,

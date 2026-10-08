@@ -22,5 +22,6 @@ object DependencyVersions {
   val `upickle`          = "4.3.0"
   val scalatestdiscipline = "2.3.0"
   val magnolia            = "1.3.18"
+  val jsoniter            = "2.38.5"
 
 }
