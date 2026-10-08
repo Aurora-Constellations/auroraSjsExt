@@ -83,7 +83,9 @@ object AuroraSjsExt {
 )
     val serverPath = context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs")
     
-    langConfig.asInstanceOf[js.Dynamic].initialize(context, serverPath)
+    // aurora-langium >= 0.4 takes the server module via setServerModule; initialize() no longer accepts it
+    langConfig.setServerModule(serverPath)
+    langConfig.initialize(context)
     // langConfig.registerWebviewViewProvider()
     val outputChannel = vscode.window.createOutputChannel("My Extension")  
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
