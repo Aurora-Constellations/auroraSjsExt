@@ -82,7 +82,6 @@ object AuroraSjsExt {
   js.undefined
 )
     val serverPath = context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs")
-    
     langConfig.asInstanceOf[js.Dynamic].initialize(context, serverPath)
     // langConfig.registerWebviewViewProvider()
     val outputChannel = vscode.window.createOutputChannel("My Extension")  

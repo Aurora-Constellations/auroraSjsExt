@@ -12,10 +12,7 @@ import com.axiom.MergePCM.MergePCM.*
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.vscode.mod.OutputChannel
-import typings.auroraLangium.distTypesSrcExtensionSrcCommandsToggleDiagramLayoutCommandMod.toggleDiagramLayout
 import com.axiom.Narratives.ManageNarratives.changeNarrativesType
-import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNarrativesCommandMod.hideNarratives
-import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNgosCommandMod.hideNGOs
 import typings.vscode.mod.TextEditor
 import typings.auroraLangium.cliMod.parse
 import com.axiom.mcp.ClaudeClient
@@ -154,8 +151,8 @@ object PublishCommands:
           ("AuroraSjsExt.processDSL", processDSL(context)),
           ("AuroraSjsExt.toggleDiagramLayout", toggleDiagramLayout(d3Manager)),
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
-          ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
-          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
+          // ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
+          // ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
           ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
           ("AuroraSjsExt.startRecording", startRecording(context)),
           ("AuroraSjsExt.stopRecording", stopRecording(context)),
@@ -314,17 +311,17 @@ object PublishCommands:
   }
 
 
-  def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-    (args) => {
-      performActionOnActivePCM(langConfig, hideNarratives)
-    }
-  }
+  // def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+  //   (args) => {
+  //     performActionOnActivePCM(langConfig, hideNarratives)
+  //   }
+  // }
 
-  def hideNamedGroups(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-    (args) => {
-      performActionOnActivePCM(langConfig, hideNGOs)     
-    }
-  }
+  // def hideNamedGroups(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+  //   (args) => {
+  //     performActionOnActivePCM(langConfig, hideNGOs)     
+  //   }
+  // }
 
   def performActionOnActivePCM(langConfig: LanguageClientConfigSingleton, f: (typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod.PCM, LanguageClientConfigSingleton) => Unit): Unit = {
     val activeEditor = vscode.window.activeTextEditor
