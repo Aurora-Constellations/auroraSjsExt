@@ -3,20 +3,17 @@ import vscode.{ExtensionContext}
 import scala.scalajs.js
 import typings.vscode.anon.Dispose
 import scala.util.*
+import scala.scalajs.js
 import concurrent.ExecutionContext.Implicits.global
 import com.axiom.patienttracker.showPatients
 import com.axiom.billing.showBilling
 import org.aurora.sjsast.*
 import org.aurora.sjsast.scoring.ScoreModuleResolver
 import com.axiom.MergePCM.MergePCM.*
-import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
 import typings.vscode.mod.OutputChannel
-import typings.auroraLangium.distTypesSrcExtensionSrcCommandsToggleDiagramLayoutCommandMod.toggleDiagramLayout
 import com.axiom.Narratives.ManageNarratives.changeNarrativesType
-import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNarrativesCommandMod.hideNarratives
-import typings.auroraLangium.distTypesSrcExtensionSrcCommandsHideNgosCommandMod.hideNGOs
 import typings.vscode.mod.TextEditor
 import typings.auroraLangium.cliMod.parse
 import com.axiom.mcp.ClaudeClient
@@ -27,6 +24,14 @@ import scala.scalajs.js.annotation.JSImport
 import scala.compiletime.uninitialized
 import scala.scalajs.js.timers.{SetIntervalHandle, setInterval, clearInterval}
 import org.aurora.sjsast.GenAst
+import com.axiom.visual.D3DiagramManager
+import org.aurora.visual.elk.AuroraElk
+import org.aurora.visual.d3.{AstTransformer, SourceRanges}
+import typings.vscode.mod.QuickPickItem
+import PublishCommands.refreshDiagram
+import com.axiom.Configurations.Layout
+import scala.scalajs.js.JSConverters.*
+import AuroraStates.globalLayoutOptions
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -34,22 +39,111 @@ object PublishCommands:
   private var startTime: Double = 0.0
   private var timerHandle: SetIntervalHandle | Null = null
 
+  // to do: work out state management so that the diagram does not go back to original alyout every time it saves
+  def refreshDiagram(
+    document: TextDocument,
+    d3Manager: D3DiagramManager
+): Unit = {
+
+  if (
+    document.languageId == "aurora" ||
+    document.fileName.endsWith(".aurora")
+  ) {
+
+    val currentFilePath = document.fileName
+
+    println("Parsing Aurora file for D3...")
+
+    parse(currentFilePath).toFuture.onComplete {
+
+      case Success(parsed) =>
+
+        try {
+
+          val currentPCM =
+            parsed.asInstanceOf[GenAst.PCM]
+
+          println("Aurora parsing successful.")
+
+
+
+          AuroraElk
+            .Graph(
+              PCM(currentPCM),
+              globalLayoutOptions
+            )
+            .graph
+            .onComplete {
+
+              case Success(elkNode) =>
+
+                try {
+
+                  println("ELK layout successful.")
+
+                  val d3Tree =
+                    AstTransformer.fromElkToD3Node(
+                      elkNode,
+                      PCM(currentPCM),
+                      SourceRanges.fromGenAst(currentPCM)
+                    )
+
+                  println("D3 transform successful.")
+
+                  d3Manager.updateDiagram(d3Tree.toJS, document.uri)
+
+                } catch {
+
+                  case e: Exception =>
+                    println(
+                      s"D3 transformation failed: ${e.getMessage}"
+                    )
+                    e.printStackTrace()
+                }
+
+              case Failure(e) =>
+
+                println(
+                  s"ELK layout failed: ${e.getMessage}"
+                )
+                e.printStackTrace()
+            }
+
+        } catch {
+
+          case e: Exception =>
+
+            println(
+              s"Error converting parsed result to PCM: ${e.getMessage}"
+            )
+            e.printStackTrace()
+        }
+
+      case Failure(e) =>
+
+        println(
+          s"Aurora parsing failed: ${e.getMessage}"
+        )
+        e.printStackTrace()
+    }
+  }
+}
   def initRecordingStatusBar(context: vscode.ExtensionContext): Unit = {
     recordingItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
     context.subscriptions.push(recordingItem.asInstanceOf[Dispose])
     updateRecordingStatusBar()
   }
 
-  def publishCommands(context: ExtensionContext, langConfig: LanguageClientConfigSingleton): Unit = {
+  def publishCommands(context: ExtensionContext, langConfig: LanguageClientConfigSingleton, d3Manager: D3DiagramManager): Unit = {
       val commands = List(
           ("AuroraSjsExt.aurora", showHello()),
           ("AuroraSjsExt.patients", showPatients(context)),
           ("AuroraSjsExt.billing", showBilling(context)),
           ("AuroraSjsExt.processDSL", processDSL(context)),
-          ("AuroraSjsExt.toggleDiagramLayout", toggleLayout(langConfig)),
+          ("AuroraSjsExt.toggleDiagramLayout", toggleDiagramLayout(d3Manager)),
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
-          ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
-          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
+          // ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
+          // ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
           ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
           ("AuroraSjsExt.startRecording", startRecording(context)),
           ("AuroraSjsExt.stopRecording", stopRecording(context)),
@@ -210,31 +304,18 @@ object PublishCommands:
       }
   }
 
-  def toggleLayout(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-    (args) => {
-      toggleDiagramLayout(langConfig)
-    }
-  }
 
-  def refreshDiagram(document: TextDocument, langConfig: LanguageClientConfigSingleton): Unit = {
-        val wvp = langConfig.webviewViewProvider.asInstanceOf[LspSprottyViewProvider]
-        wvp.openDiagram(document.uri).toFuture.onComplete {
-              case Success(_) => println("Diagram has been refreshed.")
-              case Failure(e) => println(s"Failed to refresh diagram: ${e}")
-        }
-  }
+  // def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+  //   (args) => {
+  //     performActionOnActivePCM(langConfig, hideNarratives)
+  //   }
+  // }
 
-  def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-    (args) => {
-      performActionOnActivePCM(langConfig, hideNarratives)
-    }
-  }
-
-  def hideNamedGroups(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-    (args) => {
-      performActionOnActivePCM(langConfig, hideNGOs)     
-    }
-  }
+  // def hideNamedGroups(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
+  //   (args) => {
+  //     performActionOnActivePCM(langConfig, hideNGOs)     
+  //   }
+  // }
 
   def performActionOnActivePCM(langConfig: LanguageClientConfigSingleton, f: (typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod.PCM, LanguageClientConfigSingleton) => Unit): Unit = {
     val activeEditor = vscode.window.activeTextEditor
@@ -249,6 +330,81 @@ object PublishCommands:
     }  
     
   }
+
+def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
+  (_: Any) => {
+    val quickPick =
+      vscode.window.createQuickPick[QuickPickItem]()
+
+    quickPick.placeholder = "Choose a layout for your diagram..."
+
+    val layoutOptions = Layout.values.map(layout => layout.toString()).toJSArray
+    quickPick.items = layoutOptions.map(x => QuickPickItem(label = x))
+
+    var layout = ""
+
+    quickPick.onDidChangeSelection { selection =>
+      if (selection.nonEmpty) {
+        layout = selection.head.label
+      }
+    }
+
+    quickPick.onDidAccept { (_: Unit) =>
+      val textDocument =
+        vscode.window.activeTextEditor.toOption.map(_.document)
+      // to do: check if applying enums here would be better than just having strings
+      val options = Layout.valueOf(layout) match {
+        case Layout.Stress =>
+          LHMap(
+            "elk.algorithm" -> "stress",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+
+        case Layout.Layered =>
+          LHMap(
+            "elk.algorithm" -> "layered",
+            "elk.direction" -> "TOP",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+        case Layout.MrTree => 
+          LHMap(
+            "elk.algorithm" -> "mrtree",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+        case Layout.Force =>
+          LHMap(
+            "elk.algorithm" -> "force",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+        case Layout.Radial =>
+          LHMap(
+            "elk.algorithm" -> "radial",
+            "elk.spacing.nodeNode" -> "10",
+            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
+          )
+      }
+
+      textDocument match {
+        case None =>
+          vscode.window.showErrorMessage("There is no active editor.")
+
+        case Some(doc) =>
+          globalLayoutOptions = options
+          refreshDiagram(doc, d3Manager)
+      }
+
+      quickPick.dispose()
+    }
+
+    quickPick.show()
+  }
+}
+
+
 
   // Node.js filesystem module
   @js.native

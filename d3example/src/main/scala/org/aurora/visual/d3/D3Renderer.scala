@@ -34,7 +34,16 @@ trait ElkEdgeWithAbs extends js.Object:
     val sections: js.UndefOr[js.Array[ElkSection]]
 
 @js.native
+trait D3SourceRange extends js.Object:
+    val startLine: Int
+    val startChar: Int
+    val endLine: Int
+    val endChar: Int
+
+@js.native
 trait D3RawData extends js.Object:
+    val id: js.UndefOr[String]
+    val range: js.UndefOr[D3SourceRange]
     val name: js.UndefOr[String]
     val nodeType: js.UndefOr[String]
     val nodeQualifier: js.UndefOr[String]
@@ -55,7 +64,53 @@ trait D3AugmentedNode extends js.Object:
     def each(callback: js.Function1[D3AugmentedNode, Unit]): Unit
 
 // 2. The Reusable Renderer Class
-class D3Renderer(containerSelector: String):
+class D3Renderer(val containerSelector: String):
+
+    // Node currently linked to the editor cursor / last click; survives re-renders
+    private var highlightedId: Option[String] = None
+    private var highlightRings: Option[js.Dynamic] = None
+    private var drawnNodes: List[D3AugmentedNode] = Nil
+    private var focusOnNode: Option[D3AugmentedNode => Unit] = None
+
+    // Only available inside a VS Code webview; absent when opened in a plain browser (e.g. the Vite dev server)
+    private lazy val vscodeApi: Option[js.Dynamic] =
+        if (js.typeOf(js.Dynamic.global.acquireVsCodeApi) == "function")
+            Some(js.Dynamic.global.acquireVsCodeApi())
+        else None
+
+    private val HighlightColor = "#0078d4"
+
+    private def applyHighlight(): Unit =
+        highlightRings.foreach { rings =>
+            rings.style(
+                "opacity",
+                (d: D3AugmentedNode) =>
+                    if (d.data.id.toSafeOption.exists(highlightedId.contains)) "1" else "0"
+            )
+        }
+
+    // Highlights the node whose source text contains the given editor position (zero-based line/character)
+    def highlightAt(line: Int, character: Int): Unit = {
+        def atOrAfter(l: Int, c: Int, refLine: Int, refChar: Int) = l > refLine || (l == refLine && c >= refChar)
+
+        val matchingNode = drawnNodes.find { n =>
+            n.data.range.toSafeOption.exists { r =>
+                atOrAfter(line, character, r.startLine, r.startChar) &&
+                atOrAfter(r.endLine, r.endChar, line, character)
+            }
+        }
+        val matchingId = matchingNode.flatMap(_.data.id.toSafeOption)
+
+        // Only re-centre when the cursor enters a different node; this also skips the echo of a node click
+        val enteredNewNode = matchingId.isDefined && matchingId != highlightedId
+
+        highlightedId = matchingId
+        applyHighlight()
+
+        if (enteredNewNode) {
+            for (node <- matchingNode; focus <- focusOnNode) focus(node)
+        }
+    }
 
     private def getNodeColor(nodeType: String): String = nodeType match {
         case "Reference"                           => "#6fbbfa"
@@ -75,15 +130,42 @@ class D3Renderer(containerSelector: String):
         case _                          => "#555555"
     }
 
+    // Nodes only get a border when the source carries a ?, ! or ~ qualifier
+    private def getNodeStroke(nodeQualifier: String): String =
+        if (nodeQualifier == Qualifier.Normal.elkType) "none"
+        else getQuColor(nodeQualifier)
+
+    // Deeper shade of a node's fill, shown while the node is hovered
+    private val HoverDarkenFactor = 0.6
+
+    private def getHoverColor(baseColor: String): String = {
+        // Same maths as d3-color's darker(): scale each RGB channel by 0.7^k
+        val isHex = baseColor.matches("#[0-9a-fA-F]{6}")
+        if (!isHex) baseColor
+        else {
+            val scale = math.pow(0.7, HoverDarkenFactor)
+            val channels = (0 until 3).map { i =>
+                val v = Integer.parseInt(baseColor.substring(1 + i * 2, 3 + i * 2), 16)
+                math.round(v * scale).toInt
+            }
+            "#" + channels.map(c => f"$c%02x").mkString
+        }
+    }
+
     private def getEdgeDash(edgeType: String): String =
         if (edgeType == Qualifier.Negative.elkType) "6, 6" else "none"
 
     def render(data: js.Any): Unit = {
-        val container = d3.select(containerSelector).asInstanceOf[js.Dynamic]
-        container.selectAll("*").remove()
 
-        // --- NEW: 1. Initialize a hidden tooltip div ---
-        val tooltip = d3
+    val container =
+        d3.select(containerSelector).asInstanceOf[js.Dynamic]
+
+    container.selectAll("*").remove()
+
+
+
+    // --- Tooltip ---
+    val tooltip = d3
         .select("body")
         .append("div")
         .style("position", "absolute")
@@ -95,15 +177,16 @@ class D3Renderer(containerSelector: String):
         .style("border", "1px solid #555")
         .style("font-size", "12px")
         .style("font-family", "sans-serif")
-        .style("pointer-events", "none") // Prevents the tooltip from blocking mouse events
+        .style("pointer-events", "none")
         .style("z-index", "1000")
         .style("box-shadow", "0px 4px 6px rgba(0,0,0,0.3)")
-        // -----------------------------------------------
 
-        val width = dom.window.innerWidth.toDouble
-        val height = dom.window.innerHeight.toDouble
 
-        val svg = container
+
+    val width = dom.window.innerWidth.toDouble
+    val height = dom.window.innerHeight.toDouble
+
+    val svg = container
         .append("svg")
         .attr("width", "100%")
         .attr("height", "100vh")
@@ -112,47 +195,83 @@ class D3Renderer(containerSelector: String):
         .style("font-family", "sans-serif")
         .asInstanceOf[js.Dynamic]
 
-        val g = svg.append("g").asInstanceOf[js.Dynamic]
 
-        val zoom = d3
+    val g =
+        svg.append("g").asInstanceOf[js.Dynamic]
+
+
+    val zoom = d3
         .zoom()
         .asInstanceOf[js.Dynamic]
         .on(
-            "zoom",
-            (e: dom.Event) => {
-                g.attr("transform", e.asInstanceOf[js.Dynamic].transform)
-            }
+        "zoom",
+        (e: dom.Event) => {
+            g.attr(
+            "transform",
+            e.asInstanceOf[js.Dynamic].transform
+            )
+        }
         )
-        svg.call(zoom)
 
-        val root = d3.hierarchy[js.Any](data).asInstanceOf[D3AugmentedNode]
+    svg.call(zoom)
 
-        root.each { (d: D3AugmentedNode) =>
-            val parentX = d.parent.toSafeOption.map(_.absoluteX).getOrElse(0.0)
-            val parentY = d.parent.toSafeOption.map(_.absoluteY).getOrElse(0.0)
+    val root =
+        d3.hierarchy[js.Any](data)
+        .asInstanceOf[D3AugmentedNode]
 
-            d.absoluteX = parentX + d.data.x.toSafeOption.getOrElse(0.0)
-            d.absoluteY = parentY + d.data.y.toSafeOption.getOrElse(0.0)
+    root.each { (d: D3AugmentedNode) =>
+
+        val parentX =
+        d.parent.toSafeOption
+            .map(_.absoluteX)
+            .getOrElse(0.0)
+
+        val parentY =
+        d.parent.toSafeOption
+            .map(_.absoluteY)
+            .getOrElse(0.0)
+
+        d.absoluteX =
+        parentX +
+            d.data.x.toSafeOption.getOrElse(0.0)
+
+        d.absoluteY =
+        parentY +
+            d.data.y.toSafeOption.getOrElse(0.0)
+    }
+
+    val nodes =
+        root.descendants()
+        .toList
+        .filter(d => d.parent.toSafeOption.isDefined)
+
+    val allEdges =
+        js.Array[ElkEdgeWithAbs]()
+
+    root.each { (d: D3AugmentedNode) =>
+
+        d.data.edges.toSafeOption
+        .map(_.toList)
+        .getOrElse(List.empty)
+        .foreach { (e: ElkEdgeWithAbs) =>
+
+            e.parentAbsX = d.absoluteX
+            e.parentAbsY = d.absoluteY
+
+            allEdges.push(e)
         }
+    }
 
-        val nodes = root.descendants().toList.filter(d => d.parent.toSafeOption.isDefined)
-        val allEdges = js.Array[ElkEdgeWithAbs]()
 
-        root.each { (d: D3AugmentedNode) =>
-            d.data.edges.toSafeOption.map(_.toList).getOrElse(List.empty).foreach { (e: ElkEdgeWithAbs) =>
-                e.parentAbsX = d.absoluteX
-                e.parentAbsY = d.absoluteY
-                allEdges.push(e)
-            }
-        }
-
-        val lineGenerator = d3
+    val lineGenerator = d3
         .line()
         .asInstanceOf[js.Dynamic]
         .x((p: ElkPoint) => p.x)
         .y((p: ElkPoint) => p.y)
 
-        g.selectAll(".link")
+
+
+    g.selectAll(".link")
         .data(allEdges)
         .enter()
         .append("path")
@@ -160,140 +279,381 @@ class D3Renderer(containerSelector: String):
         .style("fill", "none")
         .style("stroke-width", "2px")
         .style(
-            "stroke",
-            (d: ElkEdgeWithAbs) => {
-                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse(Qualifier.Normal.elkType)
-                getQuColor(edgeType)
-            }
+        "stroke",
+        (d: ElkEdgeWithAbs) => {
+
+            val edgeType =
+            d.id.toSafeOption
+                .getOrElse("")
+                .split("%%")
+                .lastOption
+                .getOrElse(Qualifier.Normal.elkType)
+
+            getQuColor(edgeType)
+        }
         )
         .style(
-            "stroke-dasharray",
-            (d: ElkEdgeWithAbs) => {
-                val edgeType = d.id.toSafeOption.getOrElse("").split("%%").lastOption.getOrElse(Qualifier.Normal.elkType)
-                getEdgeDash(edgeType)
-            }
+        "stroke-dasharray",
+        (d: ElkEdgeWithAbs) => {
+
+            val edgeType =
+            d.id.toSafeOption
+                .getOrElse("")
+                .split("%%")
+                .lastOption
+                .getOrElse(Qualifier.Normal.elkType)
+
+            getEdgeDash(edgeType)
+        }
         )
         .attr(
-            "d",
-            (d: ElkEdgeWithAbs) => {
+        "d",
+        (d: ElkEdgeWithAbs) => {
+
             d.sections.toSafeOption
-                .map(_.toList)
-                .getOrElse(List.empty)
-                .headOption
-                .map { section =>
+            .map(_.toList)
+            .getOrElse(List.empty)
+            .headOption
+            .map { section =>
+
                 val pX = d.parentAbsX
                 val pY = d.parentAbsY
 
-                val points = js.Array[ElkPoint]()
+                val points =
+                js.Array[ElkPoint]()
+
                 points.push(
-                    js.Dictionary("x" -> (section.startPoint.x + pX), "y" -> (section.startPoint.y + pY))
-                    .asInstanceOf[ElkPoint]
+                js.Dictionary(
+                    "x" -> (section.startPoint.x + pX),
+                    "y" -> (section.startPoint.y + pY)
+                ).asInstanceOf[ElkPoint]
                 )
 
-                section.bendPoints.toSafeOption.map(_.toList).getOrElse(List.empty).foreach { bp =>
-                    points.push(js.Dictionary("x" -> (bp.x + pX), "y" -> (bp.y + pY)).asInstanceOf[ElkPoint])
+                section.bendPoints.toSafeOption
+                .map(_.toList)
+                .getOrElse(List.empty)
+                .foreach { bp =>
+
+                    points.push(
+                    js.Dictionary(
+                        "x" -> (bp.x + pX),
+                        "y" -> (bp.y + pY)
+                    ).asInstanceOf[ElkPoint]
+                    )
                 }
 
                 points.push(
-                    js.Dictionary("x" -> (section.endPoint.x + pX), "y" -> (section.endPoint.y + pY)).asInstanceOf[ElkPoint]
+                js.Dictionary(
+                    "x" -> (section.endPoint.x + pX),
+                    "y" -> (section.endPoint.y + pY)
+                ).asInstanceOf[ElkPoint]
                 )
 
-                val pathString = lineGenerator(points).asInstanceOf[String]
-                if (pathString != null) pathString else ""
-                }
-                .getOrElse("")
+                val pathString =
+                lineGenerator(points)
+                    .asInstanceOf[String]
+
+                if (pathString != null)
+                pathString
+                else
+                ""
             }
+            .getOrElse("")
+        }
         )
 
-        // --- NEW: 2. Interactive Node Selection ---
-        val nodeSelection = g
+    // Pans and zooms the diagram so the given node sits in the centre of the view
+    def focusNode(d: D3AugmentedNode): Unit = {
+
+        val scale = 1.5
+
+        val targetX =
+        (width / 2) -
+            (
+            d.absoluteX +
+                (
+                d.data.width.toSafeOption
+                    .getOrElse(0.0) / 2
+                )
+            ) * scale
+
+        val targetY =
+        (height / 2) -
+            (
+            d.absoluteY +
+                (
+                d.data.height.toSafeOption
+                    .getOrElse(0.0) / 2
+                )
+            ) * scale
+
+        val newTransform =
+        d3.zoomIdentity
+            .translate(
+            targetX,
+            targetY
+            )
+            .scale(scale)
+
+        svg.transition()
+        .duration(750)
+        .call(
+            zoom.transform,
+            newTransform
+        )
+    }
+    focusOnNode = Some(focusNode)
+
+    val nodeSelection = g
         .selectAll(".node")
         .data(nodes.toJSArray)
         .enter()
         .append("g")
-        .attr("transform", (d: D3AugmentedNode) => s"translate(${d.absoluteX}, ${d.absoluteY})")
-        .style("cursor", "pointer") // Show hand cursor on hover
+        .attr(
+        "transform",
+        (d: D3AugmentedNode) =>
+            s"translate(${d.absoluteX}, ${d.absoluteY})"
+        )
+        .style("cursor", "pointer")
         .on(
-            "mouseover",
-            (e: dom.MouseEvent, d: D3AugmentedNode) => {
-            // Highlight the border
-            d3.select(e.currentTarget.asInstanceOf[dom.Element])
-                .select("rect")
-                .asInstanceOf[js.Dynamic]
-                .transition()
-                .duration(150)
-                // .style("stroke", "#ffffff")
-                // .style("stroke-width", "3px")
+        "mouseover",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
 
-            // Populate and show tooltip
-            val nType = d.data.nodeType.toSafeOption.getOrElse("Unknown").replace("Narrative", " Narrative")
-            val nName = d.data.name.toSafeOption.getOrElse("Unknown")
+            d3.select(
+            e.currentTarget.asInstanceOf[dom.Element]
+            )
+            .select("rect")
+            .asInstanceOf[js.Dynamic]
+            .transition()
+            .duration(150)
+            .style(
+                "fill",
+                getHoverColor(
+                getNodeColor(
+                    d.data.nodeType.toSafeOption.getOrElse("Unknown")
+                )
+                )
+            )
+
+            val nType =
+            d.data.nodeType.toSafeOption
+                .getOrElse("Unknown")
+                .replace(
+                "Narrative",
+                " Narrative"
+                )
+
+            val nName =
+            d.data.name.toSafeOption
+                .getOrElse("Unknown")
 
             tooltip
-                .html(s"<strong>Type:</strong> $nType <br/> <strong>Name:</strong> $nName")
-                .style("visibility", "visible")
-            }
+            .html(
+                s"""
+                |<strong>Type:</strong> $nType
+                |<br/>
+                |<strong>Name:</strong> $nName
+                |""".stripMargin
+            )
+            .style(
+                "visibility",
+                "visible"
+            )
+        }
         )
         .on(
-            "mousemove",
-            (e: dom.MouseEvent, d: D3AugmentedNode) => {
-            // Make tooltip follow the mouse smoothly
+        "mousemove",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
+
             tooltip
-                .style("top", s"${e.pageY + 15}px")
-                .style("left", s"${e.pageX + 15}px")
-            }
+            .style(
+                "top",
+                s"${e.pageY + 15}px"
+            )
+            .style(
+                "left",
+                s"${e.pageX + 15}px"
+            )
+        }
         )
         .on(
-            "mouseout",
-            (e: dom.MouseEvent, d: D3AugmentedNode) => {
-                // Revert border to normal
-                d3.select(e.currentTarget.asInstanceOf[dom.Element])
-                    .select("rect")
-                    .asInstanceOf[js.Dynamic]
-                    .transition()
-                    .duration(250)
-                    .style("stroke", getQuColor(d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)))
-                    .style("stroke-width", "2px")
+        "mouseout",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
 
-                // Hide tooltip
-                tooltip.style("visibility", "hidden")
-            }
+            d3.select(
+            e.currentTarget.asInstanceOf[dom.Element]
+            )
+            .select("rect")
+            .asInstanceOf[js.Dynamic]
+            .transition()
+            .duration(250)
+            .style(
+                "fill",
+                getNodeColor(
+                d.data.nodeType.toSafeOption.getOrElse("Unknown")
+                )
+            )
+            .style(
+                "stroke",
+                getNodeStroke(
+                d.data.nodeQualifier.toSafeOption
+                    .getOrElse(
+                    Qualifier.Normal.elkType
+                    )
+                )
+            )
+            .style(
+                "stroke-width",
+                "2px"
+            )
+
+            tooltip.style(
+            "visibility",
+            "hidden"
+            )
+        }
         )
-        .on("click", (e: dom.MouseEvent, d: D3AugmentedNode) => {
-            // Click to center the camera on the node
-            val scale = 1.5 // Zoom in slightly
-            val targetX = (width / 2) - (d.absoluteX + (d.data.width.toSafeOption.getOrElse(0.0) / 2)) * scale
-            val targetY = (height / 2) - (d.absoluteY + (d.data.height.toSafeOption.getOrElse(0.0) / 2)) * scale
+        .on(
+        "click",
+        (e: dom.MouseEvent, d: D3AugmentedNode) => {
 
-            // FIX: Access zoomIdentity statically so Vite bundles it properly
-            val newTransform = d3.zoomIdentity.translate(targetX, targetY).scale(scale)
+            // Select the matching text in the editor and highlight this node straight away
+            highlightedId = d.data.id.toSafeOption
+            applyHighlight()
+            vscodeApi.foreach(
+            _.postMessage(
+                js.Dynamic.literal(
+                command = "nodeClicked",
+                id = d.data.id,
+                range = d.data.range
+                )
+            )
+            )
 
-            svg.transition().duration(750).call(zoom.transform, newTransform)
-        })
-        // ------------------------------------------
+            focusNode(d)
+        }
+        )
 
-        nodeSelection
+    nodeSelection
         .append("rect")
-        .attr("width", (d: D3AugmentedNode) => d.data.width.toSafeOption.getOrElse(0.0))
-        .attr("height", (d: D3AugmentedNode) => d.data.height.toSafeOption.getOrElse(0.0))
+        .attr(
+        "width",
+        (d: D3AugmentedNode) =>
+            d.data.width.toSafeOption
+            .getOrElse(0.0)
+        )
+        .attr(
+        "height",
+        (d: D3AugmentedNode) =>
+            d.data.height.toSafeOption
+            .getOrElse(0.0)
+        )
         .attr("rx", 6)
         .attr("ry", 6)
-        .style("fill", (d: D3AugmentedNode) => getNodeColor(d.data.nodeType.toSafeOption.getOrElse("Unknown")))
-        .style("stroke", (d: D3AugmentedNode) => getQuColor(d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)))
-        .style("stroke-dasharray", (d: D3AugmentedNode) => {
-            val qual = d.data.nodeQualifier.toSafeOption.getOrElse(Qualifier.Normal.elkType)
-            getEdgeDash(qual)
-        })
-        .style("stroke-width", "2px")
+        .style(
+        "fill",
+        (d: D3AugmentedNode) =>
+            getNodeColor(
+            d.data.nodeType.toSafeOption
+                .getOrElse("Unknown")
+            )
+        )
+        .style(
+        "stroke",
+        (d: D3AugmentedNode) =>
+            getNodeStroke(
+            d.data.nodeQualifier.toSafeOption
+                .getOrElse(
+                Qualifier.Normal.elkType
+                )
+            )
+        )
+        .style(
+        "stroke-dasharray",
+        (d: D3AugmentedNode) => {
 
+            val qual =
+            d.data.nodeQualifier.toSafeOption
+                .getOrElse(
+                Qualifier.Normal.elkType
+                )
+
+            getEdgeDash(qual)
+        }
+        )
+        .style(
+        "stroke-width",
+        "2px"
+        )
+
+    // Outline drawn just outside the node, separate from the qualifier border so both can show at once
+    val ringPadding = 5.0
+    highlightRings = Some(
         nodeSelection
+        .append("rect")
+        .attr("class", "highlight-ring")
+        .attr("x", -ringPadding)
+        .attr("y", -ringPadding)
+        .attr(
+            "width",
+            (d: D3AugmentedNode) =>
+            d.data.width.toSafeOption.getOrElse(0.0) + ringPadding * 2
+        )
+        .attr(
+            "height",
+            (d: D3AugmentedNode) =>
+            d.data.height.toSafeOption.getOrElse(0.0) + ringPadding * 2
+        )
+        .attr("rx", 9)
+        .attr("ry", 9)
+        .style("fill", "none")
+        .style("stroke", HighlightColor)
+        .style("stroke-width", "3px")
+        .style("pointer-events", "none")
+        .style("opacity", "0")
+        .asInstanceOf[js.Dynamic]
+    )
+    drawnNodes = nodes
+    applyHighlight()
+
+    nodeSelection
         .append("text")
-        .attr("x", (d: D3AugmentedNode) => d.data.width.toSafeOption.getOrElse(0.0) / 2)
-        .attr("y", (d: D3AugmentedNode) => d.data.height.toSafeOption.getOrElse(0.0) / 2)
-        .attr("dy", "4px")
-        .attr("text-anchor", "middle")
-        .style("fill", "#1e1e1e")
-        .style("font-size", "12px")
-        .style("font-weight", "bold")
-        .text((d: D3AugmentedNode) => d.data.name.toSafeOption.getOrElse("Unknown"))
+        .attr(
+        "x",
+        (d: D3AugmentedNode) =>
+            d.data.width.toSafeOption
+            .getOrElse(0.0) / 2
+        )
+        .attr(
+        "y",
+        (d: D3AugmentedNode) =>
+            d.data.height.toSafeOption
+            .getOrElse(0.0) / 2
+        )
+        .attr(
+        "dy",
+        "4px"
+        )
+        .attr(
+        "text-anchor",
+        "middle"
+        )
+        .style(
+        "fill",
+        "#1e1e1e"
+        )
+        .style(
+        "font-size",
+        "12px"
+        )
+        .style(
+        "font-weight",
+        "bold"
+        )
+        .text(
+        (d: D3AugmentedNode) =>
+            d.data.name.toSafeOption
+            .getOrElse("Unknown")
+        )
+
     }

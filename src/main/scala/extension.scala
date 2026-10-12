@@ -7,14 +7,24 @@ import scala.scalajs.js.annotation._
 import vscode.{ExtensionContext}
 import PublishCommands.{publishCommands, initRecordingStatusBar}
 import typings.auroraLangium.distTypesSrcExtensionLangclientconfigMod.LanguageClientConfigSingleton
-import typings.sprottyVscode.libLspLspSprottyViewProviderMod.LspSprottyViewProvider
 import typings.vscode.mod.TextDocument
 import PublishCommands.{refreshDiagram}
 import com.axiom.patienttracker.sendMessageToPatientTracker
 import com.axiom.Narratives.ManageNarratives.getParseNarratives
+import com.axiom.visual.D3DiagramManager
+import scala.compiletime.uninitialized
+import org.aurora.visual.d3.D3Renderer
+import org.aurora.sjsast.LHMap
+import org.scalajs.dom
+import org.scalajs.dom.Element
 
 object AuroraSjsExt {
   val langConfig = LanguageClientConfigSingleton.getInstance()
+  var d3Manager: D3DiagramManager = uninitialized
+
+
+
+    
 
   @JSExportTopLevel("activate")
   def activate(context: vscode.ExtensionContext): Unit = {
@@ -29,29 +39,57 @@ object AuroraSjsExt {
       due to VS Code's security and UX model. But here is an acceptable approach
     */
     vscode.commands.executeCommand("vscode.openFolder", folderUri, false) 
-     
-    vscode.workspace.onDidSaveTextDocument(
-      (doc: TextDocument) => {
-        refreshDiagram(doc, langConfig)
-        getParseNarratives(context).onComplete {
-          case Success(categories) =>
-            sendMessageToPatientTracker(categories)
-          case Failure(e) =>
-            println(s"Failed with error: ${e.getMessage}")
-        }
-        }, 
-      js.undefined,
-      js.undefined
+
+    d3Manager = new D3DiagramManager(context)
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider("aurora", d3Manager.provider).asInstanceOf[Dispose]
     )
-    
-    langConfig.setServerModule(context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs"))
-    println(langConfig.getServerModule())
+
+    // on start up
+    vscode.window.activeTextEditor.toOption match {
+      case None => /* do nothig */
+      case Some(editor) => refreshDiagram(editor.document, d3Manager) 
+    }
+
+     
+    // Cursor in the editor -> highlight the matching node in the diagram
+    context.subscriptions.push(
+      vscode.window.onDidChangeTextEditorSelection(
+        (e: vscode.TextEditorSelectionChangeEvent) => {
+          e.selections.headOption.foreach { selection =>
+            d3Manager.highlightPosition(
+              e.textEditor.document.uri,
+              selection.active.line.toInt,
+              selection.active.character.toInt
+            )
+          }
+        },
+        js.undefined,
+        js.undefined
+      ).asInstanceOf[Dispose]
+    )
+
+    vscode.workspace.onDidSaveTextDocument(
+  (doc: TextDocument) => {
+
+    println("DOCUMENT SAVED")
+    println("Saved file: " + doc.fileName)
+
+    refreshDiagram(doc, d3Manager)
+
+  },
+  js.undefined,
+  js.undefined
+)
+    val serverPath = context.asAbsolutePath("node_modules/aurora-langium/dist/cjs/language/main.cjs")
+    // langConfig.asInstanceOf[js.Dynamic].initialize(context, serverPath)
+    langConfig.setServerModule(serverPath)
     langConfig.initialize(context)
-    langConfig.registerWebviewViewProvider()
+    // langConfig.registerWebviewViewProvider()
     val outputChannel = vscode.window.createOutputChannel("My Extension")  
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
     outputChannel.show(preserveFocus = true)
-    publishCommands(context, langConfig)
+    publishCommands(context, langConfig, d3Manager)
     initRecordingStatusBar(context)
   }
 

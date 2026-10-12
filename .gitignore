@@ -23,3 +23,5 @@ recordings
 #resources
 package-lock.json
 package-lock.json
+
+d3example/dist

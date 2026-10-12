@@ -26,10 +26,10 @@ object BrowserParser:
     val uri = URI.parse("file:///model.aurora").asInstanceOf[typings.langium.libUtilsUriUtilsMod.URI]
     
     // 3. Create the document
-    val document = shared.workspace.LangiumDocumentFactory.fromString(content, uri)
+    val document = shared.asInstanceOf[js.Dynamic].workspace.LangiumDocumentFactory.fromString(content, uri)
     
     // 4. Build and return the parsed AST
-    shared.workspace.DocumentBuilder.build(js.Array(document)).toFuture.map { _ =>
+    shared.asInstanceOf[js.Dynamic].workspace.DocumentBuilder.build(js.Array(document)).asInstanceOf[js.Promise[Any]].toFuture.map { _ =>
       document.parseResult.value.asInstanceOf[GenAst.PCM]
     }
   }

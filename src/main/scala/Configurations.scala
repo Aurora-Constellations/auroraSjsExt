@@ -1,0 +1,10 @@
+package com.axiom 
+object Configurations {
+  enum Layout {
+    case Stress 
+    case Layered
+    case MrTree 
+    case Force 
+    case Radial 
+  }
+}
