@@ -1,5 +1,4 @@
-package com.axiom.diagram
-
+package com.axiom 
 object Configurations {
   enum Layout {
     case Stress 

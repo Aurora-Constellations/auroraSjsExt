@@ -28,8 +28,9 @@ import org.aurora.visual.elk.AuroraElk
 import org.aurora.visual.d3.{AstTransformer, SourceRanges}
 import typings.vscode.mod.QuickPickItem
 import PublishCommands.refreshDiagram
-import com.axiom.diagram.Configurations.Layout
+import com.axiom.Configurations.Layout
 import scala.scalajs.js.JSConverters.*
+import AuroraStates.globalLayoutOptions
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -40,13 +41,7 @@ object PublishCommands:
   // to do: work out state management so that the diagram does not go back to original alyout every time it saves
   def refreshDiagram(
     document: TextDocument,
-    d3Manager: D3DiagramManager,
-    layoutOptions: LHMap[String,String] = LHMap(
-            "elk.algorithm" -> "layered",
-            "elk.direction" -> "TOP",
-            "elk.spacing.nodeNode" -> "10",
-            "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
-          )
+    d3Manager: D3DiagramManager
 ): Unit = {
 
   if (
@@ -69,17 +64,12 @@ object PublishCommands:
 
           println("Aurora parsing successful.")
 
-          // val layoutOptions = LHMap(
-          //   "elk.algorithm" -> "layered",
-          //   "elk.direction" -> "TOP",
-          //   "elk.spacing.nodeNode" -> "10",
-          //   "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
-          // )
+
 
           AuroraElk
             .Graph(
               PCM(currentPCM),
-              layoutOptions
+              globalLayoutOptions
             )
             .graph
             .onComplete {
@@ -399,7 +389,8 @@ def toggleDiagramLayout(d3Manager: D3DiagramManager): js.Function1[Any, Any] = {
           vscode.window.showErrorMessage("There is no active editor.")
 
         case Some(doc) =>
-          refreshDiagram(doc, d3Manager, options)
+          globalLayoutOptions = options
+          refreshDiagram(doc, d3Manager)
       }
 
       quickPick.dispose()
