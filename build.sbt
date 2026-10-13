@@ -208,8 +208,13 @@ lazy val createDirectories = Def.task[Unit] {
 }
 
 // --- Custom Task: Launch VS Code Extension Host Preview ---
-lazy val open = taskKey[Unit]("open vscode")
-def openVSCodeTask: Def.Initialize[Task[Unit]] =
+lazy val openUI = taskKey[Unit]("open the extension in an end-user VS Code window")
+lazy val open = taskKey[Unit]("open the extension in VS Code with your own settings and extensions")
+
+// endUser: launch a window that looks like the product rather than an IDE. It runs with its own user-data
+// dir (settings from enduser-profile/settings.json, UI state kept in target/enduser-profile), without your
+// other extensions, and opens the patient folder directly.
+def openVSCodeTask(endUser: Boolean): Def.Initialize[Task[Unit]] =
   Def
     .task[Unit] {
       val base = baseDirectory.value
@@ -219,7 +224,19 @@ def openVSCodeTask: Def.Initialize[Task[Unit]] =
       val isWindows = System.getProperty("os.name").toLowerCase.contains("win")
 
       val command = if (isWindows) "code.cmd" else "code"
-      s"$command --extensionDevelopmentPath=$path" ! log
+
+      val profileArgs =
+        if (endUser) {
+          val profileDir = base / "target" / "enduser-profile"
+          IO.copyFile(base / "enduser-profile" / "settings.json", profileDir / "User" / "settings.json")
+          Seq(
+            s"--user-data-dir=${profileDir.getCanonicalPath}",
+            "--disable-extensions",
+            (base / "auroraFiles").getCanonicalPath
+          )
+        } else Seq.empty
+
+      Process(Seq(command, s"--extensionDevelopmentPath=$path") ++ profileArgs) ! log
       ()
     }
     //.dependsOn(copyToMedia)
@@ -231,7 +248,12 @@ lazy val root = project
   .dependsOn(axiompatienttracker, pcmalgebra, d3example)
   .settings(
     name := "auroraSjsExt",
-    open := openVSCodeTask
+    openUI := openVSCodeTask(endUser = true)
+  .dependsOn(Compile / fastOptJS)
+  .dependsOn(copyToMedia)
+  .dependsOn(bundleD3)
+  .value,
+    open := openVSCodeTask(endUser = false)
   .dependsOn(Compile / fastOptJS)
   .dependsOn(copyToMedia)
   .dependsOn(bundleD3)

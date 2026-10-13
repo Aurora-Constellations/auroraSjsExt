@@ -1,0 +1,53 @@
+// User settings for the end-user window that `sbt open` launches.
+// `sbt open` copies this file into target/enduser-profile on every launch, so edit it here rather than in the window.
+{
+  // --- Extension ---------------------------------------------------------------------------
+  "aurora.presentationMode": true,
+
+  // --- Window chrome: hide developer tooling --------------------------------------------------
+  "window.title": "${dirty}${activeEditorShort}${separator}Aurora",
+  "window.commandCenter": false,
+  "window.menuBarVisibility": "compact",
+  "workbench.layoutControl.enabled": false,
+  "workbench.navigationControl.enabled": false,
+  "workbench.activityBar.location": "hidden",
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "workbench.startupEditor": "none",
+  "workbench.tips.enabled": false,
+  "workbench.welcomePage.walkthroughs.openOnInstall": false,
+  "workbench.tree.renderIndentGuides": "none",
+  "breadcrumbs.enabled": false,
+  "chat.disableAIFeatures": true,
+  "chat.commandCenter.enabled": false,
+  "security.workspace.trust.enabled": false,
+  "extensions.ignoreRecommendations": true,
+  "update.showReleaseNotes": false,
+  "git.enabled": false,
+
+  // --- Look: light theme with a branded title bar, matched to the diagram webview -------------
+  "workbench.colorTheme": "Light Modern",
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#16324f",
+    "titleBar.activeForeground": "#ffffff",
+    "titleBar.inactiveBackground": "#1f3f60",
+    "titleBar.inactiveForeground": "#c9d4e0",
+    "titleBar.border": "#16324f",
+    "menubar.selectionBackground": "#ffffff26",
+    "sideBar.background": "#f6f7f9",
+    "sideBar.border": "#e1e5ea",
+    "sideBarTitle.foreground": "#1f2933",
+    "sideBarSectionHeader.background": "#f6f7f9",
+    "sideBarSectionHeader.border": "#e1e5ea",
+    "editorGroupHeader.noTabsBackground": "#ffffff",
+    "editorGroupHeader.tabsBackground": "#ffffff",
+    "editorGroupHeader.border": "#e1e5ea",
+    "editor.background": "#ffffff",
+    "editorGutter.background": "#ffffff",
+    "focusBorder": "#2563eb80",
+    "sash.hoverBorder": "#2563eb",
+    "list.activeSelectionBackground": "#dbe6fb",
+    "list.activeSelectionForeground": "#1f2933",
+    "list.inactiveSelectionBackground": "#e6ebf3",
+    "list.hoverBackground": "#eef1f5"
+  }
+}

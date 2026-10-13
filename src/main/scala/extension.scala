@@ -38,12 +38,25 @@ object AuroraSjsExt {
       extensions cannot directly change or open a workspace folder programmatically on activation 
       due to VS Code's security and UX model. But here is an acceptable approach
     */
-    vscode.commands.executeCommand("vscode.openFolder", folderUri, false) 
+    // `sbt open` already passes the folder on the command line; re-opening it would only reload the window
+    val folderAlreadyOpen = vscode.workspace.workspaceFolders.toOption
+      .flatMap(_.headOption)
+      .exists(f => path.relative(f.uri.fsPath, defaultPath).asInstanceOf[String] == "")
+    if (!folderAlreadyOpen) vscode.commands.executeCommand("vscode.openFolder", folderUri, false)
+
+    // End-user layout (set in the profile `sbt open` launches): show the Aurora views, keep developer panels closed
+    val presentationMode =
+      vscode.workspace.getConfiguration("aurora").get[Boolean]("presentationMode").getOrElse(false)
 
     d3Manager = new D3DiagramManager(context)
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider("aurora", d3Manager.provider).asInstanceOf[Dispose]
     )
+
+    if (presentationMode) {
+      vscode.commands.executeCommand("workbench.view.extension.aurora-container")
+      vscode.commands.executeCommand("workbench.action.closePanel")
+    }
 
     // on start up
     vscode.window.activeTextEditor.toOption match {
@@ -88,7 +101,7 @@ object AuroraSjsExt {
     // langConfig.registerWebviewViewProvider()
     val outputChannel = vscode.window.createOutputChannel("My Extension")  
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
-    outputChannel.show(preserveFocus = true)
+    if (!presentationMode) outputChannel.show(preserveFocus = true)
     publishCommands(context, langConfig, d3Manager)
     initRecordingStatusBar(context)
   }

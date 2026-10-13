@@ -151,6 +151,16 @@
 					"group": "secondary"
 				}
 			]
+		},
+		"configuration": {
+			"title": "Aurora",
+			"properties": {
+				"aurora.presentationMode": {
+					"type": "boolean",
+					"default": false,
+					"description": "Start in the end-user layout: reveal the Patients and Care Scenario views on startup and keep developer panels, such as the extension's output, closed. Enabled by the profile that `sbt open` launches."
+				}
+			}
 		}
 	},
 	"devDependencies": {

@@ -50,3 +50,6 @@ recordings/**
 # Workspace symlinks inside node_modules
 node_modules/myform
 node_modules/billing
+
+# End-user launch profile (used by `sbt open` only)
+enduser-profile/**
