@@ -89,7 +89,8 @@
 			},
 			{
 				"command": "AuroraSjsExt.toggleDiagramLayout",
-				"title": "Toggle Diagram Layout"
+				"title": "Toggle Diagram Layout",
+				"icon": "$(type-hierarchy)"
 			},
 			{
 				"command": "AuroraSjsExt.changeNarrativeType",
@@ -109,11 +110,13 @@
 			},
 			{
 				"command": "AuroraSjsExt.startRecording",
-				"title": "Aurora Start Recording"
+				"title": "Aurora Start Recording",
+				"icon": "$(record)"
 			},
 			{
 				"command": "AuroraSjsExt.stopRecording",
-				"title": "Aurora Stop Recording"
+				"title": "Aurora Stop Recording",
+				"icon": "$(debug-stop)"
 			},
 			{
 				"command": "AuroraSjsExt.transcribeRecording",
@@ -156,13 +159,28 @@
 					"group": "navigation@2"
 				},
 				{
+					"command": "AuroraSjsExt.startRecording",
+					"when": "view == aurora && config.aurora.presentationMode && !aurora.recording",
+					"group": "navigation@1"
+				},
+				{
+					"command": "AuroraSjsExt.stopRecording",
+					"when": "view == aurora && config.aurora.presentationMode && aurora.recording",
+					"group": "navigation@1"
+				},
+				{
+					"command": "AuroraSjsExt.toggleDiagramLayout",
+					"when": "view == aurora && config.aurora.presentationMode",
+					"group": "navigation@2"
+				},
+				{
 					"command": "AuroraSjsExt.processDSL",
 					"when": "view == aurora",
 					"group": "secondary"
 				},
 				{
 					"command": "AuroraSjsExt.toggleDiagramLayout",
-					"when": "view == aurora",
+					"when": "view == aurora && !config.aurora.presentationMode",
 					"group": "secondary"
 				},
 				{
@@ -172,12 +190,12 @@
 				},
 				{
 					"command": "AuroraSjsExt.hideNarratives",
-					"when": "view == aurora",
+					"when": "view == aurora && !config.aurora.presentationMode",
 					"group": "secondary"
 				},
 				{
 					"command": "AuroraSjsExt.hideNamedGroups",
-					"when": "view == aurora",
+					"when": "view == aurora && !config.aurora.presentationMode",
 					"group": "secondary"
 				}
 			],

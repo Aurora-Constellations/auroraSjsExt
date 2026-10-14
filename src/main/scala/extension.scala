@@ -124,7 +124,7 @@ object AuroraSjsExt {
     outputChannel.appendLine("Congratulations Team Aurora, your extension 'vscode-scalajs-aurora' is now active!")
     if (!presentationMode) outputChannel.show(preserveFocus = true)
     publishCommands(context, langConfig, d3Manager)
-    initRecordingStatusBar(context)
+    initRecordingStatusBar(context, Option.when(presentationMode)(d3Manager))
   }
 
   def deactivate(): Unit = {

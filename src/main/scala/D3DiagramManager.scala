@@ -3,6 +3,7 @@ package com.axiom.visual
 import typings.vscode.mod as vscode
 import typings.std.PromiseLike // Import the exact ST type
 import scala.scalajs.js
+import scala.scalajs.js.JSConverters.*
 import org.aurora.sjsast.scoring.af.Cha2ds2VascRiskFactor
 import org.aurora.visual.d3.D3Renderer
 import org.aurora.sjsast.LHMap
@@ -13,6 +14,8 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[St
 	private var view: Option[vscode.WebviewView] = None
 	// The document the diagram was last drawn from; node clicks and cursor moves are synced against it
 	private var currentUri: Option[vscode.Uri] = None
+	// Short status shown beside the view title, e.g. while recording
+	private var status: Option[String] = None
 
 	val provider: vscode.WebviewViewProvider = new vscode.WebviewViewProvider {
 		
@@ -25,6 +28,7 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[St
 		
 		view = Some(webviewView)
 		viewTitle.foreach(t => webviewView.title = t)
+		webviewView.description = status.orUndefined
 
 		webviewView.webview.options = vscode.WebviewOptions()
 			.setEnableScripts(true)
@@ -84,6 +88,11 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[St
 				)
 			}
 		}
+	}
+
+	def setStatus(text: Option[String]): Unit = {
+		status = text
+		view.foreach(_.description = text.orUndefined)
 	}
 
 	def updateDiagram(data: js.Any, uri: vscode.Uri): Unit = {

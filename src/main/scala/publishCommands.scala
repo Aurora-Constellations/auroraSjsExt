@@ -38,6 +38,8 @@ object PublishCommands:
   private var isRecording: Boolean = false
   private var startTime: Double = 0.0
   private var timerHandle: SetIntervalHandle | Null = null
+  // End-user layout only: recording state is shown on the diagram view, since that layout hides the status bar
+  private var recordingView: Option[D3DiagramManager] = None
 
   // to do: work out state management so that the diagram does not go back to original alyout every time it saves
   def refreshDiagram(
@@ -128,7 +130,8 @@ object PublishCommands:
     }
   }
 }
-  def initRecordingStatusBar(context: vscode.ExtensionContext): Unit = {
+  def initRecordingStatusBar(context: vscode.ExtensionContext, recordingView: Option[D3DiagramManager] = None): Unit = {
+    this.recordingView = recordingView
     recordingItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
     context.subscriptions.push(recordingItem.asInstanceOf[Dispose])
     updateRecordingStatusBar()
@@ -193,6 +196,7 @@ object PublishCommands:
         val minutes = elapsedSeconds / 60
         val seconds = elapsedSeconds % 60
         recordingItem.text = f"$$(stop-circle) Stop Recording (${minutes}%02d:${seconds}%02d)"
+        recordingView.foreach(_.setStatus(Some(f"● Recording ${minutes}%02d:${seconds}%02d")))
       }
     }
   }
@@ -205,6 +209,9 @@ object PublishCommands:
   }
 
   def updateRecordingStatusBar(): Unit = {
+    // Switches the end-user diagram toolbar between its start and stop recording buttons
+    vscode.commands.executeCommand("setContext", "aurora.recording", isRecording)
+    recordingView.foreach(_.setStatus(if (isRecording) Some("● Recording") else None))
     if (isRecording) {
       recordingItem.text = "$(stop-circle) Stop Recording"
       recordingItem.command = "AuroraSjsExt.stopRecording"

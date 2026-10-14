@@ -11,6 +11,9 @@
   "workbench.layoutControl.enabled": false,
   "workbench.navigationControl.enabled": false,
   "workbench.activityBar.location": "hidden",
+  // Recording controls live in the Care Scenario view's toolbar instead
+  "workbench.statusBar.visible": false,
+  "workbench.view.alwaysShowHeaderActions": true,
   "workbench.secondarySideBar.defaultVisibility": "hidden",
   "workbench.startupEditor": "none",
   "workbench.tips.enabled": false,
