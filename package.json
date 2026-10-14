@@ -55,10 +55,18 @@
 		"views": {
 			"aurora-container": [
 				{
+					"id": "aurora.patients",
+					"name": "Patients",
+					"icon": "$(person)",
+					"initialSize": 1,
+					"when": "config.aurora.presentationMode"
+				},
+				{
 					"id": "aurora",
 					"type": "webview",
 					"name": "Patient Care Scenario",
-					"icon": "$(symbol-structure)"
+					"icon": "$(symbol-structure)",
+					"initialSize": 3
 				}
 			]
 		},
@@ -114,6 +122,18 @@
 			{
 				"command": "AuroraSjsExt.transcribeAndRunMcp",
 				"title": "Aurora Transcribe and Run MCP"
+			},
+			{
+				"command": "AuroraSjsExt.newPatient",
+				"title": "New Patient",
+				"category": "Aurora",
+				"icon": "$(add)"
+			},
+			{
+				"command": "AuroraSjsExt.refreshPatients",
+				"title": "Refresh Patients",
+				"category": "Aurora",
+				"icon": "$(refresh)"
 			}
 		],
 		"menus": {
@@ -125,6 +145,16 @@
 				}
 			],
 			"view/title": [
+				{
+					"command": "AuroraSjsExt.newPatient",
+					"when": "view == aurora.patients",
+					"group": "navigation@1"
+				},
+				{
+					"command": "AuroraSjsExt.refreshPatients",
+					"when": "view == aurora.patients",
+					"group": "navigation@2"
+				},
 				{
 					"command": "AuroraSjsExt.processDSL",
 					"when": "view == aurora",
@@ -149,6 +179,16 @@
 					"command": "AuroraSjsExt.hideNamedGroups",
 					"when": "view == aurora",
 					"group": "secondary"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "AuroraSjsExt.newPatient",
+					"when": "config.aurora.presentationMode"
+				},
+				{
+					"command": "AuroraSjsExt.refreshPatients",
+					"when": "config.aurora.presentationMode"
 				}
 			]
 		},

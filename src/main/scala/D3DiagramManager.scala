@@ -8,7 +8,8 @@ import org.aurora.visual.d3.D3Renderer
 import org.aurora.sjsast.LHMap
 import concurrent.ExecutionContext.Implicits.global
 
-class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extContext to avoid shadowing
+// viewTitle replaces the view's name from package.json, e.g. in the end-user layout
+class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[String] = None) { // Renamed to extContext to avoid shadowing
 	private var view: Option[vscode.WebviewView] = None
 	// The document the diagram was last drawn from; node clicks and cursor moves are synced against it
 	private var currentUri: Option[vscode.Uri] = None
@@ -23,6 +24,7 @@ class D3DiagramManager(extContext: vscode.ExtensionContext) { // Renamed to extC
 		): Unit | PromiseLike[Unit] = { 
 		
 		view = Some(webviewView)
+		viewTitle.foreach(t => webviewView.title = t)
 
 		webviewView.webview.options = vscode.WebviewOptions()
 			.setEnableScripts(true)

@@ -12,6 +12,7 @@ import PublishCommands.{refreshDiagram}
 import com.axiom.patienttracker.sendMessageToPatientTracker
 import com.axiom.Narratives.ManageNarratives.getParseNarratives
 import com.axiom.visual.D3DiagramManager
+import com.axiom.patients.PatientsView
 import scala.compiletime.uninitialized
 import org.aurora.visual.d3.D3Renderer
 import org.aurora.sjsast.LHMap
@@ -48,10 +49,14 @@ object AuroraSjsExt {
     val presentationMode =
       vscode.workspace.getConfiguration("aurora").get[Boolean]("presentationMode").getOrElse(false)
 
-    d3Manager = new D3DiagramManager(context)
+    d3Manager = new D3DiagramManager(context, Option.when(presentationMode)("Care Scenario"))
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider("aurora", d3Manager.provider).asInstanceOf[Dispose]
     )
+
+    // End-user layout only: a Patients list replaces the file Explorer
+    val patientsView = Option.when(presentationMode)(new PatientsView(context))
+    patientsView.foreach(_.register())
 
     if (presentationMode) {
       vscode.commands.executeCommand("workbench.view.extension.aurora-container")
@@ -62,6 +67,22 @@ object AuroraSjsExt {
     vscode.window.activeTextEditor.toOption match {
       case None => /* do nothig */
       case Some(editor) => refreshDiagram(editor.document, d3Manager) 
+    }
+
+    // End-user layout only: switching to another patient redraws the diagram for that patient
+    if (presentationMode) {
+      context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(
+          (editor: js.UndefOr[vscode.TextEditor]) => {
+            editor.toOption.foreach { ed =>
+              refreshDiagram(ed.document, d3Manager)
+              patientsView.foreach(_.select(ed.document))
+            }
+          },
+          js.undefined,
+          js.undefined
+        ).asInstanceOf[Dispose]
+      )
     }
 
      
