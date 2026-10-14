@@ -31,7 +31,7 @@ import typings.vscode.mod.QuickPickItem
 import PublishCommands.refreshDiagram
 import com.axiom.Configurations.Layout
 import scala.scalajs.js.JSConverters.*
-import AuroraStates.{globalLayoutOptions, hideNarratives, hiddenNamedGroups}
+import AuroraStates.{globalLayoutOptions, hideNarratives, hiddenNamedGroups, resetFiltersOnPatientChange}
 import org.aurora.visual.elk.AuroraElkUtils
 
 object PublishCommands:
@@ -54,6 +54,9 @@ object PublishCommands:
   ) {
 
     val currentFilePath = document.fileName
+
+    // Another patient starts with the whole diagram; the same patient keeps what was hidden (e.g. across saves)
+    resetFiltersOnPatientChange(document.uri.toString())
 
     println("Parsing Aurora file for D3...")
 
@@ -96,6 +99,7 @@ object PublishCommands:
                   println("D3 transform successful.")
 
                   d3Manager.updateDiagram(d3Tree.toJS, document.uri)
+                  showFilters(d3Manager)
 
                 } catch {
 
@@ -151,6 +155,8 @@ object PublishCommands:
           ("AuroraSjsExt.hideNarratives", setNarrativesHidden(d3Manager, hidden = true)),
           ("AuroraSjsExt.showNarratives", setNarrativesHidden(d3Manager, hidden = false)),
           ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(d3Manager)),
+          // Not in package.json: run by the diagram's filter banner
+          ("AuroraSjsExt.showWholeDiagram", showWholeDiagram(d3Manager)),
           ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
           ("AuroraSjsExt.startRecording", startRecording(context)),
           ("AuroraSjsExt.stopRecording", stopRecording(context)),
@@ -316,25 +322,50 @@ object PublishCommands:
   }
 
 
+  // Reflects the current filters: the view menu offers Hide or Show Narratives accordingly, and a banner over the
+  // diagram says what is hidden, so a filtered diagram is never mistaken for the whole picture
+  private def showFilters(d3Manager: D3DiagramManager): Unit = {
+    vscode.commands.executeCommand("setContext", "aurora.narrativesHidden", hideNarratives)
+    val reminder =
+      (if (hideNarratives) List("Narratives hidden") else Nil) ++
+      (hiddenNamedGroups.size match {
+        case 0 => Nil
+        case 1 => List("1 group hidden")
+        case n => List(s"$n groups hidden")
+      })
+    d3Manager.setFilterStatus(if (reminder.isEmpty) None else Some(reminder.mkString(" · ")))
+  }
+
+  // Clears both hide filters for the patient on screen ("Show all" on the diagram's banner)
+  def showWholeDiagram(d3Manager: D3DiagramManager): js.Function1[Any, Any] = { _ =>
+    hideNarratives = false
+    hiddenNamedGroups = Set.empty
+    d3Manager.drawnDocument.foreach { uri =>
+      vscode.workspace.openTextDocument(uri).toFuture.foreach(doc => refreshDiagram(doc, d3Manager))
+    }
+  }
+
   // Hides or shows narrative nodes in the diagram, keeping the chosen layout
   def setNarrativesHidden(d3Manager: D3DiagramManager, hidden: Boolean): js.Function1[Any, Any] = { _ =>
-    hideNarratives = hidden
-    // Switches the view menu between Hide Narratives and Show Narratives
-    vscode.commands.executeCommand("setContext", "aurora.narrativesHidden", hidden)
     vscode.window.activeTextEditor.toOption match {
-      case Some(editor) => refreshDiagram(editor.document, d3Manager)
-      case None         => ()
+      case Some(editor) =>
+        resetFiltersOnPatientChange(editor.document.uri.toString())
+        hideNarratives = hidden
+        refreshDiagram(editor.document, d3Manager)
+      case None => ()
     }
   }
 
   // Lets the user pick which named groups of orders to hide; deselecting a group shows it again.
-  // Like the layout and Hide Narratives, the choice holds across saves and patient switches.
+  // Like Hide Narratives, the choice holds across saves of this patient and resets for another patient.
   def hideNamedGroups(d3Manager: D3DiagramManager): js.Function1[Any, Any] = { _ =>
     vscode.window.activeTextEditor.toOption match {
       case None =>
         vscode.window.showErrorMessage("There is no active editor.")
 
       case Some(editor) =>
+        // Pre-selects only this patient's hidden groups
+        resetFiltersOnPatientChange(editor.document.uri.toString())
         parse(editor.document.fileName).toFuture.onComplete {
           case Failure(e) =>
             vscode.window.showErrorMessage(s"Could not read the named groups: ${e.getMessage}")
@@ -355,9 +386,7 @@ object PublishCommands:
                 items.filter(item => hiddenNamedGroups.contains(item.label))
 
               quickPick.onDidAccept { (_: Unit) =>
-                val selected = quickPick.selectedItems.map(_.label).toSet
-                // Groups from other patients keep their state; only this patient's groups are updated
-                hiddenNamedGroups = (hiddenNamedGroups -- groupNames) ++ selected
+                hiddenNamedGroups = quickPick.selectedItems.map(_.label).toSet
                 refreshDiagram(editor.document, d3Manager)
                 quickPick.dispose()
               }

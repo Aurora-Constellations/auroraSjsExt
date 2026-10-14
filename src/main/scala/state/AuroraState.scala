@@ -10,9 +10,18 @@ object AuroraStates {
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
 
-  // Hide Narratives / Show Narratives; like the layout, it holds across saves and patient switches
+  // Hide Narratives / Show Narratives and Hide Named Groups. Unlike the layout, these hold only while the same
+  // patient is shown: drawing another patient resets them, so hidden content never carries over unnoticed.
   var hideNarratives: Boolean = false
-
-  // Named groups of orders chosen in Hide Named Groups; kept by name, so they stay hidden in any patient that has them
   var hiddenNamedGroups: Set[String] = Set.empty
+
+  // The patient the hide filters above belong to
+  private var filteredPatient: Option[String] = None
+
+  def resetFiltersOnPatientChange(patient: String): Unit =
+    if (!filteredPatient.contains(patient)) {
+      filteredPatient = Some(patient)
+      hideNarratives = false
+      hiddenNamedGroups = Set.empty
+    }
 }

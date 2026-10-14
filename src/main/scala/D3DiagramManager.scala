@@ -18,6 +18,8 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, presentationMode: Bo
 	private var status: Option[String] = None
 	// Last diagram sent, replayed when the end-user webview is rebuilt (it is discarded each time the view is hidden)
 	private var lastDiagram: Option[js.Dynamic] = None
+	// What the diagram is hiding, shown as a banner over it (both layouts); replayed with the diagram
+	private var filterStatus: Option[String] = None
 
 	val provider: vscode.WebviewViewProvider = new vscode.WebviewViewProvider {
 		
@@ -48,7 +50,13 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, presentationMode: Bo
 	private def handleWebviewMessage(message: js.Dynamic): Unit = {
 		// Only the end-user diagram sends "ready"
 		if (message.command.asInstanceOf[String] == "ready") {
-			for (v <- view; diagram <- lastDiagram) v.webview.postMessage(diagram)
+			for (v <- view; diagram <- lastDiagram) {
+				v.webview.postMessage(diagram)
+				postFilterStatus()
+			}
+		} else if (message.command.asInstanceOf[String] == "showAll") {
+			// The banner's "Show all" button
+			vscode.commands.executeCommand("AuroraSjsExt.showWholeDiagram")
 		} else if (message.command.asInstanceOf[String] == "nodeClicked" && !js.isUndefined(message.range)) {
 			val range = message.range
 			selectInEditor(
@@ -94,6 +102,17 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, presentationMode: Bo
 			}
 		}
 	}
+
+	// The patient the diagram was last drawn for
+	def drawnDocument: Option[vscode.Uri] = currentUri
+
+	def setFilterStatus(text: Option[String]): Unit = {
+		filterStatus = text
+		postFilterStatus()
+	}
+
+	private def postFilterStatus(): Unit =
+		view.foreach(_.webview.postMessage(js.Dynamic.literal(command = "filterStatus", text = filterStatus.orUndefined)))
 
 	def setStatus(text: Option[String]): Unit = {
 		status = text

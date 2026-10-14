@@ -75,10 +75,7 @@ class D3Renderer(val containerSelector: String):
     private var focusOnNode: Option[D3AugmentedNode => Unit] = None
 
     // Only available inside a VS Code webview; absent when opened in a plain browser (e.g. the Vite dev server)
-    private lazy val vscodeApi: Option[js.Dynamic] =
-        if (js.typeOf(js.Dynamic.global.acquireVsCodeApi) == "function")
-            Some(js.Dynamic.global.acquireVsCodeApi())
-        else None
+    private def vscodeApi: Option[js.Dynamic] = VsCodeApi.api
 
     private val HighlightColor = "#0078d4"
 

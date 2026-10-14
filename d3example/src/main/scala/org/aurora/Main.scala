@@ -3,7 +3,7 @@ package org.aurora
 import org.scalajs.dom
 import scala.scalajs.js
 
-import org.aurora.visual.d3.{D3AppRenderer, D3Renderer, toSafeOption}
+import org.aurora.visual.d3.{D3AppRenderer, D3Renderer, FilterBanner, toSafeOption}
 import org.aurora.sjsast.LHMap
 
 object D3MainObject {
@@ -16,6 +16,7 @@ object D3MainObject {
   private def appMain(): Unit = {
 
     val renderer = new D3AppRenderer("#d3-container")
+    val banner = new FilterBanner(renderer.stageElement.parentNode.asInstanceOf[dom.Element], Some(renderer.stageElement))
 
     dom.window.addEventListener(
       "message",
@@ -28,6 +29,9 @@ object D3MainObject {
 
           val title = message.title.asInstanceOf[js.UndefOr[String]].toSafeOption
           renderer.render(message.data, title)
+        } else if (message.command.asInstanceOf[String] == "filterStatus") {
+
+          banner.show(message.text.asInstanceOf[js.UndefOr[String]].toSafeOption)
         } else if (message.command.asInstanceOf[String] == "highlightPosition") {
 
           renderer.highlightAt(
@@ -45,6 +49,7 @@ object D3MainObject {
   private def classicMain(): Unit = {
 
     val renderer = new D3Renderer("#d3-container")
+    val banner = new FilterBanner(dom.document.body)
 
     val layoutOptions = LHMap(
       "elk.algorithm" -> "layered",
@@ -65,6 +70,9 @@ object D3MainObject {
       val d3Tree = message.data
 
       renderer.render(d3Tree)
+    } else if (message.command.asInstanceOf[String] == "filterStatus") {
+
+      banner.show(message.text.asInstanceOf[js.UndefOr[String]].toSafeOption)
     } else if (message.command.asInstanceOf[String] == "highlightPosition") {
 
       renderer.highlightAt(

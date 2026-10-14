@@ -23,10 +23,10 @@ class D3AppRenderer(val containerSelector: String):
     private var contentBounds: Option[(Double, Double, Double, Double)] = None
 
     // Only available inside a VS Code webview; absent when opened in a plain browser (e.g. the Vite dev server)
-    private lazy val vscodeApi: Option[js.Dynamic] =
-        if (js.typeOf(js.Dynamic.global.acquireVsCodeApi) == "function")
-            Some(js.Dynamic.global.acquireVsCodeApi())
-        else None
+    private def vscodeApi: Option[js.Dynamic] = VsCodeApi.api
+
+    // The diagram area below the header; the filter banner is placed just before it
+    def stageElement: dom.Element = shell.stage
 
     // Draws the page shell (header, empty state, key) and tells the extension the webview is listening,
     // so it can (re)send the current diagram
