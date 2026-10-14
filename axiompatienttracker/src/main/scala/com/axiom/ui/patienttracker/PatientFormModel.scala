@@ -72,7 +72,7 @@ object PatientFormModel:
                   marginBottom := "12px",
                   label(
                     span(fieldLabel),
-                    if isRequired then span("*", color := "red", fontWeight.bold) else emptyNode,
+                    if isRequired then span("*", cls := "required-mark") else emptyNode,
                     display.block,
                     marginBottom := "4px"
                   ),

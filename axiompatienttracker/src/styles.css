@@ -1,23 +1,51 @@
 :root {
-  /* Color palette */
-  --bg-page: #242424;
-  --bg-container: #1f1f1f;
-  --bg-header: #272323;
-  --bg-row-odd: #2a2a2a;
-  --bg-row-even: #232323;
-  --bg-highlight: #32a852;
-  --text-primary: rgba(255, 255, 255, 0.87);
-  --text-secondary: #bbb;
-  --accent: #646cff;
+  /* Color palette, taken from the active VS Code theme. Inside a webview VS Code defines the --vscode-* variables
+     and updates them live when the user switches theme; the fallbacks are the original dark palette, used when the
+     page runs outside VS Code (e.g. the Vite dev server). */
+  --bg-page: var(--vscode-editor-background, #242424);
+  --bg-container: var(--vscode-editor-background, #1f1f1f);
+  --bg-header: var(--vscode-sideBar-background, #272323);
+  --bg-row-even: var(--bg-page);
+  --bg-row-odd: color-mix(in srgb, var(--text-primary) 4%, var(--bg-page));
+  --bg-row-hover: var(--vscode-list-hoverBackground, #2f3140);
+  --bg-highlight: var(--vscode-list-activeSelectionBackground, #32a852);
+  --text-highlight: var(--vscode-list-activeSelectionForeground, var(--text-primary));
+  --bg-surface: var(--vscode-editorWidget-background, #1e1e1e);
+  --text-primary: var(--vscode-foreground, rgba(255, 255, 255, 0.87));
+  --text-secondary: var(--vscode-descriptionForeground, #bbb);
+  --accent: var(--vscode-textLink-foreground, #646cff);
+  --border: var(--vscode-widget-border, var(--vscode-panel-border, #444));
+  --shadow: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.4));
+
+  --button-bg: var(--vscode-button-background, #646cff);
+  --button-fg: var(--vscode-button-foreground, #fff);
+  --button-hover: var(--vscode-button-hoverBackground, #4f5bff);
+  --button-secondary-bg: var(--vscode-button-secondaryBackground, #444);
+  --button-secondary-fg: var(--vscode-button-secondaryForeground, #fff);
+  --button-secondary-hover: var(--vscode-button-secondaryHoverBackground, #555);
+  --success: var(--vscode-charts-green, #4CAF50);
+
+  --input-bg: var(--vscode-input-background, #2d2d2d);
+  --input-fg: var(--vscode-input-foreground, #fff);
+  --input-border: var(--vscode-input-border, #444);
+  --focus: var(--vscode-focusBorder, #646cff);
+  --error: var(--vscode-errorForeground, red);
+
   --border-radius: 6px;
   --padding: 0.15rem;
   --transition: 0.2s ease-in-out;
 
   /* Typography */
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color-scheme: light dark;
+  font-family: var(--vscode-font-family, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif);
+  color-scheme: dark;
   color: var(--text-primary);
   background-color: var(--bg-page);
+}
+
+/* Native controls (scrollbars, inputs) follow the theme kind VS Code puts on <body> */
+body.vscode-light,
+body.vscode-high-contrast-light {
+  color-scheme: light;
 }
 
 body {
@@ -42,7 +70,8 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 4px var(--shadow);
 }
 
 .search-bar span {
@@ -62,16 +91,16 @@ body {
 .search-bar input {
   flex: 1;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #444;
+  border: 1px solid var(--input-border);
   border-radius: var(--border-radius);
-  background: var(--bg-container);
-  color: var(--text-primary);
+  background: var(--input-bg);
+  color: var(--input-fg);
   transition: border-color var(--transition);
 }
 
 .search-bar input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--focus);
 }
 
 .search-bar .patient-title {
@@ -89,7 +118,7 @@ body {
   margin-top: 1rem;
   background: var(--bg-container);
   border-radius: var(--border-radius);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 6px var(--shadow);
 }
 
 /* ===== Table base styles ===== */
@@ -109,7 +138,7 @@ thead th {
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.9rem;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid var(--border);
   z-index: 5;
 }
 
@@ -133,10 +162,13 @@ tbody tr:nth-child(even) {
 
 /* Row hover and selected states */
 tbody tr:hover {
-  background: var(--bg-row-odd) mix(var(--accent) 20%);
+  background: var(--bg-row-hover);
 }
 tbody tr.selected {
   background: var(--bg-highlight) !important;
+}
+tbody tr.selected td {
+  color: var(--text-highlight);
 }
 
 /* Cell styles */
@@ -145,7 +177,7 @@ td {
   vertical-align: middle;
   white-space: nowrap;
   color: var(--text-primary);
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
   transition: color var(--transition);
   text-align: center;
 }
@@ -184,19 +216,19 @@ td img {
   padding: 0.4rem 0.8rem;
   border-radius: var(--border-radius);
   border: none;
-  background: var(--accent);
-  color: #fff;
+  background: var(--button-bg);
+  color: var(--button-fg);
   font-size: 0.85rem;
   cursor: pointer;
   transition: background var(--transition);
 }
 .details-column button:hover {
-  background: #4f5bff;
+  background: var(--button-hover);
 }
 
 .save-button {
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--success);
+  color: #fff;
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 6px;
@@ -205,8 +237,8 @@ td img {
 }
 
 .back-button {
-  background-color: #f44336;
-  color: white;
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-fg);
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 6px;
@@ -222,13 +254,13 @@ td img {
   background: var(--bg-container);
   color: var(--text-primary);
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px var(--shadow);
   width: calc(100% - 4rem); /* Full width minus margin */
   max-width: 1200px; /* Optional: Limit the maximum width */
   margin: 2rem auto; /* Add margin on all sides */
   min-height: 100vh; /* Full height of the viewport */
   box-sizing: border-box; /* Include padding in width/height calculations */
-  border: 2px solid #444; /* Subtle gray border to match the theme */
+  border: 2px solid var(--border); /* Subtle border to match the theme */
 }
 
 .patient-details-page ul {
@@ -268,8 +300,8 @@ td img {
   display: block;
   margin: 1.5rem auto 0;
   padding: 0.75rem 1.5rem;
-  background: var(--accent);
-  color: #fff;
+  background: var(--button-bg);
+  color: var(--button-fg);
   border: none;
   border-radius: var(--border-radius);
   font-size: 1rem;
@@ -280,7 +312,23 @@ td img {
 }
 
 .back-button:hover {
-  background: #4f5bff;
+  background: var(--button-hover);
+}
+
+/* Create / Open buttons beside fields on the details page */
+.create-button,
+.open-button {
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border: none;
+  border-radius: var(--border-radius);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-fg);
+  cursor: pointer;
+}
+.create-button:hover,
+.open-button:hover {
+  background: var(--button-secondary-hover);
 }
 
 .details-section {
@@ -305,7 +353,7 @@ td img {
   background: var(--bg-row-odd);
   padding: 1rem;
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px var(--shadow);
 }
 
 .patient-image img {
@@ -321,7 +369,7 @@ td img {
   padding: 1.5rem;
   border-radius: var(--border-radius);
   flex: 1;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px var(--shadow);
 }
 
 .patient-info {
@@ -343,10 +391,10 @@ td img {
   padding: 2rem;
   background: var(--bg-row-odd);
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px var(--shadow);
   max-width: 600px;
   width: 90%;
-  border: 2px solid #444;
+  border: 2px solid var(--border);
 }
 
 .error-title {
@@ -418,7 +466,7 @@ td img {
 
   /* Row hover and selected states */
   tbody tr:hover {
-    background: var(--bg-row-odd) mix(var(--accent) 20%);
+    background: var(--bg-row-hover);
   }
   
   /* Remove table borders for small screens */
@@ -442,20 +490,21 @@ td img {
     left : 0;
     width : 100vw;
     height : 100vh;
-    background-Color : rgba(0, 0, 0, 0.8);
+    background-Color : rgba(0, 0, 0, 0.6);
     z-index : 9999;
     display : flex;
     align-items : center;
     justify-content : center;
 }
 .create-patient-modal {
-  background-color: #1e1e1e;
+  background-color: var(--bg-surface);
   color: var(--text-primary);
+  border: 1px solid var(--border);
   padding: 32px;
   border-radius: var(--border-radius);
   min-width: 480px;
   font-size: 16px;
-  box-shadow: 0 0 12px rgba(255,255,255,0.1);
+  box-shadow: 0 0 12px var(--shadow);
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -478,9 +527,9 @@ td img {
 }
 
 .create-patient-modal input[type="text"] {
-  background-color: #2d2d2d;
-  color: white;
-  border: 1px solid #444;
+  background-color: var(--input-bg);
+  color: var(--input-fg);
+  border: 1px solid var(--input-border);
   padding: 8px;
   border-radius: 6px;
   width: 100%;
@@ -502,32 +551,45 @@ td img {
   border: none;
 }
 
+.create-patient-modal input[type="text"]:focus {
+  outline: none;
+  border-color: var(--focus);
+}
+
 .create-patient-modal-buttons .submit-btn {
-  background-color: var(--accent);
-  color: white;
+  background-color: var(--button-bg);
+  color: var(--button-fg);
+}
+
+.create-patient-modal-buttons .submit-btn:hover {
+  background-color: var(--button-hover);
 }
 
 .create-patient-modal-buttons .cancel-btn {
-  background-color: #444;
-  color: white;
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-fg);
+}
+
+.create-patient-modal-buttons .cancel-btn:hover {
+  background-color: var(--button-secondary-hover);
 }
 
 
 .create-patient-button {
-  background-color: var(--accent);
-  color: white;
+  background-color: var(--button-bg);
+  color: var(--button-fg);
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   margin: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px var(--shadow);
   transition: background var(--transition);
 }
 
 .create-patient-button:hover {
-  background-color: #4f5bff;
+  background-color: var(--button-hover);
 }
 
 .create-patient-modal-overlay{
@@ -536,18 +598,23 @@ td img {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.6);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .input-error {
-  border: 1px solid red;
+  border: 1px solid var(--vscode-inputValidation-errorBorder, var(--error));
+}
+
+.required-mark {
+  color: var(--error);
+  font-weight: bold;
 }
 
 .error-text {
-  color: red;
+  color: var(--error);
   font-size: 0.85em;
   margin-top: 4px;
 }

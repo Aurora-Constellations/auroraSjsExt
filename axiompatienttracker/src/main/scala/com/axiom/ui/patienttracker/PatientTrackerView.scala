@@ -170,10 +170,8 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
     val unitNumber = textAt("unitNumber")(cols)
     tr(
       idAttr := s"row-$rowIdx",
-      backgroundColor <-- selectedRowVar.signal.map {
-        case Some(row) if row == rowIdx => "#32a852" // shade of green
-        case _                          => "black"
-      },
+      // Row colours (striping, hover, selection) come from styles.css, which follows the VS Code theme
+      cls("selected") <-- selectedRowVar.signal.map(_.contains(rowIdx)),
       onDblClick --> { _ =>
         // Assuming the third column contains the unit number
         println(s"Row double-clicked: Fetching details for unit number: $unitNumber")
