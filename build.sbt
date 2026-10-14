@@ -186,6 +186,29 @@ bundleD3 := {
   log.info(
     s"Copied ${bundledJs.getName} -> media/d3_main.js"
   )
+
+  // The webview's stylesheet (d3example/style.css, imported by index.js)
+  val cssFiles =
+    (assetsDir * "*.css").get
+
+  if (cssFiles.isEmpty) {
+    sys.error(
+      s"No Vite stylesheet found in ${assetsDir.getAbsolutePath}"
+    )
+  }
+
+  val bundledCss =
+    cssFiles.maxBy(_.lastModified())
+
+  IO.copyFile(
+    bundledCss,
+    mediaDir / "d3_styles.css",
+    preserveLastModified = true
+  )
+
+  log.info(
+    s"Copied ${bundledCss.getName} -> media/d3_styles.css"
+  )
 }
 
 lazy val createDirectories = Def.task[Unit] {

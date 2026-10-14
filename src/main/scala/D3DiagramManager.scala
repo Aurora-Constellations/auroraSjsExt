@@ -9,13 +9,15 @@ import org.aurora.visual.d3.D3Renderer
 import org.aurora.sjsast.LHMap
 import concurrent.ExecutionContext.Implicits.global
 
-// viewTitle replaces the view's name from package.json, e.g. in the end-user layout
-class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[String] = None) { // Renamed to extContext to avoid shadowing
+// presentationMode: the end-user layout (`sbt openUI`), which renames the view and uses the redesigned diagram
+class D3DiagramManager(extContext: vscode.ExtensionContext, presentationMode: Boolean = false) { // Renamed to extContext to avoid shadowing
 	private var view: Option[vscode.WebviewView] = None
 	// The document the diagram was last drawn from; node clicks and cursor moves are synced against it
 	private var currentUri: Option[vscode.Uri] = None
 	// Short status shown beside the view title, e.g. while recording
 	private var status: Option[String] = None
+	// Last diagram sent, replayed when the end-user webview is rebuilt (it is discarded each time the view is hidden)
+	private var lastDiagram: Option[js.Dynamic] = None
 
 	val provider: vscode.WebviewViewProvider = new vscode.WebviewViewProvider {
 		
@@ -27,7 +29,7 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[St
 		): Unit | PromiseLike[Unit] = { 
 		
 		view = Some(webviewView)
-		viewTitle.foreach(t => webviewView.title = t)
+		if (presentationMode) webviewView.title = "Care Scenario"
 		webviewView.description = status.orUndefined
 
 		webviewView.webview.options = vscode.WebviewOptions()
@@ -44,7 +46,10 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[St
 	}
 
 	private def handleWebviewMessage(message: js.Dynamic): Unit = {
-		if (message.command.asInstanceOf[String] == "nodeClicked" && !js.isUndefined(message.range)) {
+		// Only the end-user diagram sends "ready"
+		if (message.command.asInstanceOf[String] == "ready") {
+			for (v <- view; diagram <- lastDiagram) v.webview.postMessage(diagram)
+		} else if (message.command.asInstanceOf[String] == "nodeClicked" && !js.isUndefined(message.range)) {
 			val range = message.range
 			selectInEditor(
 				range.startLine.asInstanceOf[Int],
@@ -97,14 +102,15 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[St
 
 	def updateDiagram(data: js.Any, uri: vscode.Uri): Unit = {
 	currentUri = Some(uri)
-	view.foreach { v =>
-		v.webview.postMessage(
-		js.Dynamic.literal(
-			command = "updateDiagram",
-			data = data
-		)
-		)
-	}
+	val path = js.Dynamic.global.require("path")
+	val message = js.Dynamic.literal(
+		command = "updateDiagram",
+		data = data,
+		// The patient's name as shown in the end-user diagram header: the file name without its extension
+		title = path.basename(uri.fsPath, path.extname(uri.fsPath))
+	)
+	lastDiagram = Some(message)
+	view.foreach(_.webview.postMessage(message))
 	}
 
 	private def getHtmlForWebview(webview: vscode.Webview): String = {
@@ -145,7 +151,7 @@ class D3DiagramManager(extContext: vscode.ExtensionContext, viewTitle: Option[St
 		|    };
 		|  </script>
 		|</head>
-		|<body>
+		|<body${if (presentationMode) " data-aurora-mode=\"app\"" else ""}>
 		|    <div id="d3-container"></div>
  		|    <script type="module" src="$scriptUri"></script>
 		|</body>

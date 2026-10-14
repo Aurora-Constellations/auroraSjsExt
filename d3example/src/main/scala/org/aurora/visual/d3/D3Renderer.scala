@@ -29,6 +29,8 @@ trait ElkSection extends js.Object:
 @js.native
 trait ElkEdgeWithAbs extends js.Object:
     val id: js.UndefOr[String]
+    val sources: js.UndefOr[js.Array[String]]
+    val targets: js.UndefOr[js.Array[String]]
     var parentAbsX: Double
     var parentAbsY: Double
     val sections: js.UndefOr[js.Array[ElkSection]]

@@ -49,7 +49,7 @@ object AuroraSjsExt {
     val presentationMode =
       vscode.workspace.getConfiguration("aurora").get[Boolean]("presentationMode").getOrElse(false)
 
-    d3Manager = new D3DiagramManager(context, Option.when(presentationMode)("Care Scenario"))
+    d3Manager = new D3DiagramManager(context, presentationMode)
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider("aurora", d3Manager.provider).asInstanceOf[Dispose]
     )

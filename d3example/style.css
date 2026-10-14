@@ -2,3 +2,392 @@
   font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
   color: #2c3e50;
 }
+
+/* Care scenario webview for the end-user layout (`sbt openUI`), drawn by D3AppRenderer.
+   Every rule is scoped to body[data-aurora-mode="app"] or the .ap-* classes, so the developer layout's
+   diagram is unaffected. */
+
+body[data-aurora-mode="app"] {
+  --ap-bg: #f6f7f9;
+  --ap-surface: #ffffff;
+  --ap-border: #e1e5ea;
+  --ap-text: #1f2933;
+  --ap-muted: #667085;
+  --ap-edge: #a3adbb;
+  --ap-accent: #2563eb;
+  --ap-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 4px 12px rgba(16, 24, 40, 0.06);
+  --ap-node-shadow: drop-shadow(0 1px 1.5px rgba(16, 24, 40, 0.18));
+}
+
+/* VS Code tags the webview body with the active theme kind */
+body.vscode-dark[data-aurora-mode="app"],
+body.vscode-high-contrast[data-aurora-mode="app"] {
+  --ap-bg: #1b1e23;
+  --ap-surface: #252a31;
+  --ap-border: #343b45;
+  --ap-text: #e6e9ee;
+  --ap-muted: #9aa4b2;
+  --ap-edge: #6b7686;
+  --ap-accent: #5aa9ff;
+  --ap-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --ap-node-shadow: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Outside VS Code (Vite dev server) follow the OS theme instead */
+@media (prefers-color-scheme: dark) {
+  body[data-aurora-mode="app"]:not([class*="vscode-"]) {
+    --ap-bg: #1b1e23;
+    --ap-surface: #252a31;
+    --ap-border: #343b45;
+    --ap-text: #e6e9ee;
+    --ap-muted: #9aa4b2;
+    --ap-edge: #6b7686;
+    --ap-accent: #5aa9ff;
+    --ap-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --ap-node-shadow: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  }
+}
+
+body[data-aurora-mode="app"] {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--ap-bg);
+  color: var(--ap-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+}
+
+body[data-aurora-mode="app"] #d3-container {
+  position: fixed;
+  inset: 0;
+}
+
+.ap-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* --- Header ------------------------------------------------------------------------ */
+
+.ap-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--ap-surface);
+  border-bottom: 1px solid var(--ap-border);
+}
+
+.ap-title-wrap {
+  min-width: 0;
+}
+
+.ap-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ap-muted);
+}
+
+.ap-title {
+  margin: 1px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ap-app:not(.has-diagram) .ap-controls {
+  visibility: hidden;
+}
+
+.ap-controls {
+  flex: none;
+  display: flex;
+  gap: 2px;
+}
+
+.ap-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ap-muted);
+  cursor: pointer;
+}
+
+.ap-btn:hover {
+  background: var(--ap-bg);
+  border-color: var(--ap-border);
+  color: var(--ap-text);
+}
+
+.ap-btn:focus-visible {
+  outline: 2px solid var(--ap-accent);
+  outline-offset: 1px;
+}
+
+.ap-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* --- Diagram ----------------------------------------------------------------------- */
+
+.ap-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.ap-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.ap-svg:active {
+  cursor: grabbing;
+}
+
+.ap-link {
+  fill: none;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 0.15s ease, stroke-width 0.15s ease;
+}
+
+/* While a node is hovered, its own connections stand out and the rest fade back */
+.ap-app.is-focusing .ap-link {
+  opacity: 0.15;
+}
+
+.ap-app.is-focusing .ap-link.is-related {
+  opacity: 1;
+  stroke-width: 2.5px;
+}
+
+.ap-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.ap-node-box {
+  filter: var(--ap-node-shadow);
+}
+
+.ap-node:focus-visible .ap-node-box {
+  stroke: var(--ap-accent) !important;
+  stroke-width: 2px !important;
+}
+
+.ap-node-label {
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ap-highlight-ring {
+  fill: none;
+  stroke: var(--ap-accent);
+  stroke-width: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ap-highlight-ring.visible {
+  opacity: 1;
+}
+
+/* --- Empty state ------------------------------------------------------------------- */
+
+.ap-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  color: var(--ap-muted);
+}
+
+.ap-app.has-diagram .ap-empty {
+  display: none;
+}
+
+.ap-empty svg {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+  fill: none;
+  stroke: var(--ap-edge);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ap-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ap-text);
+}
+
+.ap-empty-text {
+  max-width: 24em;
+  line-height: 1.5;
+}
+
+/* --- Key --------------------------------------------------------------------------- */
+
+.ap-legend {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
+  background: var(--ap-surface);
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  box-shadow: var(--ap-shadow);
+  font-size: 12px;
+}
+
+.ap-app:not(.has-diagram) .ap-legend {
+  display: none;
+}
+
+.ap-legend summary {
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ap-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ap-legend[open] summary {
+  padding-bottom: 2px;
+}
+
+.ap-legend-body {
+  padding: 2px 10px 8px;
+}
+
+.ap-legend-group {
+  margin: 6px 0 2px;
+  font-size: 10px;
+  color: var(--ap-muted);
+}
+
+.ap-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.ap-swatch {
+  flex: none;
+  box-sizing: border-box;
+  width: 16px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+.ap-swatch-line {
+  height: 0;
+  border-radius: 0;
+  border-width: 0 0 2px;
+  border-style: solid;
+}
+
+/* --- Tooltip ----------------------------------------------------------------------- */
+
+.ap-tooltip {
+  position: fixed;
+  z-index: 1000;
+  display: none;
+  max-width: 240px;
+  padding: 8px 10px;
+  background: var(--ap-surface);
+  color: var(--ap-text);
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  box-shadow: var(--ap-shadow);
+  pointer-events: none;
+}
+
+.ap-tooltip.visible {
+  display: block;
+}
+
+.ap-tt-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-muted);
+}
+
+.ap-tt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ap-tt-name {
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ap-tt-flag {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ap-muted);
+}
+
+.ap-tt-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--ap-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-aurora-mode="app"] * {
+    transition: none !important;
+  }
+}
