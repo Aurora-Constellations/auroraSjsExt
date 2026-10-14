@@ -1,23 +1,45 @@
 :root {
-  /* Color palette */
-  --bg-page: #242424;
-  --bg-container: #1f1f1f;
-  --bg-header: #272323;
-  --bg-row-odd: #2a2a2a;
-  --bg-row-even: #232323;
-  --bg-highlight: #32a852;
-  --text-primary: rgba(255, 255, 255, 0.87);
-  --text-secondary: #bbb;
-  --accent: #646cff;
+  /* Color palette, taken from the active VS Code theme. Inside a webview VS Code defines the --vscode-* variables
+     and updates them live when the user switches theme; the fallbacks are the original dark palette, used when the
+     page runs outside VS Code (e.g. the Vite dev server). */
+  --bg-page: var(--vscode-editor-background, #242424);
+  --bg-container: var(--vscode-editor-background, #1f1f1f);
+  --bg-header: var(--vscode-sideBar-background, #272323);
+  --bg-row-even: var(--bg-page);
+  --bg-row-odd: color-mix(in srgb, var(--text-primary) 4%, var(--bg-page));
+  --bg-highlight: var(--vscode-list-hoverBackground, #32a852);
+  --text-highlight: var(--vscode-list-hoverForeground, var(--text-primary));
+  --bg-selected: var(--vscode-list-activeSelectionBackground, #1f6f3d33);
+  --text-selected: var(--vscode-list-activeSelectionForeground, var(--text-primary));
+  --bg-surface: var(--vscode-menu-background, #1f2937);
+  --text-surface: var(--vscode-menu-foreground, #fff);
+  --bg-surface-hover: var(--vscode-menu-selectionBackground, #374151);
+  --text-surface-hover: var(--vscode-menu-selectionForeground, var(--text-surface));
+  --text-primary: var(--vscode-foreground, rgba(255, 255, 255, 0.87));
+  --text-secondary: var(--vscode-descriptionForeground, #bbb);
+  --accent: var(--vscode-focusBorder, #646cff);
+  --border: var(--vscode-widget-border, var(--vscode-panel-border, #333));
+  --shadow: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.3));
+
+  --button-bg: var(--vscode-button-background, #646cff);
+  --button-fg: var(--vscode-button-foreground, #fff);
+  --button-hover: var(--vscode-button-hoverBackground, #848cff);
+
   --border-radius: 6px;
   --padding: 0.15rem;
   --transition: 0.2s ease-in-out;
 
   /* Typography */
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color-scheme: light dark;
+  font-family: var(--vscode-font-family, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif);
+  color-scheme: dark;
   color: var(--text-primary);
   background-color: var(--bg-page);
+}
+
+/* Native controls (scrollbars, inputs) follow the theme kind VS Code puts on <body> */
+body.vscode-light,
+body.vscode-high-contrast-light {
+  color-scheme: light;
 }
 
 body {
@@ -37,15 +59,11 @@ body {
   width: 100%;
 }
 .my-table th, .my-table td {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   padding: 8px;
   text-align: left;
 }
-.my-table tr.selected {
-  background-color: #32a852;
-}
 .my-table tr:hover {
-  background-color: #32a852;
   cursor: pointer;
 }
 .add-encounter-form {
@@ -54,7 +72,6 @@ body {
   gap: 8px;
   align-items: center;
 }
-.my-table tr.selected { background: #1f6f3d33; }
 
 
 /* ───────────────────────────────
@@ -64,7 +81,7 @@ body {
 .table-container {
   background: var(--bg-container);
   border-radius: var(--border-radius);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 12px var(--shadow);
   padding: 1rem;
   margin-top: 1.5rem;
   overflow-x: auto;
@@ -96,7 +113,7 @@ body {
 
 .my-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
 }
 
 .my-table tr:nth-child(odd) td {
@@ -109,9 +126,14 @@ body {
 
 .my-table tr:hover td {
   background: var(--bg-highlight);
-  color: #fff;
+  color: var(--text-highlight);
   cursor: pointer;
   transition: var(--transition);
+}
+
+.my-table tr.selected td {
+  background: var(--bg-selected);
+  color: var(--text-selected);
 }
 
 .table-header {
@@ -126,8 +148,8 @@ body {
 }
 
 .details-column button {
-  background: var(--accent);
-  color: white;
+  background: var(--button-bg);
+  color: var(--button-fg);
   border: none;
   border-radius: 4px;
   padding: 6px 10px;
@@ -137,16 +159,24 @@ body {
 }
 
 .details-column button:hover {
-  background: #848cff;
+  background: var(--button-hover);
 }
 
 .status-column img {
   border-radius: 4px;
 }
 
-/* Menu */
+/* Menu: right-click menu styled like VS Code's own context menus */
 
 .ctx-overlay { position: fixed; inset: 0; z-index: 9999; }
-.ctx-menu { background: #1f2937; color: #fff; border-radius: 8px; min-width: 190px; box-shadow: 0 10px 24px rgba(0,0,0,.3); padding: 6px 0; }
+.ctx-menu {
+  background: var(--bg-surface);
+  color: var(--text-surface);
+  border: 1px solid var(--vscode-menu-border, transparent);
+  border-radius: 8px;
+  min-width: 190px;
+  box-shadow: 0 10px 24px var(--shadow);
+  padding: 6px 0;
+}
 .ctx-item { padding: 8px 12px; cursor: pointer; }
-.ctx-item:hover { background: #374151; }
+.ctx-item:hover { background: var(--bg-surface-hover); color: var(--text-surface-hover); }
