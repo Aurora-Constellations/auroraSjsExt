@@ -1,5 +1,5 @@
-// User settings for the end-user window that `sbt open` launches.
-// `sbt open` copies this file into target/enduser-profile on every launch, so edit it here rather than in the window.
+// User settings for the end-user window that `sbt openUI` launches.
+// `sbt openUI` copies this file into target/enduser-profile on every launch, so edit it here rather than in the window.
 {
   // --- Extension ---------------------------------------------------------------------------
   "aurora.presentationMode": true,
@@ -23,6 +23,53 @@
   "extensions.ignoreRecommendations": true,
   "update.showReleaseNotes": false,
   "git.enabled": false,
+
+  // --- Editors: one patient at a time, titled by name ----------------------------------------
+  "workbench.editor.showTabs": "single",
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.empty.hint": "hidden",
+  "workbench.editor.customLabels.enabled": true,
+  "workbench.editor.customLabels.patterns": {
+    "**/*.aurora": "${filename}"
+  },
+
+  // Saving is what redraws the diagram, so save shortly after typing stops
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 800,
+
+  // --- The orders text reads as a document, not source code ---------------------------------
+  "editor.fontFamily": "'Segoe UI', system-ui, -apple-system, sans-serif",
+  "editor.fontSize": 14,
+  "editor.lineHeight": 1.7,
+  "editor.padding.top": 16,
+  "editor.padding.bottom": 16,
+  "editor.lineNumbers": "on",
+  "editor.lineDecorationsWidth": 16,
+  "editor.glyphMargin": false,
+  "editor.showFoldingControls": "mouseover",
+  "editor.minimap.enabled": false,
+  "editor.wordWrap": "on",
+  "editor.wrappingIndent": "indent",
+  "editor.renderLineHighlight": "none",
+  "editor.guides.indentation": false,
+  "editor.guides.bracketPairs": false,
+  "editor.bracketPairColorization.enabled": false,
+  "editor.matchBrackets": "never",
+  "editor.occurrencesHighlight": "off",
+  "editor.selectionHighlight": false,
+  "editor.renderWhitespace": "none",
+  "editor.unicodeHighlight.ambiguousCharacters": false,
+  "editor.stickyScroll.enabled": false,
+  "editor.lightbulb.enabled": "off",
+  "editor.codeLens": false,
+  "editor.colorDecorators": false,
+  "editor.overviewRulerBorder": false,
+  "editor.hideCursorInOverviewRuler": true,
+  "editor.scrollBeyondLastLine": false,
+  "editor.scrollbar.verticalScrollbarSize": 8,
+  "editor.smoothScrolling": true,
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
 
   // --- Look: light theme with a branded title bar, matched to the diagram webview -------------
   "workbench.colorTheme": "Light Modern",
@@ -49,5 +96,19 @@
     "list.activeSelectionForeground": "#1f2933",
     "list.inactiveSelectionBackground": "#e6ebf3",
     "list.hoverBackground": "#eef1f5"
+  },
+
+  // Aurora markers get calm, meaningful colours instead of the theme's code colours.
+  // Narrative colours follow the diagram: ?? draft (amber), !! urgent (red), xx / .. completed.
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      { "scope": ["storage.type", "variable.parameter"], "settings": { "foreground": "#16324f", "fontStyle": "bold" } },
+      { "scope": ["string", "string.quoted.double.n"], "settings": { "foreground": "#8a6100" } },
+      { "scope": "invalid.deprecated", "settings": { "foreground": "#c62828", "fontStyle": "bold" } },
+      { "scope": "entity.other.inherited-class", "settings": { "foreground": "#7b3fa0" } },
+      { "scope": "keyword.control", "settings": { "foreground": "#00707a" } },
+      { "scope": ["punctuation.brackets.aurora", "punctuation.separator.aurora"], "settings": { "foreground": "#98a2b3" } },
+      { "scope": ["comment.line.aurora", "comment.block.aurora"], "settings": { "foreground": "#8a94a6", "fontStyle": "italic" } }
+    ]
   }
 }

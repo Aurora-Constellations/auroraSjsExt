@@ -38,13 +38,13 @@ object AuroraSjsExt {
       extensions cannot directly change or open a workspace folder programmatically on activation 
       due to VS Code's security and UX model. But here is an acceptable approach
     */
-    // `sbt open` already passes the folder on the command line; re-opening it would only reload the window
+    // `sbt openUI` already passes the folder on the command line; re-opening it would only reload the window
     val folderAlreadyOpen = vscode.workspace.workspaceFolders.toOption
       .flatMap(_.headOption)
       .exists(f => path.relative(f.uri.fsPath, defaultPath).asInstanceOf[String] == "")
     if (!folderAlreadyOpen) vscode.commands.executeCommand("vscode.openFolder", folderUri, false)
 
-    // End-user layout (set in the profile `sbt open` launches): show the Aurora views, keep developer panels closed
+    // End-user layout (set in the profile `sbt openUI` launches): show the Aurora views, keep developer panels closed
     val presentationMode =
       vscode.workspace.getConfiguration("aurora").get[Boolean]("presentationMode").getOrElse(false)
 
