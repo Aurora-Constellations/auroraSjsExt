@@ -9,4 +9,7 @@ object AuroraStates {
             "elk.spacing.nodeNode" -> "10",
             "elk.layered.spacing.nodeNodeBetweenLayers" -> "30"
           )
+
+  // Hide Narratives / Show Narratives; like the layout, it holds across saves and patient switches
+  var hideNarratives: Boolean = false
 }

@@ -31,7 +31,7 @@ import typings.vscode.mod.QuickPickItem
 import PublishCommands.refreshDiagram
 import com.axiom.Configurations.Layout
 import scala.scalajs.js.JSConverters.*
-import AuroraStates.globalLayoutOptions
+import AuroraStates.{globalLayoutOptions, hideNarratives}
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -72,7 +72,8 @@ object PublishCommands:
           AuroraElk
             .Graph(
               PCM(currentPCM),
-              globalLayoutOptions
+              globalLayoutOptions,
+              hideNarratives
             )
             .graph
             .onComplete {
@@ -145,7 +146,8 @@ object PublishCommands:
           ("AuroraSjsExt.processDSL", processDSL(context)),
           ("AuroraSjsExt.toggleDiagramLayout", toggleDiagramLayout(d3Manager)),
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
-          // ("AuroraSjsExt.hideNarratives", hideNarrs(langConfig)),
+          ("AuroraSjsExt.hideNarratives", setNarrativesHidden(d3Manager, hidden = true)),
+          ("AuroraSjsExt.showNarratives", setNarrativesHidden(d3Manager, hidden = false)),
           // ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
           ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
           ("AuroraSjsExt.startRecording", startRecording(context)),
@@ -312,11 +314,16 @@ object PublishCommands:
   }
 
 
-  // def hideNarrs(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-  //   (args) => {
-  //     performActionOnActivePCM(langConfig, hideNarratives)
-  //   }
-  // }
+  // Hides or shows narrative nodes in the diagram, keeping the chosen layout
+  def setNarrativesHidden(d3Manager: D3DiagramManager, hidden: Boolean): js.Function1[Any, Any] = { _ =>
+    hideNarratives = hidden
+    // Switches the view menu between Hide Narratives and Show Narratives
+    vscode.commands.executeCommand("setContext", "aurora.narrativesHidden", hidden)
+    vscode.window.activeTextEditor.toOption match {
+      case Some(editor) => refreshDiagram(editor.document, d3Manager)
+      case None         => ()
+    }
+  }
 
   // def hideNamedGroups(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
   //   (args) => {

@@ -101,6 +101,10 @@
 				"title": "Hide Narratives"
 			},
 			{
+				"command": "AuroraSjsExt.showNarratives",
+				"title": "Show Narratives"
+			},
+			{
 				"command": "AuroraSjsExt.hideNamedGroups",
 				"title": "Hide Named Groups"
 			},
@@ -190,7 +194,12 @@
 				},
 				{
 					"command": "AuroraSjsExt.hideNarratives",
-					"when": "view == aurora && !config.aurora.presentationMode",
+					"when": "view == aurora && !aurora.narrativesHidden",
+					"group": "secondary"
+				},
+				{
+					"command": "AuroraSjsExt.showNarratives",
+					"when": "view == aurora && aurora.narrativesHidden",
 					"group": "secondary"
 				},
 				{
@@ -207,6 +216,14 @@
 				{
 					"command": "AuroraSjsExt.refreshPatients",
 					"when": "config.aurora.presentationMode"
+				},
+				{
+					"command": "AuroraSjsExt.hideNarratives",
+					"when": "!aurora.narrativesHidden"
+				},
+				{
+					"command": "AuroraSjsExt.showNarratives",
+					"when": "aurora.narrativesHidden"
 				}
 			]
 		},
