@@ -60,8 +60,14 @@ object AuroraElk:
         val sources: LHSet[String] = LHSet.from(edge.sources)
         val targets: LHSet[String] = LHSet.from(edge.targets)
 
-    // hideNarratives leaves narrative nodes, and the edges to them, out of the graph before layout
-    case class Graph(pcm: PCM, layoutOptions: LHMap[String, String], hideNarratives: Boolean = false) :
+    // hideNarratives / hiddenGroups leave narrative nodes, or the orders and narratives of the named groups,
+    // and the edges to them, out of the graph before layout
+    case class Graph(
+        pcm: PCM,
+        layoutOptions: LHMap[String, String],
+        hideNarratives: Boolean = false,
+        hiddenGroups: Set[String] = Set.empty
+    ) :
         implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
         private val elk = new ELKConstructor()
         private val elkRoot: ElkNode = ElkNode(id="root")
@@ -88,14 +94,19 @@ object AuroraElk:
         private def isNarrative(id: String): Boolean =
             id.split("%%").lastOption.exists(_.endsWith("Narrative"))
 
+        private val hiddenGroupIds = namedGroupNodeIds(pcm, hiddenGroups)
+
+        private def isHidden(id: String): Boolean =
+            (hideNarratives && isNarrative(id)) || hiddenGroupIds.contains(id)
+
         // 2. Fetch the children, apply the sizes, and pass them to ELK
         val rawChildren = getDrawableDescendants(pcm).toList
-            .filterNot(n => hideNarratives && n.id.toOption.exists(isNarrative))
+            .filterNot(n => n.id.toOption.exists(isHidden))
             .toJSArray
         applyDimensions(rawChildren)     
         
         val edges = getDrawableEdges(pcm).toList
-            .filterNot(e => hideNarratives && (e.sources.exists(isNarrative) || e.targets.exists(isNarrative)))
+            .filterNot(e => e.sources.exists(isHidden) || e.targets.exists(isHidden))
             .toJSArray
 
         elkRoot.setChildren(rawChildren)

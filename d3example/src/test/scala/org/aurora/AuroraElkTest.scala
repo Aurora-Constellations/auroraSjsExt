@@ -118,6 +118,14 @@ class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
         root.edges.toList.map(_.id) should be (List("OC2%%Coordinate->IC1%%Reference%%Normal"))
       }
     }
+    "leave a hidden named group's orders, narratives and edges out" in {
+      val layoutOptions = LHMap("elk.algorithm" -> "org.eclipse.elk.layered")
+      AuroraElk.Graph(TestUtils.pcm, layoutOptions, hiddenGroups = Set("NGO1")).graph.map { root =>
+        // Only the issues IC1 and IC2 remain; every edge started at an order in NGO1
+        root.children.toList.map(_.id.split("%%").head).toSet should be (Set("IC1", "IC2"))
+        root.edges.isEmpty should be (true)
+      }
+    }
   }
 
 }

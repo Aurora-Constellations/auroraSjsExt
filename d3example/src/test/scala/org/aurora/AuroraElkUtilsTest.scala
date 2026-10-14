@@ -6,6 +6,8 @@ import matchers._
 import org.aurora.visual.elk.AuroraElkUtils.getDrawableDescendants
 import org.aurora.TestUtils
 import org.aurora.visual.elk.AuroraElkUtils.getDrawableEdges
+import org.aurora.visual.elk.AuroraElkUtils.{namedGroupNames, namedGroupNodeIds}
+import org.aurora.sjsast.*
 
 
 class AuroraElkUtilsTest extends wordspec.AsyncWordSpec with should.Matchers{
@@ -57,6 +59,30 @@ class AuroraElkUtilsTest extends wordspec.AsyncWordSpec with should.Matchers{
       val drawableOc3Edges = getDrawableEdges(TestUtils.oc3)
       drawableOc3Edges.isEmpty should be (true)
 
+    }
+  }
+  "namedGroupNames" should {
+    "list the named groups of orders" in {
+      namedGroupNames(TestUtils.pcm) should be (List("NGO1", "NGO2"))
+    }
+  }
+  "namedGroupNodeIds" should {
+    "return the orders and narratives of the hidden groups" in {
+      namedGroupNodeIds(TestUtils.pcm, Set("NGO1")) should be (Set(
+        "OC1%%Coordinate", "OC2%%Coordinate", "OC3%%Coordinate",
+        "nar1%%NormalNarrative", "nar2%%NormalNarrative"
+      ))
+    }
+    "return nothing when no group is hidden" in {
+      namedGroupNodeIds(TestUtils.pcm, Set.empty).isEmpty should be (true)
+      namedGroupNodeIds(TestUtils.pcm, Set("NGO2")).isEmpty should be (true)
+    }
+    "keep an order that also belongs to a group still shown" in {
+      val groupA = NGO(name = "A", ordercoord = LHSet(TestUtils.oc1, TestUtils.oc3))
+      val groupB = NGO(name = "B", ordercoord = LHSet(TestUtils.oc1))
+      val pcm = PCM(LHMap("Orders" -> Orders(ngo = LHSet(groupA, groupB))))
+
+      namedGroupNodeIds(pcm, Set("A")) should be (Set("OC3%%Coordinate"))
     }
   }
 

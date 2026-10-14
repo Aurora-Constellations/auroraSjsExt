@@ -31,7 +31,8 @@ import typings.vscode.mod.QuickPickItem
 import PublishCommands.refreshDiagram
 import com.axiom.Configurations.Layout
 import scala.scalajs.js.JSConverters.*
-import AuroraStates.{globalLayoutOptions, hideNarratives}
+import AuroraStates.{globalLayoutOptions, hideNarratives, hiddenNamedGroups}
+import org.aurora.visual.elk.AuroraElkUtils
 
 object PublishCommands:
   private var recordingItem: vscode.StatusBarItem = uninitialized
@@ -73,7 +74,8 @@ object PublishCommands:
             .Graph(
               PCM(currentPCM),
               globalLayoutOptions,
-              hideNarratives
+              hideNarratives,
+              hiddenNamedGroups
             )
             .graph
             .onComplete {
@@ -148,7 +150,7 @@ object PublishCommands:
           ("AuroraSjsExt.changeNarrativeType", changeNarrativesType(context)),
           ("AuroraSjsExt.hideNarratives", setNarrativesHidden(d3Manager, hidden = true)),
           ("AuroraSjsExt.showNarratives", setNarrativesHidden(d3Manager, hidden = false)),
-          // ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(langConfig)),
+          ("AuroraSjsExt.hideNamedGroups", hideNamedGroups(d3Manager)),
           ("AuroraSjsExt.mcp", takeMcpPrompt(context)),
           ("AuroraSjsExt.startRecording", startRecording(context)),
           ("AuroraSjsExt.stopRecording", stopRecording(context)),
@@ -325,11 +327,46 @@ object PublishCommands:
     }
   }
 
-  // def hideNamedGroups(langConfig: LanguageClientConfigSingleton): js.Function1[Any, Any] = {
-  //   (args) => {
-  //     performActionOnActivePCM(langConfig, hideNGOs)     
-  //   }
-  // }
+  // Lets the user pick which named groups of orders to hide; deselecting a group shows it again.
+  // Like the layout and Hide Narratives, the choice holds across saves and patient switches.
+  def hideNamedGroups(d3Manager: D3DiagramManager): js.Function1[Any, Any] = { _ =>
+    vscode.window.activeTextEditor.toOption match {
+      case None =>
+        vscode.window.showErrorMessage("There is no active editor.")
+
+      case Some(editor) =>
+        parse(editor.document.fileName).toFuture.onComplete {
+          case Failure(e) =>
+            vscode.window.showErrorMessage(s"Could not read the named groups: ${e.getMessage}")
+
+          case Success(parsed) =>
+            val groupNames = AuroraElkUtils.namedGroupNames(PCM(parsed.asInstanceOf[GenAst.PCM]))
+
+            if (groupNames.isEmpty)
+              vscode.window.showInformationMessage("This patient has no named groups of orders.")
+            else {
+              val quickPick = vscode.window.createQuickPick[QuickPickItem]()
+              quickPick.title = "Hide Named Groups"
+              quickPick.placeholder = "Choose the named groups to hide; deselect one to show it again"
+              quickPick.canSelectMany = true
+              val items = groupNames.map(name => QuickPickItem(label = name)).toJSArray
+              quickPick.items = items
+              quickPick.asInstanceOf[js.Dynamic].selectedItems =
+                items.filter(item => hiddenNamedGroups.contains(item.label))
+
+              quickPick.onDidAccept { (_: Unit) =>
+                val selected = quickPick.selectedItems.map(_.label).toSet
+                // Groups from other patients keep their state; only this patient's groups are updated
+                hiddenNamedGroups = (hiddenNamedGroups -- groupNames) ++ selected
+                refreshDiagram(editor.document, d3Manager)
+                quickPick.dispose()
+              }
+              quickPick.onDidHide((_: Unit) => quickPick.dispose())
+              quickPick.show()
+            }
+        }
+    }
+  }
 
   def performActionOnActivePCM(langConfig: LanguageClientConfigSingleton, f: (typings.auroraLangium.distTypesSrcLanguageGeneratedAstMod.PCM, LanguageClientConfigSingleton) => Unit): Unit = {
     val activeEditor = vscode.window.activeTextEditor

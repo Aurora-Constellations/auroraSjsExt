@@ -204,7 +204,7 @@
 				},
 				{
 					"command": "AuroraSjsExt.hideNamedGroups",
-					"when": "view == aurora && !config.aurora.presentationMode",
+					"when": "view == aurora",
 					"group": "secondary"
 				}
 			],

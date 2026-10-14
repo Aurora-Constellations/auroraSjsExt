@@ -12,4 +12,7 @@ object AuroraStates {
 
   // Hide Narratives / Show Narratives; like the layout, it holds across saves and patient switches
   var hideNarratives: Boolean = false
+
+  // Named groups of orders chosen in Hide Named Groups; kept by name, so they stay hidden in any patient that has them
+  var hiddenNamedGroups: Set[String] = Set.empty
 }
