@@ -4,9 +4,9 @@ import org.scalatest._
 import wordspec._
 import matchers._
 import org.aurora.sjsast.*
-import org.aurora.AstNodeUtils.{getAllDescendants, getName}
+import org.aurora.sjsast.utils.AstNode.{getAllDescendants, getName}
 import org.aurora.TestUtils
-import org.aurora.AstNodeUtils.getAllEdges
+import org.aurora.sjsast.utils.AstNode.getAllEdges
 
 //discussion about testing workflows, pros/cons 
 

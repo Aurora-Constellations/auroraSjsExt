@@ -5,15 +5,15 @@ import wordspec._
 import matchers._
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
-import org.aurora.AuroraElkUtils.getDrawableDescendants
+import org.aurora.visual.elk.AuroraElkUtils.getDrawableDescendants
 import org.aurora.TestUtils
-import org.aurora.AuroraElkUtils.getDrawableEdges
+import org.aurora.visual.elk.AuroraElkUtils.getDrawableEdges
 import typings.elkjs.libElkApiMod.ElkNode
-import org.aurora.AuroraElk
-import org.aurora.AstNodeUtils.getAllDescendants
+import org.aurora.visual.elk.AuroraElk
+import org.aurora.sjsast.utils.AstNode.getAllDescendants
 import org.aurora.sjsast.LHMap
 import typings.langium.grammarMod
-import org.aurora.AstNodeUtils.getName
+import org.aurora.sjsast.utils.AstNode.getName
 import scala.scalajs.concurrent.JSExecutionContext
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
@@ -98,8 +98,25 @@ class AuroraElkTest extends wordspec.AsyncWordSpec with should.Matchers{
         val xCoords = nodes.map(n => n.xCoord).toList
         xCoords should not contain (0)
         val yCoords = nodes.map(n => n.yCoord).toList
-        yCoords should not contain (0)       
+        yCoords should not contain (0)
 
+    }
+    "keep narratives in the graph by default" in {
+      val layoutOptions = LHMap("elk.algorithm" -> "org.eclipse.elk.layered")
+      AuroraElk.Graph(TestUtils.pcm, layoutOptions).graph.map { root =>
+        root.children.size should be (TestUtils.allDrawableDescendants.size)
+        root.edges.size should be (TestUtils.allDrawableEdges.size)
+      }
+    }
+    "leave narratives and their edges out when hideNarratives is set" in {
+      val layoutOptions = LHMap("elk.algorithm" -> "org.eclipse.elk.layered")
+      AuroraElk.Graph(TestUtils.pcm, layoutOptions, hideNarratives = true).graph.map { root =>
+        // IC1, IC2, OC1, OC2, OC3 remain; nar1 and nar2 are gone
+        root.children.size should be (5)
+        root.children.toList.map(_.nodeType).foreach(t => t should not endWith "Narrative")
+        // Only OC2 -> IC1 remains; OC1 -> nar1 and OC2 -> nar2 are gone
+        root.edges.toList.map(_.id) should be (List("OC2%%Coordinate->IC1%%Reference%%Normal"))
+      }
     }
   }
 

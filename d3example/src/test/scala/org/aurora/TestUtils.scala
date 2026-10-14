@@ -1,6 +1,8 @@
 package org.aurora
 import org.aurora.sjsast.*
-import org.aurora.AuroraElkUtils.getDrawableDescendants
+import org.aurora.visual.elk.AuroraElkUtils.getDrawableDescendants
+import org.aurora.visual.elk.AuroraElk
+import org.aurora.visual.elk.given
 
 object TestUtils {
     /**

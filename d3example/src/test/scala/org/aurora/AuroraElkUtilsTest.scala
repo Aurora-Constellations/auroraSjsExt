@@ -3,9 +3,9 @@ import org.scalatest._
 
 import wordspec._
 import matchers._
-import org.aurora.AuroraElkUtils.getDrawableDescendants
+import org.aurora.visual.elk.AuroraElkUtils.getDrawableDescendants
 import org.aurora.TestUtils
-import org.aurora.AuroraElkUtils.getDrawableEdges
+import org.aurora.visual.elk.AuroraElkUtils.getDrawableEdges
 
 
 class AuroraElkUtilsTest extends wordspec.AsyncWordSpec with should.Matchers{
