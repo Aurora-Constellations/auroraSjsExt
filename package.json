@@ -20,7 +20,12 @@
 	"main": "./out/extension",
 	"scripts": {
 		"build": "lerna run build",
-		"watch": "lerna run dev --parallel"
+		"watch": "lerna run dev --parallel",
+		"demos:setup": "node meet-react/scripts/meet-demos.mjs setup",
+		"demos:build": "node meet-react/scripts/meet-demos.mjs build",
+		"demos:dev": "node meet-react/scripts/meet-demos.mjs dev",
+		"demos:test": "node meet-react/scripts/meet-demos.mjs test",
+		"demos:engine": "node meet-react/scripts/meet-demos.mjs engine"
 	},
 	"contributes": {
 		"languages": [

@@ -9,21 +9,21 @@ object AfScorer:
       status: Option[Cha2ds2VascStatus]
   )
 
-  private val AgeKeys = List("age", "age_years", "ageyears")
-  private val SexKeys = List("sex", "gender", "sex_for_score")
-  private val DiagnosisKeys = List("atrial_fibrillation", "atrial_flutter", "af")
-  private val HeartFailureKeys = List("heart_failure", "cha2ds2_vasc_heart_failure")
-  private val HypertensionKeys = List("hypertension", "cha2ds2_vasc_hypertension")
-  private val DiabetesKeys = List("diabetes", "cha2ds2_vasc_diabetes")
-  private val PriorStrokeKeys = List("prior_stroke_tia_te", "prior_stroke_tia_thromboembolism", "prior_stroke", "prior_tia")
-  private val VascularDiseaseKeys = List("vascular_disease", "cha2ds2_vasc_vascular_disease")
+  private[scoring] val AgeKeys = List("age", "age_years", "ageyears")
+  private[scoring] val SexKeys = List("sex", "gender", "sex_for_score")
+  private[scoring] val DiagnosisKeys = List("atrial_fibrillation", "atrial_flutter", "af")
+  private[scoring] val HeartFailureKeys = List("heart_failure", "cha2ds2_vasc_heart_failure")
+  private[scoring] val HypertensionKeys = List("hypertension", "cha2ds2_vasc_hypertension")
+  private[scoring] val DiabetesKeys = List("diabetes", "cha2ds2_vasc_diabetes")
+  private[scoring] val PriorStrokeKeys = List("prior_stroke_tia_te", "prior_stroke_tia_thromboembolism", "prior_stroke", "prior_tia")
+  private[scoring] val VascularDiseaseKeys = List("vascular_disease", "cha2ds2_vasc_vascular_disease")
 
-  private val DiagnosisIssueNames = Set("atrial_fibrillation", "atrial_flutter", "af", "afib", "a_fib", "a_flutter")
-  private val HeartFailureIssueNames = Set("heart_failure", "congestive_heart_failure", "chf", "hf")
-  private val HypertensionIssueNames = Set("hypertension", "htn")
-  private val DiabetesIssueNames = Set("diabetes", "diabetes_mellitus", "dm")
-  private val PriorStrokeIssueNames = Set("stroke", "tia", "thromboembolism", "prior_stroke", "prior_tia")
-  private val VascularDiseaseIssueNames = Set(
+  private[scoring] val DiagnosisIssueNames = Set("atrial_fibrillation", "atrial_flutter", "af", "afib", "a_fib", "a_flutter")
+  private[scoring] val HeartFailureIssueNames = Set("heart_failure", "congestive_heart_failure", "chf", "hf")
+  private[scoring] val HypertensionIssueNames = Set("hypertension", "htn")
+  private[scoring] val DiabetesIssueNames = Set("diabetes", "diabetes_mellitus", "dm")
+  private[scoring] val PriorStrokeIssueNames = Set("stroke", "tia", "thromboembolism", "prior_stroke", "prior_tia")
+  private[scoring] val VascularDiseaseIssueNames = Set(
     "vascular_disease",
     "mi",
     "myocardial_infarction",
@@ -79,15 +79,15 @@ object AfScorer:
       case _ =>
         Some(Result(total = None, riskBand = None, status = Some(Cha2ds2VascStatus.InsufficientData)))
 
-  private def resolveAge(facts: ClinicalFacts): Option[Int] =
+  private[scoring] def resolveAge(facts: ClinicalFacts): Option[Int] =
     facts.firstValue(AgeKeys).flatMap(Parsing.parseInt).filter(_ >= 0)
 
-  private def resolveSex(facts: ClinicalFacts): Option[SexCategory] =
+  private[scoring] def resolveSex(facts: ClinicalFacts): Option[SexCategory] =
     facts.firstValue(SexKeys)
       .flatMap(Parsing.asText)
       .flatMap(SexCategory.parse)
 
-  private def resolveBoolean(
+  private[scoring] def resolveBoolean(
       facts: ClinicalFacts,
       keys: List[String],
       issueNames: Set[String]

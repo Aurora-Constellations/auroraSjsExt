@@ -385,6 +385,21 @@ lazy val pcmalgebra = project
   )
   .settings(sharedStSettings)
 
+// Optional source build for the engine bundled by the standalone demos.
+lazy val meetEngine = project
+  .in(file("pcmalgebra/demo-engine"))
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(pcmalgebra)
+  .settings(
+    name := "meetengine",
+    scalacOptions ++= Seq("-Xmax-inlines", "100"),
+    scalaJSLinkerConfig ~= {
+      _.withModuleKind(ModuleKind.ESModule)
+        .withModuleSplitStyle(ModuleSplitStyle.FewestModules)
+    },
+    libraryDependencies ++= Dependencies.scalatest.value
+  )
+
 // --- D3 Example ---
 lazy val d3example = project
   .in(file("d3example"))

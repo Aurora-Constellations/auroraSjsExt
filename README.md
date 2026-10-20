@@ -2,6 +2,8 @@
 
 This Project is a port of the [helloworld-minimal-sample] to [ScalaJS]. It is based on the extension [accessible-scala].
 
+The standalone PCM algebra and scoring workbench lives in [meet-react](meet-react/README.md). Its React and TypeScript frontend provides join, meet, reference validation, decomposition, and scoring using a bundled Scala.js PCM engine. It runs with Node.js. See [MEET_DEMOS.md](MEET_DEMOS.md) for setup and the code-reading guide.
+
 Please check there on how to describe a VSCode Extension.
 
 #Important Note

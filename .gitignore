@@ -25,3 +25,7 @@ package-lock.json
 package-lock.json
 
 d3example/dist
+!meet-react/package-lock.json
+/meet-react/dist/
+/meet-react/test-results/
+/meet-react/playwright-report/

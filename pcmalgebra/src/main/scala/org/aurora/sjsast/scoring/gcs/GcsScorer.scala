@@ -10,10 +10,10 @@ object GcsScorer:
       status: Option[GcsStatus]
   )
 
-  private val EyeKeys = List("gcs_eye", "glasgow_eye", "gcs_eye_response", "glasgow_coma_scale_eye")
-  private val VerbalKeys = List("gcs_verbal", "glasgow_verbal", "gcs_verbal_response", "glasgow_coma_scale_verbal")
-  private val MotorKeys = List("gcs_motor", "glasgow_motor", "gcs_motor_response", "glasgow_coma_scale_motor")
-  private val TotalKeys = List("gcs_total", "glasgow_total", "glasgow_coma_scale_total")
+  private[scoring] val EyeKeys = List("gcs_eye", "glasgow_eye", "gcs_eye_response", "glasgow_coma_scale_eye")
+  private[scoring] val VerbalKeys = List("gcs_verbal", "glasgow_verbal", "gcs_verbal_response", "glasgow_coma_scale_verbal")
+  private[scoring] val MotorKeys = List("gcs_motor", "glasgow_motor", "gcs_motor_response", "glasgow_coma_scale_motor")
+  private[scoring] val TotalKeys = List("gcs_total", "glasgow_total", "glasgow_coma_scale_total")
 
   def compute(facts: ClinicalFacts): Option[Result] =
     val eye = resolveEye(facts)
@@ -37,19 +37,19 @@ object GcsScorer:
 
       Some(Result(total = total, severity = severity, source = source, status = status))
 
-  private def resolveEye(facts: ClinicalFacts): ComponentResolution[Eye] =
+  private[scoring] def resolveEye(facts: ClinicalFacts): ComponentResolution[Eye] =
     facts.firstValue(EyeKeys)
       .flatMap(Parsing.asText)
       .map(Eye.resolveInput)
       .getOrElse(ComponentResolution.Missing)
 
-  private def resolveVerbal(facts: ClinicalFacts): ComponentResolution[Verbal] =
+  private[scoring] def resolveVerbal(facts: ClinicalFacts): ComponentResolution[Verbal] =
     facts.firstValue(VerbalKeys)
       .flatMap(Parsing.asText)
       .map(Verbal.resolveInput)
       .getOrElse(ComponentResolution.Missing)
 
-  private def resolveMotor(facts: ClinicalFacts): ComponentResolution[Motor] =
+  private[scoring] def resolveMotor(facts: ClinicalFacts): ComponentResolution[Motor] =
     facts.firstValue(MotorKeys)
       .flatMap(Parsing.asText)
       .map(Motor.resolveInput)
