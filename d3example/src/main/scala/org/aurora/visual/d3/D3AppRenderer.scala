@@ -4,6 +4,7 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import org.scalajs.dom
 import org.aurora.sjsast.utils.{NarrativeType, Qualifier}
+import org.aurora.visual.LabelWrap
 import typings.d3.mod as d3
 
 // Care scenario renderer for the end-user layout (`sbt openUI`): page shell with a header, zoom controls,
@@ -130,6 +131,15 @@ class D3AppRenderer(val containerSelector: String):
                     .trim
             else name.replace('_', ' ')
         if (text.isEmpty) name else text
+    }
+
+    // One entry per wrapped line of a node's label: its text and where it sits, centred in the node
+    private def labelLines(label: String, width: Double, height: Double): js.Array[js.Dynamic] = {
+        val lines = LabelWrap.lines(label)
+        val firstY = height / 2 - (lines.size - 1) * LabelWrap.LineHeight / 2
+        lines.zipWithIndex.map { case (text, i) =>
+            js.Dynamic.literal(text = text, x = width / 2, y = firstY + i * LabelWrap.LineHeight)
+        }.toJSArray
     }
 
     private def escapeHtml(s: String): String =
@@ -568,14 +578,23 @@ class D3AppRenderer(val containerSelector: String):
         nodeSelection
             .append("text")
             .attr("class", "ap-node-label")
-            .attr("x", (d: D3AugmentedNode) => d.data.width.toSafeOption.getOrElse(0.0) / 2)
-            .attr("y", (d: D3AugmentedNode) => d.data.height.toSafeOption.getOrElse(0.0) / 2)
-            .attr("dy", "0.35em")
             .attr("text-anchor", "middle")
             .style("fill", (d: D3AugmentedNode) => getLabelColor(nodeFill(d)))
-            .text((d: D3AugmentedNode) =>
-                displayLabel(d.data.name.toSafeOption.getOrElse("Unknown"), d.data.nodeType.toSafeOption.getOrElse(""))
+            // Long labels wrap onto several lines, one tspan each (the node was sized for them)
+            .selectAll("tspan")
+            .data((d: D3AugmentedNode) =>
+                labelLines(
+                    displayLabel(d.data.name.toSafeOption.getOrElse("Unknown"), d.data.nodeType.toSafeOption.getOrElse("")),
+                    d.data.width.toSafeOption.getOrElse(0.0),
+                    d.data.height.toSafeOption.getOrElse(0.0)
+                )
             )
+            .enter()
+            .append("tspan")
+            .attr("x", (l: js.Dynamic) => l.x)
+            .attr("y", (l: js.Dynamic) => l.y)
+            .attr("dy", "0.35em")
+            .text((l: js.Dynamic) => l.text)
 
         renderLegend(s, nodes, allEdges.toSeq)
 

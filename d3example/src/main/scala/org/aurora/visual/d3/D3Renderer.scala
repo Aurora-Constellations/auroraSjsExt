@@ -4,6 +4,7 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import org.scalajs.dom
 import org.aurora.sjsast.utils.{NarrativeType, Qualifier}
+import org.aurora.visual.LabelWrap
 import typings.d3.mod as d3
 
 // --- THE FIX: Safe JS extraction extension ---
@@ -149,6 +150,15 @@ class D3Renderer(val containerSelector: String):
             }
             "#" + channels.map(c => f"$c%02x").mkString
         }
+    }
+
+    // One entry per wrapped line of a node's label: its text and where it sits, centred in the node
+    private def labelLines(label: String, width: Double, height: Double): js.Array[js.Dynamic] = {
+        val lines = LabelWrap.lines(label)
+        val firstY = height / 2 - (lines.size - 1) * LabelWrap.LineHeight / 2
+        lines.zipWithIndex.map { case (text, i) =>
+            js.Dynamic.literal(text = text, x = width / 2, y = firstY + i * LabelWrap.LineHeight)
+        }.toJSArray
     }
 
     private def getEdgeDash(edgeType: String): String =
@@ -618,22 +628,6 @@ class D3Renderer(val containerSelector: String):
     nodeSelection
         .append("text")
         .attr(
-        "x",
-        (d: D3AugmentedNode) =>
-            d.data.width.toSafeOption
-            .getOrElse(0.0) / 2
-        )
-        .attr(
-        "y",
-        (d: D3AugmentedNode) =>
-            d.data.height.toSafeOption
-            .getOrElse(0.0) / 2
-        )
-        .attr(
-        "dy",
-        "4px"
-        )
-        .attr(
         "text-anchor",
         "middle"
         )
@@ -649,10 +643,20 @@ class D3Renderer(val containerSelector: String):
         "font-weight",
         "bold"
         )
-        .text(
-        (d: D3AugmentedNode) =>
-            d.data.name.toSafeOption
-            .getOrElse("Unknown")
+        // Long names wrap onto several lines, one tspan each (the node was sized for them)
+        .selectAll("tspan")
+        .data((d: D3AugmentedNode) =>
+            labelLines(
+                d.data.name.toSafeOption.getOrElse("Unknown"),
+                d.data.width.toSafeOption.getOrElse(0.0),
+                d.data.height.toSafeOption.getOrElse(0.0)
+            )
         )
+        .enter()
+        .append("tspan")
+        .attr("x", (l: js.Dynamic) => l.x)
+        .attr("y", (l: js.Dynamic) => l.y)
+        .attr("dy", "4px")
+        .text((l: js.Dynamic) => l.text)
 
     }

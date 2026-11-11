@@ -103,6 +103,63 @@ body {
   border-color: var(--focus);
 }
 
+/* Compact search box with its search button attached on the right */
+.search-bar .search-field {
+  display: flex;
+  align-items: stretch;
+  flex: 0 1 320px;
+  min-width: 160px;
+}
+
+.search-bar .search-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  border-right: none;
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+}
+
+.search-bar .search-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.6rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-fg);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.search-bar .search-button:hover {
+  background: var(--button-secondary-hover);
+}
+
+.search-bar .search-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.search-bar .search-field input:focus,
+.search-bar .search-field input:focus + .search-button {
+  border-color: var(--focus);
+}
+
+.search-bar .search-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
+/* Keep Add Patient at the far right, apart from the search box */
+.search-bar .create-patient-button {
+  margin-left: auto;
+}
+
 .search-bar .patient-title {
   font-size: 1.8rem;
   font-weight: 600;

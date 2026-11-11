@@ -55,6 +55,11 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
   private lazy val visibleHeaders: List[String] =
     allHeaders.filterNot(removedCols)
 
+  // Column title shown for a field name: words split at capitals, e.g. "accountNumber" -> "account Number"
+  // (the stylesheet shows headers in capitals)
+  private def headerLabel(fieldName: String): String =
+    fieldName.replaceAll("([a-z0-9])([A-Z])", "$1 $2")
+
   private lazy val visibleIndex: Map[String, Int] =
     visibleHeaders.zipWithIndex.toMap
 
@@ -150,7 +155,7 @@ class PatientTracker() extends GridT[PatientRow, CellData] with RenderHtml:
           onKeyDown --> tableKeyboardHandler,
           thead(
             children <-- Val(visibleHeaders).map { hs =>
-              List(tr(hs.map(h => th(h))))
+              List(tr(hs.map(h => th(headerLabel(h)))))
             }
           ),
           tbody(

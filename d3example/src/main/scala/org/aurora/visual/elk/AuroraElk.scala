@@ -14,6 +14,7 @@ import org.aurora.sjsast.AstNode
 import org.aurora.sjsast.NL_STATEMENT
 import org.aurora.sjsast.QuReference
 import org.aurora.visual.elk.AuroraElkUtils.*
+import org.aurora.visual.LabelWrap
 import org.aurora.sjsast.LHSet
 import org.aurora.sjsast.LHMap
 import org.scalablytyped.runtime.StringDictionary
@@ -76,13 +77,13 @@ object AuroraElk:
         //Create a helper to enforce width and height on every node
         def applyDimensions(nodes: js.Array[ElkNode]): Unit = {
             nodes.foreach { n =>
-                // Extract the clean name to measure its length
+                // Extract the clean name to measure its length; long names wrap onto several lines
                 val nodeName = n.id.toOption.getOrElse("Unknown").split("%%").headOption.getOrElse("Unknown")
-                val calculatedWidth = (nodeName.length * 7) + 20.0
+                val lines = LabelWrap.lines(nodeName)
 
-                // Assign the true dynamic width to ELK
-                n.width = calculatedWidth
-                n.height = 40.0 // We can keep height fixed for standard text
+                // Assign the true dynamic size to ELK
+                n.width = LabelWrap.width(lines)
+                n.height = LabelWrap.height(lines)
 
                 n.children.toOption.foreach { childArray =>
                 applyDimensions(childArray)

@@ -30,7 +30,7 @@ object PatientFormModel:
         case true =>
           div(
             className := "create-patient-modal",
-            h2("Create New Patient"),
+            h2("Add New Patient"),
             form(
               onSubmit.preventDefault --> { _ =>
                 if validateForm(state) then
