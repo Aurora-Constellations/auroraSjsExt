@@ -202,6 +202,8 @@ class D3AppRenderer(val containerSelector: String):
         val app = d3.select(container).select(".ap-app").asInstanceOf[js.Dynamic]
         val svg = app.select(".ap-svg")
         val viewport = svg.select(".ap-viewport")
+        // Arrowheads for the edges, coloured like the edges themselves
+        Arrowheads.define(svg, "app", getQuColor)
 
         val zoom = d3
             .zoom()
@@ -440,6 +442,8 @@ class D3AppRenderer(val containerSelector: String):
             .style("stroke", (d: ElkEdgeWithAbs) => getQuColor(edgeQualifier(d)))
             .style("stroke-dasharray", (d: ElkEdgeWithAbs) => getEdgeDash(edgeQualifier(d)))
             .attr("d", (d: ElkEdgeWithAbs) => roundedPath(edgePoints(d), 8))
+        // Edges point Issue -> Order -> Narrative
+        Arrowheads.apply(links, "app")
 
         val nodeSelection = s.nodeLayer
             .selectAll(".ap-node")

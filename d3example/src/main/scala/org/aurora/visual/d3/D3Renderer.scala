@@ -204,6 +204,9 @@ class D3Renderer(val containerSelector: String):
         .style("font-family", "sans-serif")
         .asInstanceOf[js.Dynamic]
 
+    // Arrowheads for the edges, coloured like the edges themselves
+    Arrowheads.define(svg, "classic", getQuColor)
+
 
     val g =
         svg.append("g").asInstanceOf[js.Dynamic]
@@ -370,6 +373,9 @@ class D3Renderer(val containerSelector: String):
             .getOrElse("")
         }
         )
+
+    // Edges point Issue -> Order -> Narrative
+    Arrowheads.apply(g.selectAll(".link"), "classic")
 
     // Pans and zooms the diagram so the given node sits in the centre of the view
     def focusNode(d: D3AugmentedNode): Unit = {
